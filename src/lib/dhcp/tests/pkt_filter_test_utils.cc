@@ -210,21 +210,20 @@ PktFilterStub::isSocketReceivedTimeSupported() const {
 
 SocketInfo
 PktFilterStub::openSocket(Iface&,
-           const isc::asiolink::IOAddress& addr,
-           const uint16_t port, const bool, const bool) {
+                          const isc::asiolink::IOAddress& addr,
+                          const uint16_t port, const bool, const bool) {
     return (SocketInfo(addr, port, 0));
 }
 
 Pkt4Ptr
 PktFilterStub::receive(Iface&, const SocketInfo&) {
-    return Pkt4Ptr();
+    return (Pkt4Ptr());
 }
 
 int
 PktFilterStub::send(const Iface&, uint16_t, const Pkt4Ptr&) {
     return (0);
 }
-
 
 } // end of isc::dhcp::test namespace
 } // end of isc::dhcp namespace

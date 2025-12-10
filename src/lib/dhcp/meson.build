@@ -4,8 +4,6 @@ if SYSTEM == 'linux'
     pkt_filter_cc = 'pkt_filter_lpf.cc'
 elif SYSTEM == 'freebsd' or SYSTEM == 'netbsd' or SYSTEM == 'openbsd' or SYSTEM == 'darwin'
     iface_mgr = 'iface_mgr_bsd.cc'
-elif SYSTEM == 'sun'
-    iface_mgr = 'iface_mgr_sun.cc'
 else
     error(f'Build failed: Unsupported system "@SYSTEM@".')
 endif

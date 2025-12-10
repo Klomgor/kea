@@ -86,7 +86,7 @@ public:
     /// group.
     ///
     /// @return A structure describing a primary and fallback socket.
-    virtual SocketInfo openSocket(const Iface& iface,
+    virtual SocketInfo openSocket(Iface& iface,
                                   const isc::asiolink::IOAddress& addr,
                                   const uint16_t port,
                                   const bool join_multicast) = 0;

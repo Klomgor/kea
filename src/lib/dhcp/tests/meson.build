@@ -54,6 +54,7 @@ kea_dhcp_tests = executable(
     'pkt4o6_unittest.cc',
     'pkt6_unittest.cc',
     'pkt_filter6_test_utils.cc',
+    'pkt_filter_iface_test_utils.cc',
     'pkt_filter_inet6_unittest.cc',
     'pkt_filter_inet_unittest.cc',
     'pkt_filter_test_utils.cc',

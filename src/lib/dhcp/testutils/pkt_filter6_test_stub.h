@@ -49,7 +49,7 @@ public:
     ///
     /// @return A SocketInfo structure with the socket descriptor set to 0. The
     /// fallback socket descriptor is set to a negative value.
-    virtual SocketInfo openSocket(const Iface& iface,
+    virtual SocketInfo openSocket(Iface& iface,
                                   const isc::asiolink::IOAddress& addr,
                                   const uint16_t port,
                                   const bool join_multicast);
@@ -68,13 +68,13 @@ public:
     /// This function does nothing.
     ///
     /// @param iface An interface to be used to send DHCPv6 message.
-    /// @param port A port used to send a message.
+    /// @param sockfd socket descriptor.
     /// @param pkt A DHCPv6 to be sent.
     ///
     /// @note All parameters are ignored.
     ///
     /// @return 0.
-    virtual int send(const Iface& iface, uint16_t port, const Pkt6Ptr& pkt);
+    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt6Ptr& pkt);
 
     /// @brief Simulate joining IPv6 multicast group on a socket.
     ///

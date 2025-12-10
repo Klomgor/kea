@@ -205,7 +205,7 @@ PktFilter6Stub::PktFilter6Stub()
 }
 
 SocketInfo
-PktFilter6Stub::openSocket(const Iface& iface, const isc::asiolink::IOAddress& addr,
+PktFilter6Stub::openSocket(Iface& iface, const isc::asiolink::IOAddress& addr,
                            const uint16_t port, const bool) {
     // Check if there is any other socket bound to the specified address
     // and port on this interface.

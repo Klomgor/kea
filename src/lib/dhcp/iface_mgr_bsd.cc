@@ -190,6 +190,7 @@ IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port,
     SocketInfo info = packet_filter6_->openSocket(iface, actual_address, port,
                                                   join_multicast);
     iface.addSocket(info);
+
     return (info.sockfd_);
 }
 

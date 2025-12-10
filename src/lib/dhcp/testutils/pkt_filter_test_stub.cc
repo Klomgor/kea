@@ -35,8 +35,8 @@ PktFilterTestStub::isSocketReceivedTimeSupported() const {
 
 SocketInfo
 PktFilterTestStub::openSocket(Iface&,
-           const isc::asiolink::IOAddress& addr,
-           const uint16_t port, const bool, const bool) {
+                              const isc::asiolink::IOAddress& addr,
+                              const uint16_t port, const bool, const bool) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (fd < 0) {

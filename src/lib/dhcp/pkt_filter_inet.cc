@@ -115,9 +115,7 @@ PktFilterInet::openSocket(Iface& iface,
     }
 #endif
 
-    SocketInfo sock_desc(addr, port, sock);
-    return (sock_desc);
-
+    return (SocketInfo(addr, port, sock));
 }
 
 Pkt4Ptr

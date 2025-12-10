@@ -8,19 +8,23 @@
 #define DHCP_SOCKET_INFO_H
 
 #include <asiolink/io_address.h>
+
 #include <cstdint>
 
-
 namespace isc {
-
 namespace dhcp {
 
 /// Holds information about socket.
 struct SocketInfo {
 
-    isc::asiolink::IOAddress addr_; /// bound address
-    uint16_t port_;   /// socket port
-    uint16_t family_; /// IPv4 or IPv6
+    /// @brief Bound address.
+    isc::asiolink::IOAddress addr_;
+
+    /// @brief Socket port.
+    uint16_t port_;
+
+    /// @brief Family IPv4 or IPv6.
+    uint16_t family_;
 
     /// @brief Socket descriptor (a.k.a. primary socket).
     int sockfd_;
@@ -59,7 +63,6 @@ struct SocketInfo {
                const int sockfd, const int fallbackfd = -1)
         : addr_(addr), port_(port), family_(addr.getFamily()),
           sockfd_(sockfd), fallbackfd_(fallbackfd) { }
-
 };
 
 }  // namespace dhcp

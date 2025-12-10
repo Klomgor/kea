@@ -17,9 +17,9 @@ PktFilter6TestStub::PktFilter6TestStub() : open_socket_callback_() {
 }
 
 SocketInfo
-PktFilter6TestStub::openSocket(const Iface&,
-           const isc::asiolink::IOAddress& addr,
-           const uint16_t port, const bool) {
+PktFilter6TestStub::openSocket(Iface&,
+                               const isc::asiolink::IOAddress& addr,
+                               const uint16_t port, const bool) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (fd < 0) {

@@ -186,18 +186,17 @@ public:
     /// This function does nothing.
     ///
     /// @param iface An interface to be used to send DHCPv4 message.
-    /// @param port A port used to send a message.
+    /// @param sockfd socket descriptor.
     /// @param pkt A DHCPv4 to be sent.
     ///
     /// @note All parameters are ignored.
     ///
     /// @return 0.
-    virtual int send(const Iface& iface, uint16_t port, const Pkt4Ptr& pkt);
+    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt4Ptr& pkt);
 
     // Change the scope of the protected function so as they can be unit tested.
     using PktFilter::openFallbackSocket;
 };
-
 
 }  // end of isc::dhcp::test namespace
 }  // end of isc::dhcp namespace

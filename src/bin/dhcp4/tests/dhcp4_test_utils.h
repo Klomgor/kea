@@ -39,55 +39,6 @@ namespace isc {
 namespace dhcp {
 namespace test {
 
-/// @brief Dummy Packet Filtering class.
-///
-/// This class reports capability to respond directly to the client which
-/// doesn't have address configured yet.
-///
-/// All packet and socket handling functions do nothing because they are not
-/// used in unit tests.
-class PktFilterTest : public PktFilter {
-public:
-
-    /// @brief Constructor.
-    ///
-    /// Sets the 'direct response' capability to true.
-    PktFilterTest()
-        : direct_resp_supported_(true) {
-    }
-
-    /// @brief Reports 'direct response' capability.
-    ///
-    /// @return always true.
-    virtual bool isDirectResponseSupported() const {
-        return (direct_resp_supported_);
-    }
-
-    /// Does nothing.
-    virtual SocketInfo openSocket(Iface&,
-                                  const isc::asiolink::IOAddress& addr,
-                                  const uint16_t port, const bool, const bool) {
-        return (SocketInfo(addr, port, 0));
-    }
-
-    /// Does nothing.
-    virtual Pkt4Ptr receive(Iface&, const SocketInfo&) {
-        return Pkt4Ptr();
-    }
-
-    /// Does nothing.
-    virtual int send(const Iface&, uint16_t, const Pkt4Ptr&) {
-        return (0);
-    }
-
-    /// @brief Holds a boolean value which indicates whether direct response
-    /// capability is supported (true) or not (false).
-    bool direct_resp_supported_;
-
-};
-
-typedef boost::shared_ptr<PktFilterTest> PktFilterTestPtr;
-
 /// Forward definition for Dhcp4Client defined in dhcp4_client.h
 /// dhcp4_client.h includes dhcp_test_utils.h (this file), so to avoid
 /// circular dependencies, we need a forward class declaration.

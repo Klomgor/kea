@@ -15,6 +15,8 @@
 #include <dhcp/pkt_filter_inet.h>
 #include <dhcp/pkt_filter_inet6.h>
 #include <dhcp/testutils/iface_mgr_test_config.h>
+#include <dhcp/tests/pkt_filter_iface_test_utils.h>
+#include <dhcp/tests/pkt_filter_test_utils.h>
 #include <dhcp/tests/pkt_filter6_test_utils.h>
 #include <dhcp/tests/packet_queue_testutils.h>
 #include <testutils/env_var_wrapper.h>
@@ -76,6 +78,17 @@ const uint32_t TIMEOUT_TOLERANCE = 10000;
 
 // Macro for making select wait time arguments for receive functions
 #define RECEIVE_WAIT_MS(m) 0,(m*1000)
+
+bool callback_ok = false;
+bool callback2_ok = false;
+
+void my_callback(int /* fd */) {
+    callback_ok = true;
+}
+
+void my_callback2(int /* fd */) {
+    callback2_ok = true;
+}
 
 /// This test verifies that the socket read buffer can be used to
 /// receive the data and that the data can be read from it.
@@ -209,310 +222,6 @@ public:
     /// object after its creation.
     bool open_socket_called_;
 };
-
-class PktFilterIfaceSocketTest {
-public:
-    /// @brief Constructor.
-    ///
-    /// @param ready_on_send Flag which indicates if socket should be marked as
-    /// readReady when calling @ref send.
-    /// @param clear_on_read Flag which indicates is socket should be unmarked as
-    /// readReady when calling @ref receive.
-    PktFilterIfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
-
-    /// @brief Destructor.
-    virtual ~PktFilterIfaceSocketTest();
-
-    /// @brief Simulate opening of the socket.
-    ///
-    /// This function simulates opening a primary socket. In reality, it doesn't
-    /// open a socket but uses a pipe which can control if a read event is ready
-    /// or not.
-    ///
-    /// @param iface An interface descriptor.
-    /// @param addr Address on the interface to be used to send packets.
-    /// @param port Port number to bind socket to.
-    /// @param receive_bcast A flag which indicates if socket should be
-    /// configured to receive broadcast packets (if true).
-    /// @param send_bcast A flag which indicates if the socket should be
-    /// configured to send broadcast packets (if true).
-    ///
-    /// @return A SocketInfo structure with the socket descriptor set. The
-    /// fallback socket descriptor is set to a negative value.
-    virtual SocketInfo openSocketCommon(const Iface& iface,
-                                        const isc::asiolink::IOAddress& addr,
-                                        const uint16_t port);
-
-    /// @brief Simulate reception of the DHCPv4/DHCPv6 message.
-    ///
-    /// @param sock_info A descriptor of the primary and fallback sockets.
-    ///
-    /// @return the same packet used by @ref send (if any).
-    virtual PktPtr receiveCommon(const SocketInfo& sock_info);
-
-    /// @brief Simulates sending a DHCPv4/DHCPv6 message.
-    ///
-    /// @param iface An interface to be used to send DHCPv4/DHCPv6 message.
-    /// @param sockfd socket descriptor.
-    /// @param pkt A DHCPv4/DHCPv6 to be sent.
-    ///
-    /// @return 0.
-    virtual int sendCommon(const Iface& iface, uint16_t sockfd, const PktPtr& pkt);
-
-    /// @brief Flag which indicates if socket should be marked as
-    /// readReady when calling @ref send.
-    bool ready_on_send_;
-
-    /// @brief Flag which indicates is socket should be unmarked as
-    /// readReady when calling @ref receive.
-    bool clear_on_read_;
-
-    /// @brief The set of opened file descriptors.
-    std::unordered_map<int, int> socket_fds_;
-
-    std::unordered_map<int, PktPtr> pkts_;
-};
-
-class PktFilter4IfaceSocketTest : public PktFilterIfaceSocketTest, public PktFilter {
-public:
-
-    /// @brief Constructor.
-    ///
-    /// @param ready_on_send Flag which indicates if socket should be marked as
-    /// readReady when calling @ref send.
-    /// @param clear_on_read Flag which indicates is socket should be unmarked as
-    /// readReady when calling @ref receive.
-    PktFilter4IfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
-
-    /// @brief Destructor.
-    ~PktFilter4IfaceSocketTest() = default;
-
-    /// @brief Checks if the direct DHCPv4 response is supported.
-    ///
-    /// This function checks if the direct response capability is supported,
-    /// i.e. if the server can respond to the client which doesn't have an
-    /// address yet. For this dummy class, the true is always returned.
-    ///
-    /// @return always true.
-    virtual bool isDirectResponseSupported() const;
-
-    /// @brief Check if the socket received time is supported.
-    ///
-    /// If true, then packets received through this filter will include
-    /// a SOCKET_RECEIVED event in its event stack.
-    ///
-    /// @return always true.
-    virtual bool isSocketReceivedTimeSupported() const;
-
-    /// @brief Simulate opening of the socket.
-    ///
-    /// This function simulates opening a primary socket. In reality, it doesn't
-    /// open a socket but uses a pipe which can control if a read event is ready
-    /// or not.
-    ///
-    /// @param iface An interface descriptor.
-    /// @param addr Address on the interface to be used to send packets.
-    /// @param port Port number to bind socket to.
-    /// @param receive_bcast A flag which indicates if socket should be
-    /// configured to receive broadcast packets (if true).
-    /// @param send_bcast A flag which indicates if the socket should be
-    /// configured to send broadcast packets (if true).
-    ///
-    /// @return A SocketInfo structure with the socket descriptor set. The
-    /// fallback socket descriptor is set to a negative value.
-    virtual SocketInfo openSocket(Iface& iface,
-                                  const isc::asiolink::IOAddress& addr,
-                                  const uint16_t port,
-                                  const bool receive_bcast,
-                                  const bool send_bcast);
-
-    /// @brief Simulate reception of the DHCPv4 message.
-    ///
-    /// @param iface An interface to be used to receive DHCPv4 message.
-    /// @param sock_info A descriptor of the primary and fallback sockets.
-    ///
-    /// @return the same packet used by @ref send (if any).
-    virtual Pkt4Ptr receive(Iface& iface, const SocketInfo& sock_info);
-
-    /// @brief Simulates sending a DHCPv4 message.
-    ///
-    /// @param iface An interface to be used to send DHCPv4 message.
-    /// @param sockfd socket descriptor.
-    /// @param pkt A DHCPv4 to be sent.
-    ///
-    /// @return 0.
-    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt4Ptr& pkt);
-};
-
-class PktFilter6IfaceSocketTest : public PktFilterIfaceSocketTest, public PktFilter6 {
-public:
-
-    /// @brief Constructor.
-    ///
-    /// @param ready_on_send Flag which indicates if socket should be marked as
-    /// readReady when calling @ref send.
-    /// @param clear_on_read Flag which indicates is socket should be unmarked as
-    /// readReady when calling @ref receive.
-    PktFilter6IfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
-
-    /// @brief Destructor.
-    ~PktFilter6IfaceSocketTest() = default;
-
-    /// @brief Simulate opening of the socket.
-    ///
-    /// This function simulates opening a primary socket. In reality, it doesn't
-    /// open a socket but uses a pipe which can control if a read event is ready
-    /// or not.
-    ///
-    /// @param iface Interface descriptor.
-    /// @param addr Address on the interface to be used to send packets.
-    /// @param port Port number.
-    /// @param join_multicast A boolean parameter which indicates whether
-    /// socket should join All_DHCP_Relay_Agents_and_servers multicast
-    /// group.
-    ///
-    /// @return A SocketInfo structure with the socket descriptor set. The
-    /// fallback socket descriptor is set to a negative value.
-    virtual SocketInfo openSocket(const Iface& iface,
-                                  const isc::asiolink::IOAddress& addr,
-                                  const uint16_t port,
-                                  const bool join_multicast);
-
-    /// @brief Simulate reception of the DHCPv6 message.
-    ///
-    /// @param iface An interface to be used to receive DHCPv6 message.
-    /// @param sock_info A descriptor of the primary and fallback sockets.
-    ///
-    /// @return the same packet used by @ref send (if any).
-    virtual Pkt6Ptr receive(const SocketInfo& sock_info);
-
-    /// @brief Simulates sending a DHCPv6 message.
-    ///
-    /// @param iface An interface to be used to send DHCPv6 message.
-    /// @param sockfd socket descriptor.
-    /// @param pkt A DHCPv6 to be sent.
-    ///
-    /// @return 0.
-    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt6Ptr& pkt);
-};
-
-const uint8_t MARKER = 0;
-
-PktFilterIfaceSocketTest::PktFilterIfaceSocketTest(bool ready_on_send, bool clear_on_read)
-    : ready_on_send_(ready_on_send),
-      clear_on_read_(clear_on_read) {
-}
-
-PktFilterIfaceSocketTest::~PktFilterIfaceSocketTest() {
-    for (auto it = socket_fds_.begin(); it != socket_fds_.end(); ++it) {
-        close(it->first);
-        close(it->second);
-    }
-}
-
-SocketInfo
-PktFilterIfaceSocketTest::openSocketCommon(const Iface& /* iface */, const isc::asiolink::IOAddress& addr,
-                                           const uint16_t) {
-    int pipe_fds[2];
-    if (pipe(pipe_fds) < 0) {
-        isc_throw(Unexpected, "failed to open test pipe");
-    }
-    if (fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK) < 0) {
-        close(pipe_fds[0]);
-        close(pipe_fds[1]);
-        isc_throw(Unexpected, "fcntl " << strerror(errno));
-    }
-    if (fcntl(pipe_fds[1], F_SETFL, O_NONBLOCK) < 0) {
-        close(pipe_fds[0]);
-        close(pipe_fds[1]);
-        isc_throw(Unexpected, "fcntl " << strerror(errno));
-    }
-
-    socket_fds_[pipe_fds[0]] = pipe_fds[1];
-    return (SocketInfo(addr, 9999, pipe_fds[0]));
-}
-
-PktPtr
-PktFilterIfaceSocketTest::receiveCommon(const SocketInfo& s) {
-    auto it = socket_fds_.find(s.sockfd_);
-    if (it == socket_fds_.end()) {
-        std::cout << "receive no such socket: " << s.sockfd_ << std::endl;
-        return (PktPtr());
-    }
-    PktPtr result = pkts_[s.sockfd_];
-    if (clear_on_read_) {
-        uint8_t data;
-        for (size_t count = -1; count; count = read(s.sockfd_, &data, sizeof(data)));
-    }
-    return (result);
-}
-
-int
-PktFilterIfaceSocketTest::sendCommon(const Iface& /* iface */, uint16_t sockfd, const PktPtr& pkt) {
-    auto it = socket_fds_.find(sockfd);
-    if (it == socket_fds_.end()) {
-        std::cout << "send no such socket: " << sockfd << std::endl;
-        return (-1);
-    }
-    pkts_[sockfd] = pkt;
-    if (ready_on_send_) {
-        uint8_t data = MARKER;
-        write(it->second, &data, sizeof(data));
-    }
-    return (0);
-}
-
-PktFilter4IfaceSocketTest::PktFilter4IfaceSocketTest(bool ready_on_send, bool clear_on_read)
-    : PktFilterIfaceSocketTest(ready_on_send, clear_on_read) {
-}
-
-bool
-PktFilter4IfaceSocketTest::isDirectResponseSupported() const {
-    return (true);
-}
-
-bool
-PktFilter4IfaceSocketTest::isSocketReceivedTimeSupported() const {
-    return (true);
-}
-
-SocketInfo
-PktFilter4IfaceSocketTest::openSocket(Iface& iface,
-                                      const isc::asiolink::IOAddress& addr,
-                                      const uint16_t port, const bool, const bool) {
-    return (PktFilterIfaceSocketTest::openSocketCommon(iface, addr, port));
-}
-
-Pkt4Ptr
-PktFilter4IfaceSocketTest::receive(Iface& /* iface */, const SocketInfo& s) {
-    return (boost::dynamic_pointer_cast<Pkt4>(PktFilterIfaceSocketTest::receiveCommon(s)));
-}
-
-int
-PktFilter4IfaceSocketTest::send(const Iface& iface, uint16_t sockfd, const Pkt4Ptr& pkt) {
-    return (PktFilterIfaceSocketTest::sendCommon(iface, sockfd, pkt));
-}
-
-PktFilter6IfaceSocketTest::PktFilter6IfaceSocketTest(bool ready_on_send, bool clear_on_read)
-    : PktFilterIfaceSocketTest(ready_on_send, clear_on_read) {
-}
-
-SocketInfo
-PktFilter6IfaceSocketTest::openSocket(const Iface& iface,
-                                      const isc::asiolink::IOAddress& addr,
-                                      const uint16_t port, const bool) {
-    return (PktFilterIfaceSocketTest::openSocketCommon(iface, addr, port));
-}
-
-Pkt6Ptr
-PktFilter6IfaceSocketTest::receive(const SocketInfo& s) {
-    return (boost::dynamic_pointer_cast<Pkt6>(PktFilterIfaceSocketTest::receiveCommon(s)));
-}
-
-int
-PktFilter6IfaceSocketTest::send(const Iface& iface, uint16_t sockfd, const Pkt6Ptr& pkt) {
-    return (PktFilterIfaceSocketTest::sendCommon(iface, sockfd, pkt));
-}
 
 class NakedIfaceMgr: public IfaceMgr {
     // "Naked" Interface Manager, exposes internal fields
@@ -663,17 +372,6 @@ public:
         }
     }
 };
-
-volatile bool callback_ok;
-volatile bool callback2_ok;
-
-void my_callback(int /* fd */) {
-    callback_ok = true;
-}
-
-void my_callback2(int /* fd */) {
-    callback2_ok = true;
-}
 
 /// @brief A test fixture class for IfaceMgr.
 ///
@@ -3344,7 +3042,7 @@ TEST_F(IfaceMgrTest, openSockets6LinkLocal) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3396,7 +3094,7 @@ TEST_F(IfaceMgrTest, openSockets6Loopback) {
     // so add one.
     ifacemgr.getIface("lo")->addUnicast(IOAddress("::1"));
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3421,7 +3119,7 @@ TEST_F(IfaceMgrTest, openSockets6NoLinkLocal) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3467,7 +3165,7 @@ TEST_F(IfaceMgrTest, openSockets6NotMulticast) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3515,7 +3213,7 @@ TEST_F(IfaceMgrTest, openSockets6Unicast) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3561,7 +3259,7 @@ TEST_F(IfaceMgrTest, openSockets6UnicastOnly) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3609,7 +3307,7 @@ TEST_F(IfaceMgrTest, openSockets6IfaceDown) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3671,7 +3369,7 @@ TEST_F(IfaceMgrTest, openSockets6IfaceInactive) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3726,7 +3424,7 @@ TEST_F(IfaceMgrTest, openSockets6NoIfaces) {
     // Remove existing interfaces.
     ifacemgr.clearIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3785,7 +3483,7 @@ TEST_F(IfaceMgrTest, openSockets6SkipOpen) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -3812,7 +3510,7 @@ TEST_F(IfaceMgrTest, hasOpenSocketForAddress6) {
     // Remove all real interfaces and create a set of dummy interfaces.
     ifacemgr.createIfaces();
 
-    boost::shared_ptr<PktFilter6Stub> filter(new PktFilter6Stub());
+    boost::shared_ptr<PktFilter6IfaceSocketTest> filter(new PktFilter6IfaceSocketTest());
     ASSERT_TRUE(filter);
     ASSERT_NO_THROW(ifacemgr.setPacketFilter(filter));
 
@@ -4338,12 +4036,6 @@ void IfaceMgrTest::testMultipleExternalSockets4() {
     EXPECT_TRUE(callback_ok);
     EXPECT_FALSE(callback2_ok);
 
-    // Read the data sent, because our test callbacks are too dumb to actually
-    // do it. We don't care about the content read, because we're testing
-    // the callbacks, not pipes.
-    char buf[80];
-    EXPECT_EQ(38, read(pipefd[0], buf, 80));
-
     // Clear the status...
     callback_ok = false;
     callback2_ok = false;
@@ -4357,7 +4049,9 @@ void IfaceMgrTest::testMultipleExternalSockets4() {
     // IfaceMgr should not process control socket data as incoming packets
     EXPECT_FALSE(pkt4);
 
-    // There was some data, so this time callback should be called
+    // There was some data, so this time second callback should be called
+    // Without socket rotation this would call the first callback as the first
+    // pipe data has not been read.
     EXPECT_FALSE(callback_ok);
     EXPECT_TRUE(callback2_ok);
 
@@ -4573,12 +4267,6 @@ void IfaceMgrTest::testMultipleExternalSockets6() {
     EXPECT_TRUE(callback_ok);
     EXPECT_FALSE(callback2_ok);
 
-    // Read the data sent, because our test callbacks are too dumb to actually
-    // do it. We don't care about the content read, because we're testing
-    // the callbacks, not pipes.
-    char buf[80];
-    EXPECT_EQ(38, read(pipefd[0], buf, 80));
-
     // Clear the status...
     callback_ok = false;
     callback2_ok = false;
@@ -4592,7 +4280,9 @@ void IfaceMgrTest::testMultipleExternalSockets6() {
     // IfaceMgr should not process control socket data as incoming packets
     EXPECT_FALSE(pkt6);
 
-    // There was some data, so this time callback should be called
+    // There was some data, so this time second callback should be called
+    // Without socket rotation this would call the first callback as the first
+    // pipe data has not been read.
     EXPECT_FALSE(callback_ok);
     EXPECT_TRUE(callback2_ok);
 

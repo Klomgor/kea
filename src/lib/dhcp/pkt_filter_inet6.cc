@@ -32,7 +32,7 @@ PktFilterInet6::isSocketReceivedTimeSupported() const {
 }
 
 SocketInfo
-PktFilterInet6::openSocket(const Iface& iface,
+PktFilterInet6::openSocket(Iface& iface,
                            const isc::asiolink::IOAddress& addr,
                            const uint16_t port,
                            const bool join_multicast) {
