@@ -414,6 +414,16 @@ IfaceMgr::deleteAllExternalSockets() {
     callbacks_.clear();
 }
 
+std::list<int>
+IfaceMgr::getAllExternalSockets() {
+    std::list<int> result;
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    for (SocketCallbackInfo const& s : callbacks_) {
+        result.push_back(s.socket_);
+    }
+    return (result);
+}
+
 void
 IfaceMgr::setPacketFilter(const PktFilterPtr& packet_filter) {
     // Do not allow null pointer.
@@ -1269,6 +1279,7 @@ Pkt4Ptr IfaceMgr::receive4Indirect(uint32_t timeout_sec, uint32_t timeout_usec /
         boost::scoped_ptr<SocketCallbackInfo> ex_sock;
         bool found = false;
         {
+            std::list<SocketCallbackInfoIterator> to_reloc;
             std::lock_guard<std::mutex> lock(callbacks_mutex_);
             for (auto it = callbacks_.begin(); it != callbacks_.end(); ++it) {
                 if (it->unusable_) {
@@ -1278,6 +1289,7 @@ Pkt4Ptr IfaceMgr::receive4Indirect(uint32_t timeout_sec, uint32_t timeout_usec /
                 if (fd_event_handler_->readReady(it->socket_) ||
                     fd_event_handler_->hasError(it->socket_)) {
                     found = true;
+                    to_reloc.push_back(it);
 
                     // something received over external socket
                     if (it->callback_) {
@@ -1286,6 +1298,11 @@ Pkt4Ptr IfaceMgr::receive4Indirect(uint32_t timeout_sec, uint32_t timeout_usec /
                         ex_sock.reset(new SocketCallbackInfo(*it));
                         break;
                     }
+                }
+            }
+            if (found) {
+                for (auto it : to_reloc) {
+                    callbacks_.relocate(callbacks_.end(), it);
                 }
             }
         }
@@ -1379,6 +1396,7 @@ Pkt4Ptr IfaceMgr::receive4Direct(uint32_t timeout_sec, uint32_t timeout_usec /* 
     boost::scoped_ptr<SocketCallbackInfo> ex_sock;
     bool found = false;
     {
+        std::list<SocketCallbackInfoIterator> to_reloc;
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
         for (auto it = callbacks_.begin(); it != callbacks_.end(); ++it) {
             if (it->unusable_) {
@@ -1388,6 +1406,7 @@ Pkt4Ptr IfaceMgr::receive4Direct(uint32_t timeout_sec, uint32_t timeout_usec /* 
             if (fd_event_handler_->readReady(it->socket_) ||
                 fd_event_handler_->hasError(it->socket_)) {
                 found = true;
+                to_reloc.push_back(it);
 
                 // something received over external socket
                 if (it->callback_) {
@@ -1396,6 +1415,11 @@ Pkt4Ptr IfaceMgr::receive4Direct(uint32_t timeout_sec, uint32_t timeout_usec /* 
                     ex_sock.reset(new SocketCallbackInfo(*it));
                     break;
                 }
+            }
+        }
+        if (found) {
+            for (auto it : to_reloc) {
+                callbacks_.relocate(callbacks_.end(), it);
             }
         }
     }
@@ -1529,6 +1553,7 @@ IfaceMgr::receive6Direct(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */ )
     boost::scoped_ptr<SocketCallbackInfo> ex_sock;
     bool found = false;
     {
+        std::list<SocketCallbackInfoIterator> to_reloc;
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
         for (auto it = callbacks_.begin(); it != callbacks_.end(); ++it) {
             if (it->unusable_) {
@@ -1538,6 +1563,7 @@ IfaceMgr::receive6Direct(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */ )
             if (fd_event_handler_->readReady(it->socket_) ||
                 fd_event_handler_->hasError(it->socket_)) {
                 found = true;
+                to_reloc.push_back(it);
 
                 // something received over external socket
                 if (it->callback_) {
@@ -1546,6 +1572,11 @@ IfaceMgr::receive6Direct(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */ )
                     ex_sock.reset(new SocketCallbackInfo(*it));
                     break;
                 }
+            }
+        }
+        if (found) {
+            for (auto it : to_reloc) {
+                callbacks_.relocate(callbacks_.end(), it);
             }
         }
     }
@@ -1682,6 +1713,7 @@ IfaceMgr::receive6Indirect(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */
         boost::scoped_ptr<SocketCallbackInfo> ex_sock;
         bool found = false;
         {
+            std::list<SocketCallbackInfoIterator> to_reloc;
             std::lock_guard<std::mutex> lock(callbacks_mutex_);
             for (auto it = callbacks_.begin(); it != callbacks_.end(); ++it) {
                 if (it->unusable_) {
@@ -1691,6 +1723,7 @@ IfaceMgr::receive6Indirect(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */
                 if (fd_event_handler_->readReady(it->socket_) ||
                     fd_event_handler_->hasError(it->socket_)) {
                     found = true;
+                    to_reloc.push_back(it);
 
                     // something received over external socket
                     if (it->callback_) {
@@ -1699,6 +1732,11 @@ IfaceMgr::receive6Indirect(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */
                         ex_sock.reset(new SocketCallbackInfo(*it));
                         break;
                     }
+                }
+            }
+            if (found) {
+                for (auto it : to_reloc) {
+                    callbacks_.relocate(callbacks_.end(), it);
                 }
             }
         }

@@ -1275,6 +1275,11 @@ public:
     /// by the external API.
     void deleteAllExternalSockets();
 
+    /// @brief Get the list of external sockets.
+    ///
+    /// @return The list of external sockets.
+    std::list<int> getAllExternalSockets();
+
     /// @brief Set packet filter object to handle sending and receiving DHCPv4
     /// messages.
     ///
