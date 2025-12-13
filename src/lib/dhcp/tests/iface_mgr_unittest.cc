@@ -18,6 +18,7 @@
 #include <testutils/env_var_wrapper.h>
 #include <testutils/gtest_utils.h>
 #include <testutils/log_utils.h>
+#include <util/watch_socket.h>
 #include <boost/scoped_ptr.hpp>
 #include <gtest/gtest.h>
 
@@ -37,6 +38,7 @@ using namespace isc::asiolink;
 using namespace isc::dhcp;
 using namespace isc::dhcp::test;
 using namespace isc::test;
+using namespace isc::util;
 using boost::scoped_ptr;
 namespace ph = std::placeholders;
 
@@ -917,6 +919,180 @@ public:
 
     /// @brief Tests if existing external socket can be deleted (v6).
     void testDeleteExternalSockets6();
+
+    /// @brief Verifies that IfaceMgr DHCPv4 receive calls follow
+    /// a LRU order.
+    void lruExternalSockets4Test() {
+        bool callback1_ok = false;
+        bool callback2_ok = false;
+
+        scoped_ptr<NakedIfaceMgr> ifacemgr(new NakedIfaceMgr());
+
+        // Create 3 watch sockets.
+        WatchSocket ws0;
+        WatchSocket ws1;
+        WatchSocket ws2;
+
+        // Register them. the first with no handle.
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws0.getSelectFd(), 0));
+        auto handler1 = [&callback1_ok, &ws1](int) {
+            callback1_ok = true;
+            EXPECT_NO_THROW(ws1.clearReady());
+        };
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws1.getSelectFd(), handler1));
+        auto handler2 = [&callback2_ok, &ws2](int) {
+            callback2_ok = true;
+            EXPECT_NO_THROW(ws2.clearReady());
+        };
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws2.getSelectFd(), handler2));
+
+        // Mark all watch sockets as ready.
+        ws0.markReady();
+        ws1.markReady();
+        ws2.markReady();
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+
+        /// Check the order before the first call to receive4.
+        std::list<int> expected;
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // First call to receive4: ws0 and ws1 are scanned and moved.
+        Pkt4Ptr pkt4;
+        ASSERT_NO_THROW(pkt4 = ifacemgr->receive4(RECEIVE_WAIT_MS(10)));
+        EXPECT_TRUE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+        EXPECT_FALSE(pkt4);
+        expected.clear();
+        expected.push_back(ws2.getSelectFd());
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // Second call to receive4: ws2 is scanned and moved.
+        callback1_ok = false;
+        ASSERT_NO_THROW(pkt4 = ifacemgr->receive4(RECEIVE_WAIT_MS(10)));
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_TRUE(callback2_ok);
+        EXPECT_FALSE(pkt4);
+        expected.clear();
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // Third call to receive4: ws0 is scanned and moved.
+        callback1_ok = false;
+        callback2_ok = false;
+        ASSERT_NO_THROW(pkt4 = ifacemgr->receive4(RECEIVE_WAIT_MS(10)));
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+        EXPECT_FALSE(pkt4);
+        expected.clear();
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        expected.push_back(ws0.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        EXPECT_NO_THROW(ws0.clearReady());
+        std::string err;
+        EXPECT_NO_THROW(ws0.closeSocket(err));
+        EXPECT_EQ("", err);
+        EXPECT_NO_THROW(ws1.closeSocket(err));
+        EXPECT_EQ("", err);
+        EXPECT_NO_THROW(ws2.closeSocket(err));
+        EXPECT_EQ("", err);
+    }
+
+    /// @brief Verifies that IfaceMgr DHCPv6 receive calls follow
+    /// a LRU order.
+    void lruExternalSockets6Test() {
+        bool callback1_ok = false;
+        bool callback2_ok = false;
+
+        scoped_ptr<NakedIfaceMgr> ifacemgr(new NakedIfaceMgr());
+
+        // Create 3 watch sockets.
+        WatchSocket ws0;
+        WatchSocket ws1;
+        WatchSocket ws2;
+
+        // Register them. the first with no handle.
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws0.getSelectFd(), 0));
+        auto handler1 = [&callback1_ok, &ws1](int) {
+            callback1_ok = true;
+            EXPECT_NO_THROW(ws1.clearReady());
+        };
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws1.getSelectFd(), handler1));
+        auto handler2 = [&callback2_ok, &ws2](int) {
+            callback2_ok = true;
+            EXPECT_NO_THROW(ws2.clearReady());
+        };
+        EXPECT_NO_THROW(ifacemgr->addExternalSocket(ws2.getSelectFd(), handler2));
+
+        // Mark all watch sockets as ready.
+        ws0.markReady();
+        ws1.markReady();
+        ws2.markReady();
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+
+        /// Check the order before the first call to receive6.
+        std::list<int> expected;
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // First call to receive6: ws0 and ws1 are scanned and moved.
+        Pkt6Ptr pkt6;
+        ASSERT_NO_THROW(pkt6 = ifacemgr->receive6(RECEIVE_WAIT_MS(10)));
+        EXPECT_TRUE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+        EXPECT_FALSE(pkt6);
+        expected.clear();
+        expected.push_back(ws2.getSelectFd());
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // Second call to receive6: ws2 is scanned and moved.
+        callback1_ok = false;
+        ASSERT_NO_THROW(pkt6 = ifacemgr->receive6(RECEIVE_WAIT_MS(10)));
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_TRUE(callback2_ok);
+        EXPECT_FALSE(pkt6);
+        expected.clear();
+        expected.push_back(ws0.getSelectFd());
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        // Third call to receive6: ws0 is scanned and moved.
+        callback1_ok = false;
+        callback2_ok = false;
+        ASSERT_NO_THROW(pkt6 = ifacemgr->receive6(RECEIVE_WAIT_MS(10)));
+        EXPECT_FALSE(callback1_ok);
+        EXPECT_FALSE(callback2_ok);
+        EXPECT_FALSE(pkt6);
+        expected.clear();
+        expected.push_back(ws1.getSelectFd());
+        expected.push_back(ws2.getSelectFd());
+        expected.push_back(ws0.getSelectFd());
+        EXPECT_EQ(expected, ifacemgr->getAllExternalSockets());
+
+        EXPECT_NO_THROW(ws0.clearReady());
+        std::string err;
+        EXPECT_NO_THROW(ws0.closeSocket(err));
+        EXPECT_EQ("", err);
+        EXPECT_NO_THROW(ws1.closeSocket(err));
+        EXPECT_EQ("", err);
+        EXPECT_NO_THROW(ws2.closeSocket(err));
+        EXPECT_EQ("", err);
+    }
 
     /// @brief Holds the invocation counter for ifaceMgrErrorHandler.
     int errors_count_;
@@ -3324,6 +3500,16 @@ TEST_F(IfaceMgrTest, unusableExternalSockets4IndirectPoll) {
     unusableExternalSockets4Test(true);
 }
 
+/// @brief Verifies that IfaceMgr DHCPv4 receive calls follow a LRU order.
+TEST_F(IfaceMgrTest, lruExternalSockets4) {
+    lruExternalSockets4Test();
+}
+
+/// @brief Verifies that IfaceMgr DHCPv6 receive calls follow a LRU order.
+TEST_F(IfaceMgrTest, lruExternalSockets6) {
+    lruExternalSockets6Test();
+}
+
 // Tests if a single external socket and its callback can be passed and
 // it is supported properly by receive6() method.
 void IfaceMgrTest::testSingleExternalSocket6() {
@@ -3544,6 +3730,8 @@ TEST_F(IfaceMgrTest, unusableExternalSockets6IndirectPoll) {
     kea_event_handler_type_.setValue("poll");
     unusableExternalSockets6Test(true);
 }
+
+
 
 /// @brief Test fixture for logs.
 class IfaceMgrLogTest : public LogContentTest {
