@@ -104,13 +104,11 @@ Iface::closeSockets(const uint16_t family) {
             if (sock->fallbackfd_ >= 0) {
                 close(sock->fallbackfd_);
             }
-            sockets_.erase(sock++);
-
+            sock = sockets_.erase(sock);
         } else {
             // Different type of socket. Let's move
             // to the next one.
             ++sock;
-
         }
     }
 }
@@ -161,7 +159,7 @@ bool Iface::delAddress(const isc::asiolink::IOAddress& addr) {
 }
 
 bool Iface::delSocket(const uint16_t sockfd) {
-    list<SocketInfo>::iterator sock = sockets_.begin();
+    SocketCollection::iterator sock = sockets_.begin();
     while (sock != sockets_.end()) {
         if (sock->sockfd_ == sockfd) {
             close(sockfd);
@@ -1435,24 +1433,40 @@ Pkt4Ptr IfaceMgr::receive4Direct(uint32_t timeout_sec, uint32_t timeout_usec /* 
     }
 
     // Let's find out which interface/socket has the data
-    // @todo: fix iface starvation
     boost::scoped_ptr<SocketInfo> candidate;
     IfacePtr recv_if;
-    for (const IfacePtr& iface : ifaces_) {
-        for (const SocketInfo& s : iface->getSockets()) {
-            if (!fd_event_handler_->readReady(s.sockfd_) &&
-                !fd_event_handler_->hasError(s.sockfd_)) {
+    std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+    IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+    for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+        std::list<Iface::SocketLruIterator> sockets_to_reloc;
+        Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+        Iface::SocketLruIndex& sidx = sockets.get<1>();
+        for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+            if (!fd_event_handler_->readReady(sit->sockfd_) &&
+                !fd_event_handler_->hasError(sit->sockfd_)) {
                 continue;
             }
-            if (fd_event_handler_->hasError(s.sockfd_)) {
-                handleIfaceSocketError(iface, s);
+            ifaces_to_reloc.push_back(iit);
+            sockets_to_reloc.push_back(sit);
+            if (fd_event_handler_->hasError(sit->sockfd_)) {
+                handleIfaceSocketError(*iit, *sit);
             }
-            candidate.reset(new SocketInfo(s));
+            candidate.reset(new SocketInfo(*sit));
             break;
         }
+        if (!sockets_to_reloc.empty()) {
+            for (auto it : sockets_to_reloc) {
+                sidx.relocate(sidx.end(), it);
+            }
+        }
         if (candidate) {
-            recv_if = iface;
+            recv_if = *iit;
             break;
+        }
+    }
+    if (!ifaces_to_reloc.empty()) {
+        for (auto it : ifaces_to_reloc) {
+            iidx.relocate(iidx.end(), it);
         }
     }
 
@@ -1592,22 +1606,40 @@ IfaceMgr::receive6Direct(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */ )
     }
 
     // Let's find out which interface/socket has the data
-    // @todo: fix iface starvation
     boost::scoped_ptr<SocketInfo> candidate;
-    for (const IfacePtr& iface : ifaces_) {
-        for (const SocketInfo& s : iface->getSockets()) {
-            if (!fd_event_handler_->readReady(s.sockfd_) &&
-                !fd_event_handler_->hasError(s.sockfd_)) {
+    IfacePtr recv_if;
+    std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+    IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+    for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+        std::list<Iface::SocketLruIterator> sockets_to_reloc;
+        Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+        Iface::SocketLruIndex& sidx = sockets.get<1>();
+        for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+            if (!fd_event_handler_->readReady(sit->sockfd_) &&
+                !fd_event_handler_->hasError(sit->sockfd_)) {
                 continue;
             }
-            if (fd_event_handler_->hasError(s.sockfd_)) {
-                handleIfaceSocketError(iface, s);
+            ifaces_to_reloc.push_back(iit);
+            sockets_to_reloc.push_back(sit);
+            if (fd_event_handler_->hasError(sit->sockfd_)) {
+                handleIfaceSocketError(*iit, *sit);
             }
-            candidate.reset(new SocketInfo(s));
+            candidate.reset(new SocketInfo(*sit));
             break;
         }
+        if (!sockets_to_reloc.empty()) {
+            for (auto it : sockets_to_reloc) {
+                sidx.relocate(sidx.end(), it);
+            }
+        }
         if (candidate) {
+            recv_if = *iit;
             break;
+        }
+    }
+    if (!ifaces_to_reloc.empty()) {
+        for (auto it : ifaces_to_reloc) {
+            iidx.relocate(iidx.end(), it);
         }
     }
 
@@ -1818,21 +1850,60 @@ IfaceMgr::receiveDHCP4Packets() {
             }
 
             // Let's find out which interface/socket has data.
-            for (const IfacePtr& iface : ifaces_) {
-                for (const SocketInfo& s : iface->getSockets()) {
-                    if (!receiver_fd_event_handler_->readReady(s.sockfd_) &&
-                        !receiver_fd_event_handler_->hasError(s.sockfd_)) {
+            std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+            IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+            try {
+              for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+                std::list<Iface::SocketLruIterator> sockets_to_reloc;
+                Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+                Iface::SocketLruIndex& sidx = sockets.get<1>();
+                bool to_reloc = false;
+                try {
+                  for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+                    if (!receiver_fd_event_handler_->readReady(sit->sockfd_) &&
+                        !receiver_fd_event_handler_->hasError(sit->sockfd_)) {
                         continue;
                     }
-                    if (receiver_fd_event_handler_->hasError(s.sockfd_)) {
-                        handleIfaceSocketError(iface, s);
+                    if (!to_reloc) {
+                        ifaces_to_reloc.push_back(iit);
+                        to_reloc = true;
                     }
-                    receiveDHCP4Packet(*iface, s);
+                    sockets_to_reloc.push_back(sit);
+                    if (receiver_fd_event_handler_->hasError(sit->sockfd_)) {
+                        handleIfaceSocketError(*iit, *sit);
+                    }
+                    receiveDHCP4Packet(**iit, *sit);
                     // Can take time so check one more time the watch socket.
                     if (dhcp_receiver_->shouldTerminate()) {
                         return;
                     }
+                  }
+                  if (!sockets_to_reloc.empty()) {
+                      for (auto it : sockets_to_reloc) {
+                          sidx.relocate(sidx.end(), it);
+                      }
+                  }
+                } catch (...) {
+                    if (!sockets_to_reloc.empty()) {
+                        for (auto it : sockets_to_reloc) {
+                            sidx.relocate(sidx.end(), it);
+                        }
+                    }
+                    throw;
                 }
+              }
+              if (!ifaces_to_reloc.empty()) {
+                  for (auto it : ifaces_to_reloc) {
+                      iidx.relocate(iidx.end(), it);
+                  }
+              }
+            } catch (...) {
+                if (!ifaces_to_reloc.empty()) {
+                    for (auto it : ifaces_to_reloc) {
+                        iidx.relocate(iidx.end(), it);
+                    }
+                }
+                throw;
             }
         } catch (const std::exception& ex) {
             std::lock_guard<std::mutex> lk(receiver_mutex_);
@@ -1900,21 +1971,60 @@ IfaceMgr::receiveDHCP6Packets() {
             }
 
             // Let's find out which interface/socket has data.
-            for (const IfacePtr& iface : ifaces_) {
-                for (const SocketInfo& s : iface->getSockets()) {
-                    if (!receiver_fd_event_handler_->readReady(s.sockfd_) &&
-                        !receiver_fd_event_handler_->hasError(s.sockfd_)) {
+            std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+            IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+            try {
+              for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+                std::list<Iface::SocketLruIterator> sockets_to_reloc;
+                Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+                Iface::SocketLruIndex& sidx = sockets.get<1>();
+                bool to_reloc = false;
+                try {
+                  for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+                    if (!receiver_fd_event_handler_->readReady(sit->sockfd_) &&
+                        !receiver_fd_event_handler_->hasError(sit->sockfd_)) {
                         continue;
                     }
-                    if (receiver_fd_event_handler_->hasError(s.sockfd_)) {
-                        handleIfaceSocketError(iface, s);
+                    if (!to_reloc) {
+                        ifaces_to_reloc.push_back(iit);
+                        to_reloc = true;
                     }
-                    receiveDHCP6Packet(s);
+                    sockets_to_reloc.push_back(sit);
+                    if (receiver_fd_event_handler_->hasError(sit->sockfd_)) {
+                        handleIfaceSocketError(*iit, *sit);
+                    }
+                    receiveDHCP6Packet(*sit);
                     // Can take time so check one more time the watch socket.
                     if (dhcp_receiver_->shouldTerminate()) {
                         return;
                     }
+                  }
+                  if (!sockets_to_reloc.empty()) {
+                      for (auto it : sockets_to_reloc) {
+                          sidx.relocate(sidx.end(), it);
+                      }
+                  }
+                } catch (...) {
+                    if (!sockets_to_reloc.empty()) {
+                        for (auto it : sockets_to_reloc) {
+                            sidx.relocate(sidx.end(), it);
+                        }
+                    }
+                    throw;
                 }
+              }
+              if (!ifaces_to_reloc.empty()) {
+                  for (auto it : ifaces_to_reloc) {
+                      iidx.relocate(iidx.end(), it);
+                  }
+              }
+            } catch (...) {
+                if (!ifaces_to_reloc.empty()) {
+                    for (auto it : ifaces_to_reloc) {
+                        iidx.relocate(iidx.end(), it);
+                    }
+                }
+                throw;
             }
         } catch (const std::exception& ex) {
             std::lock_guard<std::mutex> lk(receiver_mutex_);

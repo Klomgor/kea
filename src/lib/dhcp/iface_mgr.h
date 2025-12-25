@@ -147,7 +147,23 @@ public:
     /// removed and further iterates through remaining elements.
     ///
     /// @todo: Add SocketCollectionConstIter type
-    typedef std::list<SocketInfo> SocketCollection;
+    typedef boost::multi_index_container<
+        // Container comprises elements of SocketInfo type.
+        SocketInfo,
+        // Here we start enumerating various indexes.
+        boost::multi_index::indexed_by<
+            // Sequenced index #0 in insertion order.
+            boost::multi_index::sequenced<>,
+            // Sequenced index #1 in Least Recently Used order.
+            boost::multi_index::sequenced<>
+        >
+    > SocketCollection;
+
+    /// @brief SocketInfo LRU index type.
+    typedef SocketCollection::nth_index<1>::type SocketLruIndex;
+
+    /// @brief SocketInfo LRU iterator type.
+    typedef SocketLruIndex::iterator SocketLruIterator;
 
     /// @brief Type definition for a list of error messages
     using ErrorBuffer = std::vector<std::string>;
@@ -373,6 +389,13 @@ public:
         return (sockets_);
     }
 
+    /// @brief Returns collection of all sockets added to interface.
+    ///
+    /// @return reference to collection of sockets added to interface
+    SocketCollection& getSocketsRef() {
+        return (sockets_);
+    }
+
     /// @brief Removes any unicast addresses
     ///
     /// Removes any unicast addresses that the server was configured to
@@ -547,7 +570,10 @@ public:
                 boost::multi_index::const_mem_fun<
                     Iface, std::string, &Iface::getName
                 >
-            >
+            >,
+            // Start definition of index #3.
+            // Sequence in Least Recently Used order.
+            boost::multi_index::sequenced<>
         >
     > IfaceContainer;
 
@@ -564,6 +590,19 @@ public:
     IfaceContainer::const_iterator end() const {
         return (ifaces_container_.end());
     }
+
+    /// @brief Type of LRU index.
+    typedef IfaceContainer::nth_index<3>::type LruIndex;
+
+    /// @brief LRU index.
+    ///
+    /// @return A reference to the LRU index.
+    LruIndex& getLru() {
+        return (ifaces_container_.get<3>());
+    }
+
+    /// @brief Type of LRU iterator.
+    typedef LruIndex::iterator LruIterator;
 
     /// @brief Empty predicate.
     ///
