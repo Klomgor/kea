@@ -12,6 +12,8 @@
 #include <dhcp/option.h>
 #include <dhcp/pkt6.h>
 #include <dhcp/pkt_filter.h>
+#include <dhcp/pkt_filter_inet.h>
+#include <dhcp/pkt_filter_inet6.h>
 #include <dhcp/testutils/iface_mgr_test_config.h>
 #include <dhcp/tests/pkt_filter6_test_utils.h>
 #include <dhcp/tests/packet_queue_testutils.h>
@@ -28,6 +30,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <unordered_map>
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -4058,6 +4061,533 @@ TEST_F(IfaceMgrTest, configureDHCPPacketQueueTest6) {
     ASSERT_NO_THROW(queue_enabled = ifacemgr->configureDHCPPacketQueue(AF_INET6, queue_control));
     EXPECT_FALSE(ifacemgr->getPacketQueue6());
     ASSERT_FALSE(ifacemgr->isDHCPReceiverRunning());
+}
+
+// Tests that a replace in the SocketCallbackInfoContainer keeps the sequence.
+TEST(SocketCallbackInfoContainer, replace) {
+    IfaceMgr::SocketCallbackInfoContainer callbacks;
+    auto getSequence = [&]() {
+        std::stringstream seq;
+        for (auto const& s : callbacks) {
+            seq << s.socket_ << "\n";
+        }
+        return (seq.str());
+    };
+    for (int i = 0; i < 9; ++i) {
+        IfaceMgr::SocketCallbackInfo s(i);
+        callbacks.push_back(s);
+    }
+    EXPECT_EQ("0\n1\n2\n3\n4\n5\n6\n7\n8\n", getSequence());
+    auto& idx = callbacks.get<1>();
+    auto it = idx.find(5);
+    ASSERT_NE(it, idx.end());
+    IfaceMgr::SocketCallbackInfo x(9);
+    EXPECT_TRUE(idx.replace(it, x));
+    EXPECT_EQ("0\n1\n2\n3\n4\n9\n6\n7\n8\n", getSequence());
+}
+
+const uint8_t MARKER = 0;
+
+class PktFilterIfaceSocketTest {
+public:
+    /// @brief Constructor.
+    ///
+    /// @param ready_on_send Flag which indicates if socket should be marked as
+    /// readReady when calling @ref send.
+    /// @param clear_on_read Flag which indicates is socket should be unmarked as
+    /// readReady when calling @ref receive.
+    PktFilterIfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
+
+    /// @brief Destructor.
+    virtual ~PktFilterIfaceSocketTest();
+
+    /// @brief Simulate opening of the socket.
+    ///
+    /// This function simulates opening a primary socket. In reality, it doesn't
+    /// open a socket but uses a pipe which can control if a read event is ready
+    /// or not.
+    ///
+    /// @param iface An interface descriptor.
+    /// @param addr Address on the interface to be used to send packets.
+    /// @param port Port number to bind socket to.
+    /// @param receive_bcast A flag which indicates if socket should be
+    /// configured to receive broadcast packets (if true).
+    /// @param send_bcast A flag which indicates if the socket should be
+    /// configured to send broadcast packets (if true).
+    ///
+    /// @return A SocketInfo structure with the socket descriptor set. The
+    /// fallback socket descriptor is set to a negative value.
+    virtual SocketInfo openSocketCommon(const Iface& iface,
+                                        const isc::asiolink::IOAddress& addr,
+                                        const uint16_t port);
+
+    /// @brief Simulate reception of the DHCPv4/DHCPv6 message.
+    ///
+    /// @param sock_info A descriptor of the primary and fallback sockets.
+    ///
+    /// @return the same packet used by @ref send (if any).
+    virtual PktPtr receiveCommon(const SocketInfo& sock_info);
+
+    /// @brief Simulates sending a DHCPv4/DHCPv6 message.
+    ///
+    /// @param iface An interface to be used to send DHCPv4/DHCPv6 message.
+    /// @param sockfd socket descriptor.
+    /// @param pkt A DHCPv4/DHCPv6 to be sent.
+    ///
+    /// @return 0.
+    virtual int sendCommon(const Iface& iface, uint16_t sockfd, const PktPtr& pkt);
+
+    /// @brief Flag which indicates if socket should be marked as
+    /// readReady when calling @ref send.
+    bool ready_on_send_;
+
+    /// @brief Flag which indicates is socket should be unmarked as
+    /// readReady when calling @ref receive.
+    bool clear_on_read_;
+
+    /// @brief The set of opened file descriptors.
+    std::unordered_map<int, int> socket_fds_;
+
+    std::unordered_map<int, PktPtr> pkts_;
+};
+
+PktFilterIfaceSocketTest::PktFilterIfaceSocketTest(bool ready_on_send, bool clear_on_read)
+    : ready_on_send_(ready_on_send),
+      clear_on_read_(clear_on_read) {
+}
+
+PktFilterIfaceSocketTest::~PktFilterIfaceSocketTest() {
+    for (auto it = socket_fds_.begin(); it != socket_fds_.end(); ++it) {
+        close(it->first);
+        close(it->second);
+    }
+}
+
+SocketInfo
+PktFilterIfaceSocketTest::openSocketCommon(const Iface& /* iface */,
+                                           const isc::asiolink::IOAddress& addr,
+                                           const uint16_t) {
+    int pipe_fds[2];
+    if (pipe(pipe_fds) < 0) {
+        isc_throw(Unexpected, "failed to open test pipe");
+    }
+    if (fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK) < 0) {
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+        isc_throw(Unexpected, "fcntl " << strerror(errno));
+    }
+    if (fcntl(pipe_fds[1], F_SETFL, O_NONBLOCK) < 0) {
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+        isc_throw(Unexpected, "fcntl " << strerror(errno));
+    }
+
+    socket_fds_[pipe_fds[0]] = pipe_fds[1];
+    return (SocketInfo(addr, 9999, pipe_fds[0]));
+}
+
+PktPtr
+PktFilterIfaceSocketTest::receiveCommon(const SocketInfo& s) {
+    auto it = socket_fds_.find(s.sockfd_);
+    if (it == socket_fds_.end()) {
+        std::cout << "receive no such socket: " << s.sockfd_ << std::endl;
+        return (PktPtr());
+    }
+    PktPtr result = pkts_[s.sockfd_];
+    if (clear_on_read_) {
+        uint8_t data;
+        for (size_t count = -1; count; count = read(s.sockfd_, &data, sizeof(data)));
+    }
+    return (result);
+}
+
+int
+PktFilterIfaceSocketTest::sendCommon(const Iface& /* iface */, uint16_t sockfd, const PktPtr& pkt) {
+    auto it = socket_fds_.find(sockfd);
+    if (it == socket_fds_.end()) {
+        std::cout << "send no such socket: " << sockfd << std::endl;
+        return (-1);
+    }
+    pkts_[sockfd] = pkt;
+    if (ready_on_send_) {
+        uint8_t data = MARKER;
+        write(it->second, &data, sizeof(data));
+    }
+    return (0);
+}
+
+class PktFilter4IfaceSocketTest : public PktFilterIfaceSocketTest, public PktFilter {
+public:
+
+    /// @brief Constructor.
+    ///
+    /// @param ready_on_send Flag which indicates if socket should be marked as
+    /// readReady when calling @ref send.
+    /// @param clear_on_read Flag which indicates is socket should be unmarked as
+    /// readReady when calling @ref receive.
+    PktFilter4IfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
+
+    /// @brief Destructor.
+    ~PktFilter4IfaceSocketTest() = default;
+
+    /// @brief Checks if the direct DHCPv4 response is supported.
+    ///
+    /// This function checks if the direct response capability is supported,
+    /// i.e. if the server can respond to the client which doesn't have an
+    /// address yet. For this dummy class, the true is always returned.
+    ///
+    /// @return always true.
+    virtual bool isDirectResponseSupported() const;
+
+    /// @brief Check if the socket received time is supported.
+    ///
+    /// If true, then packets received through this filter will include
+    /// a SOCKET_RECEIVED event in its event stack.
+    ///
+    /// @return always true.
+    virtual bool isSocketReceivedTimeSupported() const;
+
+    /// @brief Simulate opening of the socket.
+    ///
+    /// This function simulates opening a primary socket. In reality, it doesn't
+    /// open a socket but uses a pipe which can control if a read event is ready
+    /// or not.
+    ///
+    /// @param iface An interface descriptor.
+    /// @param addr Address on the interface to be used to send packets.
+    /// @param port Port number to bind socket to.
+    /// @param receive_bcast A flag which indicates if socket should be
+    /// configured to receive broadcast packets (if true).
+    /// @param send_bcast A flag which indicates if the socket should be
+    /// configured to send broadcast packets (if true).
+    ///
+    /// @return A SocketInfo structure with the socket descriptor set. The
+    /// fallback socket descriptor is set to a negative value.
+    virtual SocketInfo openSocket(Iface& iface,
+                                  const isc::asiolink::IOAddress& addr,
+                                  const uint16_t port,
+                                  const bool receive_bcast,
+                                  const bool send_bcast);
+
+    /// @brief Simulate reception of the DHCPv4 message.
+    ///
+    /// @param iface An interface to be used to receive DHCPv4 message.
+    /// @param sock_info A descriptor of the primary and fallback sockets.
+    ///
+    /// @return the same packet used by @ref send (if any).
+    virtual Pkt4Ptr receive(Iface& iface, const SocketInfo& sock_info);
+
+    /// @brief Simulates sending a DHCPv4 message.
+    ///
+    /// @param iface An interface to be used to send DHCPv4 message.
+    /// @param sockfd socket descriptor.
+    /// @param pkt A DHCPv4 to be sent.
+    ///
+    /// @return 0.
+    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt4Ptr& pkt);
+};
+
+PktFilter4IfaceSocketTest::PktFilter4IfaceSocketTest(bool ready_on_send, bool clear_on_read)
+    : PktFilterIfaceSocketTest(ready_on_send, clear_on_read) {
+}
+
+bool
+PktFilter4IfaceSocketTest::isDirectResponseSupported() const {
+    return (true);
+}
+
+bool
+PktFilter4IfaceSocketTest::isSocketReceivedTimeSupported() const {
+    return (true);
+}
+
+SocketInfo
+PktFilter4IfaceSocketTest::openSocket(Iface& iface,
+                                      const isc::asiolink::IOAddress& addr,
+                                      const uint16_t port, const bool, const bool) {
+    return (PktFilterIfaceSocketTest::openSocketCommon(iface, addr, port));
+}
+
+Pkt4Ptr
+PktFilter4IfaceSocketTest::receive(Iface& /* iface */, const SocketInfo& s) {
+    return (boost::dynamic_pointer_cast<Pkt4>(PktFilterIfaceSocketTest::receiveCommon(s)));
+}
+
+int
+PktFilter4IfaceSocketTest::send(const Iface& iface, uint16_t sockfd, const Pkt4Ptr& pkt) {
+    return (PktFilterIfaceSocketTest::sendCommon(iface, sockfd, pkt));
+}
+
+class PktFilter6IfaceSocketTest : public PktFilterIfaceSocketTest, public PktFilter6 {
+public:
+
+    /// @brief Constructor.
+    ///
+    /// @param ready_on_send Flag which indicates if socket should be marked as
+    /// readReady when calling @ref send.
+    /// @param clear_on_read Flag which indicates is socket should be unmarked as
+    /// readReady when calling @ref receive.
+    PktFilter6IfaceSocketTest(bool ready_on_send = true, bool clear_on_read = true);
+
+    /// @brief Destructor.
+    ~PktFilter6IfaceSocketTest() = default;
+
+    /// @brief Simulate opening of the socket.
+    ///
+    /// This function simulates opening a primary socket. In reality, it doesn't
+    /// open a socket but uses a pipe which can control if a read event is ready
+    /// or not.
+    ///
+    /// @param iface Interface descriptor.
+    /// @param addr Address on the interface to be used to send packets.
+    /// @param port Port number.
+    /// @param join_multicast A boolean parameter which indicates whether
+    /// socket should join All_DHCP_Relay_Agents_and_servers multicast
+    /// group.
+    ///
+    /// @return A SocketInfo structure with the socket descriptor set. The
+    /// fallback socket descriptor is set to a negative value.
+    virtual SocketInfo openSocket(const Iface& iface,
+                                  const isc::asiolink::IOAddress& addr,
+                                  const uint16_t port,
+                                  const bool join_multicast);
+
+    /// @brief Simulate reception of the DHCPv6 message.
+    ///
+    /// @param iface An interface to be used to receive DHCPv6 message.
+    /// @param sock_info A descriptor of the primary and fallback sockets.
+    ///
+    /// @return the same packet used by @ref send (if any).
+    virtual Pkt6Ptr receive(const SocketInfo& sock_info);
+
+    /// @brief Simulates sending a DHCPv6 message.
+    ///
+    /// @param iface An interface to be used to send DHCPv6 message.
+    /// @param sockfd socket descriptor.
+    /// @param pkt A DHCPv6 to be sent.
+    ///
+    /// @return 0.
+    virtual int send(const Iface& iface, uint16_t sockfd, const Pkt6Ptr& pkt);
+};
+
+PktFilter6IfaceSocketTest::PktFilter6IfaceSocketTest(bool ready_on_send, bool clear_on_read)
+    : PktFilterIfaceSocketTest(ready_on_send, clear_on_read) {
+}
+
+SocketInfo
+PktFilter6IfaceSocketTest::openSocket(const Iface& iface,
+                                      const isc::asiolink::IOAddress& addr,
+                                      const uint16_t port, const bool) {
+    return (PktFilterIfaceSocketTest::openSocketCommon(iface, addr, port));
+}
+
+Pkt6Ptr
+PktFilter6IfaceSocketTest::receive(const SocketInfo& s) {
+    return (boost::dynamic_pointer_cast<Pkt6>(PktFilterIfaceSocketTest::receiveCommon(s)));
+}
+
+int
+PktFilter6IfaceSocketTest::send(const Iface& iface, uint16_t sockfd, const Pkt6Ptr& pkt) {
+    return (PktFilterIfaceSocketTest::sendCommon(iface, sockfd, pkt));
+}
+
+/// Ported tests (for bench add " * 1024" to loop_count definitions.
+
+typedef boost::hash<Pkt4Ptr> hash_pkt4;
+typedef boost::hash<Pkt6Ptr> hash_pkt6;
+
+class IfaceMgrRBTest : public IfaceMgrTest {
+public:
+    ~IfaceMgrRBTest() {
+        IfaceMgr::instance().stopDHCPReceiver();
+        IfaceMgr::instance().clearIfaces();
+        IfaceMgr::instance().deleteAllExternalSockets();
+        IfaceMgr::instance().detectIfaces();
+        IfaceMgr::instance().setPacketFilter(PktFilterPtr(new PktFilterInet()));
+        IfaceMgr::instance().setPacketFilter(PktFilter6Ptr(new PktFilterInet6()));
+        IfaceMgr::instance().configureDHCPPacketQueue(AF_INET, data::ConstElementPtr());
+        IfaceMgr::instance().configureDHCPPacketQueue(AF_INET6, data::ConstElementPtr());
+    }
+
+    /// @brief Test that iface sockets are rotated when ifaces are under load.
+    ///
+    /// @param direct Flag which indicates if direct or indirect receive should
+    /// be used.
+    void testReceive4RotateIfaces(bool direct = true) {
+        const size_t loop_count = 1024;
+        IfaceMgr::instance().clearIfaces();
+        IfaceMgr::instance().deleteAllExternalSockets();
+        PktFilterPtr filter(new PktFilter4IfaceSocketTest(true, false));
+        IfaceMgr::instance().setPacketFilter(filter);
+        IfacePtr iface0(new Iface("eth0", 0));
+        iface0->flag_up_ = true;
+        iface0->flag_running_ = true;
+        iface0->addAddress(IOAddress("192.168.0.1"));
+        IfaceMgr::instance().addInterface(iface0);
+        IfacePtr iface1(new Iface("eth1", 1));
+        iface1->flag_up_ = true;
+        iface1->flag_running_ = true;
+        iface1->addAddress(IOAddress("192.168.0.2"));
+        IfaceMgr::instance().addInterface(iface1);
+        IfacePtr iface2(new Iface("eth2", 2));
+        iface2->flag_up_ = true;
+        iface2->flag_running_ = true;
+        iface2->addAddress(IOAddress("192.168.0.3"));
+        IfaceMgr::instance().addInterface(iface2);
+        for (size_t i = 3; i < 250; ++i) {
+            string name = "eth";
+            name += std::to_string(i);
+            IfacePtr iface_n(new Iface(name, i));
+            iface_n->flag_up_ = true;
+            iface_n->flag_running_ = true;
+            iface_n->addAddress(IOAddress(string("192.168.0.") + std::to_string(i)));
+            IfaceMgr::instance().addInterface(iface_n);
+        }
+        if (!direct) {
+            auto queue_control = makeQueueConfig(PacketQueueMgr4::DEFAULT_QUEUE_TYPE4, 500, true);
+            IfaceMgr::instance().configureDHCPPacketQueue(AF_INET, queue_control);
+        } else {
+            IfaceMgr::instance().configureDHCPPacketQueue(AF_INET6, data::ConstElementPtr());
+        }
+        IfaceMgr::instance().openSockets4(9999, true, IfaceMgrErrorMsgCallback(), false);
+        EXPECT_EQ((boost::dynamic_pointer_cast<PktFilter4IfaceSocketTest>(filter))->socket_fds_.size(), 250);
+        Pkt4Ptr pkt0(new Pkt4(DHCPDISCOVER, 1234));
+        pkt0->setIface("eth0");
+        pkt0->setIndex(0);
+        Pkt4Ptr pkt1(new Pkt4(DHCPDISCOVER, 2345));
+        pkt1->setIface("eth1");
+        pkt1->setIndex(1);
+        Pkt4Ptr pkt2(new Pkt4(DHCPDISCOVER, 3456));
+        pkt2->setIface("eth2");
+        pkt2->setIndex(2);
+        IfaceMgr::instance().send(pkt0);
+        IfaceMgr::instance().send(pkt1);
+        IfaceMgr::instance().send(pkt2);
+        std::unordered_map<Pkt4Ptr, size_t, hash_pkt4> expected;
+        expected[pkt0] = 0;
+        expected[pkt1] = 0;
+        expected[pkt2] = 0;
+        for (size_t i = 0, j = 0; i < 3 * loop_count && j < 2048;) {
+            Pkt4Ptr new_pkt = IfaceMgr::instance().receive4(1, 0);
+            if (new_pkt) {
+                expected[new_pkt]++;
+                if (i % 3 == 0) {
+                    EXPECT_EQ(new_pkt.get(), pkt0.get());
+                } else if (i % 3 == 1) {
+                    EXPECT_EQ(new_pkt.get(), pkt1.get());
+                } else {
+                    EXPECT_EQ(new_pkt.get(), pkt2.get());
+                }
+                i++;
+            } else {
+                j++;
+            }
+        }
+        for (auto i = expected.begin(); i!= expected.end(); ++i) {
+            EXPECT_EQ(loop_count, i->second);
+        }
+        ASSERT_NO_THROW(IfaceMgr::instance().stopDHCPReceiver());
+    }
+
+    /// @brief Test that iface sockets are rotated when ifaces are under load.
+    ///
+    /// @param direct Flag which indicates if direct or indirect receive should
+    /// be used.
+    void testReceive6RotateIfaces(bool direct = true) {
+        const size_t loop_count = 1024;
+        IfaceMgr::instance().clearIfaces();
+        IfaceMgr::instance().deleteAllExternalSockets();
+        PktFilter6Ptr filter(new PktFilter6IfaceSocketTest(true, false));
+        IfaceMgr::instance().setPacketFilter(filter);
+        IfacePtr iface0(new Iface("eth0", 0));
+        iface0->flag_up_ = true;
+        iface0->flag_running_ = true;
+        iface0->addAddress(IOAddress("2003:db8::1"));
+        iface0->addAddress(IOAddress("fe80::3a60:77ff:fed5:abcd"));
+        IfaceMgr::instance().addInterface(iface0);
+        IfacePtr iface1(new Iface("eth1", 1));
+        iface1->flag_up_ = true;
+        iface1->flag_running_ = true;
+        iface1->addAddress(IOAddress("2003:db8::2"));
+        iface1->addAddress(IOAddress("fe80::3a60:77ff:fed5:bcde"));
+        IfaceMgr::instance().addInterface(iface1);
+        IfacePtr iface2(new Iface("eth2", 2));
+        iface2->flag_up_ = true;
+        iface2->flag_running_ = true;
+        iface2->addAddress(IOAddress("2003:db8::3"));
+        iface2->addAddress(IOAddress("fe80::3a60:77ff:fed5:cdef"));
+        IfaceMgr::instance().addInterface(iface2);
+        for (size_t i = 3; i < 250; ++i) {
+            string name = "eth";
+            name += std::to_string(i);
+            IfacePtr iface_n(new Iface(name, i));
+            iface_n->flag_up_ = true;
+            iface_n->flag_running_ = true;
+            iface_n->addAddress(IOAddress(string("2003:db8::") + std::to_string(i)));
+            iface_n->addAddress(IOAddress(string("fe80::3a60:77ff:fed5:") + std::to_string(i)));
+            IfaceMgr::instance().addInterface(iface_n);
+        }
+        if (!direct) {
+            auto queue_control = makeQueueConfig(PacketQueueMgr6::DEFAULT_QUEUE_TYPE6, 500, true);
+            IfaceMgr::instance().configureDHCPPacketQueue(AF_INET6, queue_control);
+        } else {
+            IfaceMgr::instance().configureDHCPPacketQueue(AF_INET6, data::ConstElementPtr());
+        }
+        IfaceMgr::instance().openSockets6(9999, IfaceMgrErrorMsgCallback(), false);
+        EXPECT_EQ((boost::dynamic_pointer_cast<PktFilter6IfaceSocketTest>(filter))->socket_fds_.size(), 250);
+        Pkt6Ptr pkt0(new Pkt6(DHCPV6_SOLICIT, 1234));
+        pkt0->setIface("eth0");
+        pkt0->setIndex(0);
+        Pkt6Ptr pkt1(new Pkt6(DHCPV6_SOLICIT, 2345));
+        pkt1->setIface("eth1");
+        pkt1->setIndex(1);
+        Pkt6Ptr pkt2(new Pkt6(DHCPV6_SOLICIT, 3456));
+        pkt2->setIface("eth2");
+        pkt2->setIndex(2);
+        IfaceMgr::instance().send(pkt0);
+        IfaceMgr::instance().send(pkt1);
+        IfaceMgr::instance().send(pkt2);
+        std::unordered_map<Pkt6Ptr, size_t, hash_pkt6> expected;
+        expected[pkt0] = 0;
+        expected[pkt1] = 0;
+        expected[pkt2] = 0;
+        for (size_t i = 0, j = 0; i < 3 * loop_count && j < 2048;) {
+            Pkt6Ptr new_pkt = IfaceMgr::instance().receive6(1, 0);
+            if (new_pkt) {
+                expected[new_pkt]++;
+                if (i % 3 == 0) {
+                    EXPECT_EQ(new_pkt.get(), pkt0.get());
+                } else if (i % 3 == 1) {
+                    EXPECT_EQ(new_pkt.get(), pkt1.get());
+                } else {
+                    EXPECT_EQ(new_pkt.get(), pkt2.get());
+                }
+                i++;
+            } else {
+                j++;
+            }
+        }
+        for (auto i = expected.begin(); i!= expected.end(); ++i) {
+            EXPECT_EQ(loop_count, i->second);
+        }
+        ASSERT_NO_THROW(IfaceMgr::instance().stopDHCPReceiver());
+    }
+};
+
+TEST_F(IfaceMgrRBTest, directReceive4RotateIfaces) {
+    testReceive4RotateIfaces();
+}
+
+TEST_F(IfaceMgrRBTest, indirectReceive4RotateIfaces) {
+    testReceive4RotateIfaces(false);
+}
+
+TEST_F(IfaceMgrRBTest, directReceive6RotateIfaces) {
+    testReceive6RotateIfaces();
+}
+
+TEST_F(IfaceMgrRBTest, indirectReceive6RotateIfaces) {
+    testReceive6RotateIfaces(false);
 }
 
 }
