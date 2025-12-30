@@ -107,6 +107,13 @@ public:
         isc::Exception(file, line, what) { }
 };
 
+/// @brief ReceiveTerminate internal exception.
+class ReceiveTerminate : public Exception {
+public:
+    ReceiveTerminate(const char* file, size_t line, const char* what) :
+        isc::Exception(file, line, what) { }
+};
+
 /// @brief Represents a single network interface
 ///
 /// Iface structure represents network interface with all useful
@@ -1689,6 +1696,11 @@ private:
     /// it marks the "error" watch socket as ready.
     void receiveDHCP4Packets();
 
+    /// @brief DHCPv4 receiver scan method.
+    ///
+    /// Scan loop of @ref receiveDHCP4Packets.
+    void scanReceiveDHCP4Packets();
+
     /// @brief Receives a single DHCPv4 packet from an interface socket
     ///
     /// Called by @c receiveDHCP4Packets when a socket fd is flagged as
@@ -1711,6 +1723,11 @@ private:
     /// socket readiness.  If the select errors out (other than EINTR),
     /// it marks the "error" watch socket as ready.
     void receiveDHCP6Packets();
+
+    /// @brief DHCPv6 receiver scan method.
+    ///
+    /// Scan loop of @ref receiveDHCP6Packets.
+    void scanReceiveDHCP6Packets();
 
     /// @brief Receives a single DHCPv6 packet from an interface socket
     ///

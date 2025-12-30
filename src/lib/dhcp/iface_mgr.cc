@@ -1795,6 +1795,66 @@ IfaceMgr::receive6Indirect(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */
 }
 
 void
+IfaceMgr::scanReceiveDHCP4Packets() {
+    // Let's find out which interface/socket has data.
+    std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+    IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+    try {
+        for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+            std::list<Iface::SocketLruIterator> sockets_to_reloc;
+            Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+            Iface::SocketLruIndex& sidx = sockets.get<1>();
+            bool to_reloc = false;
+            try {
+                for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+                    if (!receiver_fd_event_handler_->readReady(sit->sockfd_) &&
+                        !receiver_fd_event_handler_->hasError(sit->sockfd_)) {
+                        continue;
+                    }
+                    if (!to_reloc) {
+                        ifaces_to_reloc.push_back(iit);
+                        to_reloc = true;
+                    }
+                    sockets_to_reloc.push_back(sit);
+                    if (receiver_fd_event_handler_->hasError(sit->sockfd_)) {
+                        handleIfaceSocketError(*iit, *sit);
+                    }
+                    receiveDHCP4Packet(**iit, *sit);
+                    // Can take time so check one more time the watch socket.
+                    if (dhcp_receiver_->shouldTerminate()) {
+                        isc_throw(ReceiveTerminate, "receiveDHCP4Packet");
+                    }
+                }
+                if (!sockets_to_reloc.empty()) {
+                    for (auto it : sockets_to_reloc) {
+                        sidx.relocate(sidx.end(), it);
+                    }
+                }
+            } catch (...) {
+                if (!sockets_to_reloc.empty()) {
+                    for (auto it : sockets_to_reloc) {
+                        sidx.relocate(sidx.end(), it);
+                    }
+                }
+                throw;
+            }
+        }
+        if (!ifaces_to_reloc.empty()) {
+            for (auto it : ifaces_to_reloc) {
+                iidx.relocate(iidx.end(), it);
+            }
+        }
+    } catch (...) {
+        if (!ifaces_to_reloc.empty()) {
+            for (auto it : ifaces_to_reloc) {
+                iidx.relocate(iidx.end(), it);
+            }
+        }
+        throw;
+    }
+}
+
+void
 IfaceMgr::receiveDHCP4Packets() {
     receiver_fd_event_handler_->clear();
 
@@ -1816,7 +1876,7 @@ IfaceMgr::receiveDHCP4Packets() {
         try {
             // Check the watch socket.
             if (dhcp_receiver_->shouldTerminate()) {
-                return;
+                isc_throw(ReceiveTerminate, "entry");
             }
 
             // zero out the errno to be safe.
@@ -1827,7 +1887,7 @@ IfaceMgr::receiveDHCP4Packets() {
 
             // Re-check the watch socket.
             if (dhcp_receiver_->shouldTerminate()) {
-                return;
+                isc_throw(ReceiveTerminate, "waitEvent");
             }
 
             if (result == 0) {
@@ -1849,17 +1909,34 @@ IfaceMgr::receiveDHCP4Packets() {
                 continue;
             }
 
-            // Let's find out which interface/socket has data.
-            std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
-            IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+            // Body.
+            scanReceiveDHCP4Packets();
+
+        } catch (const ReceiveTerminate&) {
+            return;
+        } catch (const std::exception& ex) {
+            std::lock_guard<std::mutex> lk(receiver_mutex_);
+            dhcp_receiver_->setError(string(ex.what()) + " error: " + strerror(errno));
+        } catch (...) {
+            std::lock_guard<std::mutex> lk(receiver_mutex_);
+            dhcp_receiver_->setError("receive failed");
+        }
+    }
+}
+
+void
+IfaceMgr::scanReceiveDHCP6Packets() {
+    // Let's find out which interface/socket has data.
+    std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
+    IfaceCollection::LruIndex& iidx = ifaces_.getLru();
+    try {
+        for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
+            std::list<Iface::SocketLruIterator> sockets_to_reloc;
+            Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
+            Iface::SocketLruIndex& sidx = sockets.get<1>();
+            bool to_reloc = false;
             try {
-              for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
-                std::list<Iface::SocketLruIterator> sockets_to_reloc;
-                Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
-                Iface::SocketLruIndex& sidx = sockets.get<1>();
-                bool to_reloc = false;
-                try {
-                  for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
+                for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
                     if (!receiver_fd_event_handler_->readReady(sit->sockfd_) &&
                         !receiver_fd_event_handler_->hasError(sit->sockfd_)) {
                         continue;
@@ -1872,46 +1949,38 @@ IfaceMgr::receiveDHCP4Packets() {
                     if (receiver_fd_event_handler_->hasError(sit->sockfd_)) {
                         handleIfaceSocketError(*iit, *sit);
                     }
-                    receiveDHCP4Packet(**iit, *sit);
+                    receiveDHCP6Packet(*sit);
                     // Can take time so check one more time the watch socket.
                     if (dhcp_receiver_->shouldTerminate()) {
-                        return;
+                        isc_throw(ReceiveTerminate, "receiveDHCP6Packet");
                     }
-                  }
-                  if (!sockets_to_reloc.empty()) {
-                      for (auto it : sockets_to_reloc) {
-                          sidx.relocate(sidx.end(), it);
-                      }
-                  }
-                } catch (...) {
-                    if (!sockets_to_reloc.empty()) {
-                        for (auto it : sockets_to_reloc) {
-                            sidx.relocate(sidx.end(), it);
-                        }
-                    }
-                    throw;
                 }
-              }
-              if (!ifaces_to_reloc.empty()) {
-                  for (auto it : ifaces_to_reloc) {
-                      iidx.relocate(iidx.end(), it);
-                  }
-              }
+                if (!sockets_to_reloc.empty()) {
+                    for (auto it : sockets_to_reloc) {
+                        sidx.relocate(sidx.end(), it);
+                    }
+                }
             } catch (...) {
-                if (!ifaces_to_reloc.empty()) {
-                    for (auto it : ifaces_to_reloc) {
-                        iidx.relocate(iidx.end(), it);
+                if (!sockets_to_reloc.empty()) {
+                    for (auto it : sockets_to_reloc) {
+                        sidx.relocate(sidx.end(), it);
                     }
                 }
                 throw;
             }
-        } catch (const std::exception& ex) {
-            std::lock_guard<std::mutex> lk(receiver_mutex_);
-            dhcp_receiver_->setError(string(ex.what()) + " error: " + strerror(errno));
-        } catch (...) {
-            std::lock_guard<std::mutex> lk(receiver_mutex_);
-            dhcp_receiver_->setError("receive failed");
         }
+        if (!ifaces_to_reloc.empty()) {
+            for (auto it : ifaces_to_reloc) {
+                iidx.relocate(iidx.end(), it);
+            }
+        }
+    } catch (...) {
+        if (!ifaces_to_reloc.empty()) {
+            for (auto it : ifaces_to_reloc) {
+                iidx.relocate(iidx.end(), it);
+            }
+        }
+        throw;
     }
 }
 
@@ -1937,7 +2006,7 @@ IfaceMgr::receiveDHCP6Packets() {
         try {
             // Check the watch socket.
             if (dhcp_receiver_->shouldTerminate()) {
-                return;
+                isc_throw(ReceiveTerminate, "entry");
             }
 
             // zero out the errno to be safe.
@@ -1948,7 +2017,7 @@ IfaceMgr::receiveDHCP6Packets() {
 
             // Re-check the watch socket.
             if (dhcp_receiver_->shouldTerminate()) {
-                return;
+                isc_throw(ReceiveTerminate, "waitEvent");
             }
 
             if (result == 0) {
@@ -1970,62 +2039,11 @@ IfaceMgr::receiveDHCP6Packets() {
                 continue;
             }
 
-            // Let's find out which interface/socket has data.
-            std::list<IfaceCollection::LruIterator> ifaces_to_reloc;
-            IfaceCollection::LruIndex& iidx = ifaces_.getLru();
-            try {
-              for (auto iit = iidx.begin(); iit != iidx.end(); ++iit) {
-                std::list<Iface::SocketLruIterator> sockets_to_reloc;
-                Iface::SocketCollection& sockets = (*iit)->getSocketsRef();
-                Iface::SocketLruIndex& sidx = sockets.get<1>();
-                bool to_reloc = false;
-                try {
-                  for (auto sit = sidx.begin(); sit != sidx.end(); ++sit) {
-                    if (!receiver_fd_event_handler_->readReady(sit->sockfd_) &&
-                        !receiver_fd_event_handler_->hasError(sit->sockfd_)) {
-                        continue;
-                    }
-                    if (!to_reloc) {
-                        ifaces_to_reloc.push_back(iit);
-                        to_reloc = true;
-                    }
-                    sockets_to_reloc.push_back(sit);
-                    if (receiver_fd_event_handler_->hasError(sit->sockfd_)) {
-                        handleIfaceSocketError(*iit, *sit);
-                    }
-                    receiveDHCP6Packet(*sit);
-                    // Can take time so check one more time the watch socket.
-                    if (dhcp_receiver_->shouldTerminate()) {
-                        return;
-                    }
-                  }
-                  if (!sockets_to_reloc.empty()) {
-                      for (auto it : sockets_to_reloc) {
-                          sidx.relocate(sidx.end(), it);
-                      }
-                  }
-                } catch (...) {
-                    if (!sockets_to_reloc.empty()) {
-                        for (auto it : sockets_to_reloc) {
-                            sidx.relocate(sidx.end(), it);
-                        }
-                    }
-                    throw;
-                }
-              }
-              if (!ifaces_to_reloc.empty()) {
-                  for (auto it : ifaces_to_reloc) {
-                      iidx.relocate(iidx.end(), it);
-                  }
-              }
-            } catch (...) {
-                if (!ifaces_to_reloc.empty()) {
-                    for (auto it : ifaces_to_reloc) {
-                        iidx.relocate(iidx.end(), it);
-                    }
-                }
-                throw;
-            }
+            // Body.
+            scanReceiveDHCP6Packets();
+
+        } catch (const ReceiveTerminate&) {
+            return;
         } catch (const std::exception& ex) {
             std::lock_guard<std::mutex> lk(receiver_mutex_);
             dhcp_receiver_->setError(string(ex.what()) + " error: " + strerror(errno));
