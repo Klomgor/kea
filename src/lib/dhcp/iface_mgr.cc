@@ -1311,9 +1311,6 @@ Pkt4Ptr IfaceMgr::receive4Indirect(uint32_t timeout_sec, uint32_t timeout_usec /
             // in IfaceMgr
             ex_sock->callback_(ex_sock->socket_);
         }
-        if (found) {
-            return (Pkt4Ptr());
-        }
     }
 
     // If we're here it should only be because there are DHCP packets waiting.
@@ -1427,9 +1424,6 @@ Pkt4Ptr IfaceMgr::receive4Direct(uint32_t timeout_sec, uint32_t timeout_usec /* 
         // layer access without integrating any specific features
         // in IfaceMgr
         ex_sock->callback_(ex_sock->socket_);
-    }
-    if (found) {
-        return (Pkt4Ptr());
     }
 
     // Let's find out which interface/socket has the data
@@ -1600,9 +1594,6 @@ IfaceMgr::receive6Direct(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */ )
         // layer access without integrating any specific features
         // in IfaceMgr
         ex_sock->callback_(ex_sock->socket_);
-    }
-    if (found) {
-        return (Pkt6Ptr());
     }
 
     // Let's find out which interface/socket has the data
@@ -1778,9 +1769,6 @@ IfaceMgr::receive6Indirect(uint32_t timeout_sec, uint32_t timeout_usec /* = 0 */
             // layer access without integrating any specific features
             // in IfaceMgr
             ex_sock->callback_(ex_sock->socket_);
-        }
-        if (found) {
-            return (Pkt6Ptr());
         }
     }
 
@@ -2076,7 +2064,7 @@ IfaceMgr::receiveDHCP4Packet(Iface& iface, const SocketInfo& socket_info) {
         pkt = packet_filter_->receive(iface, socket_info);
     } catch (const std::exception& ex) {
         std::lock_guard<std::mutex> lk(receiver_mutex_);
-        dhcp_receiver_->setError(strerror(errno));
+        dhcp_receiver_->setError(ex.what());
     } catch (...) {
         std::lock_guard<std::mutex> lk(receiver_mutex_);
         dhcp_receiver_->setError("packet filter receive() failed");
