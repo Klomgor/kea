@@ -132,6 +132,7 @@ HttpConnection::shutdownCallback(const boost::system::error_code&) {
     if (use_external_) {
         IfaceMgr::instance().deleteExternalSocket(tls_socket_->getNative());
         closeWatchSocket();
+        use_external_ = false;
     }
 
     tls_socket_->close();
@@ -144,6 +145,7 @@ HttpConnection::shutdown() {
         if (use_external_) {
             IfaceMgr::instance().deleteExternalSocket(tcp_socket_->getNative());
             closeWatchSocket();
+            use_external_ = false;
         }
         tcp_socket_->close();
         return;
@@ -214,6 +216,7 @@ HttpConnection::close() {
         if (use_external_) {
             IfaceMgr::instance().deleteExternalSocket(tcp_socket_->getNative());
             closeWatchSocket();
+            use_external_ = false;
         }
         tcp_socket_->close();
         return;
@@ -222,6 +225,7 @@ HttpConnection::close() {
         if (use_external_) {
             IfaceMgr::instance().deleteExternalSocket(tls_socket_->getNative());
             closeWatchSocket();
+            use_external_ = false;
         }
         tls_socket_->close();
         return;

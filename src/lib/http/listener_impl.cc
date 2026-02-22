@@ -115,6 +115,7 @@ HttpListenerImpl::stop() {
     connections_->stopAll();
     if (use_external_) {
         IfaceMgr::instance().deleteExternalSocket(acceptor_->getNative());
+        use_external_ = false;
     }
     acceptor_->close();
 }
