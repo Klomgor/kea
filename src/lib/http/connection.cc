@@ -78,7 +78,8 @@ HttpConnection::HttpConnection(const asiolink::IOServicePtr& io_service,
       idle_timeout_(idle_timeout), tcp_socket_(), tls_socket_(),
       acceptor_(acceptor), connection_pool_(connection_pool),
       response_creator_(response_creator), acceptor_callback_(callback),
-      use_external_(false), watch_socket_(), defer_shutdown_(false) {
+      use_external_(false), watch_socket_(), defer_shutdown_(false),
+      closed_(false) {
     if (!tls_context) {
         tcp_socket_.reset(new asiolink::TCPSocket<SocketCallback>(io_service));
     } else {
@@ -129,6 +130,9 @@ HttpConnection::recordParameters(const HttpRequestPtr& request) const {
 
 void
 HttpConnection::shutdownCallback(const boost::system::error_code&) {
+    if (closed_) {
+        return;
+    }
     if (use_external_) {
         IfaceMgr::instance().deleteExternalSocket(tls_socket_->getNative());
         closeWatchSocket();
@@ -136,10 +140,14 @@ HttpConnection::shutdownCallback(const boost::system::error_code&) {
     }
 
     tls_socket_->close();
+    closed_ = true;
 }
 
 void
 HttpConnection::shutdown() {
+    if (closed_) {
+        return;
+    }
     request_timer_.cancel();
     if (tcp_socket_) {
         if (use_external_) {
@@ -148,6 +156,7 @@ HttpConnection::shutdown() {
             use_external_ = false;
         }
         tcp_socket_->close();
+        closed_ = true;
         return;
     }
     if (tls_socket_) {
@@ -211,6 +220,9 @@ HttpConnection::close() {
         io_service_->post(std::bind([](HttpConnectionPtr c) { c->close(); }, shared_from_this()));
         return;
     }
+    if (closed_) {
+        return;
+    }
     request_timer_.cancel();
     if (tcp_socket_) {
         if (use_external_) {
@@ -219,6 +231,7 @@ HttpConnection::close() {
             use_external_ = false;
         }
         tcp_socket_->close();
+        closed_ = true;
         return;
     }
     if (tls_socket_) {
@@ -228,6 +241,7 @@ HttpConnection::close() {
             use_external_ = false;
         }
         tls_socket_->close();
+        closed_ = true;
         return;
     }
     // Not reachable?
@@ -254,6 +268,9 @@ HttpConnection::shutdownConnection() {
 void
 HttpConnection::stopThisConnection() {
     auto connection_pool = connection_pool_.lock();
+    if (closed_ && !connection_pool) {
+        return;
+    }
     try {
         LOG_DEBUG(http_logger, isc::log::DBGLVL_TRACE_BASIC,
                   HTTP_CONNECTION_STOP)
