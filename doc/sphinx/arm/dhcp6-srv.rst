@@ -2286,6 +2286,57 @@ carrying an IPv6 address, and ntp-server-fqdn (3) carrying a FQDN in wire format
 in the "v6-ntp-server-suboptions" option space. Each option instance carries one and only one
 suboption as required by `RFC 5908 <https://datatracker.ietf.org/doc/html/rfc5908>`__.
 
+So assuming the ntp-server container option is already set in an option-data
+clause, to send it with the ntp-server-address suboption for the
+2.pool.ntp.org public server the configuration should include:
+
+::
+
+   "option-data": [
+       {
+           "space": "v6-ntp-server-suboptions",
+           "name": "ntp-server-address",
+           "data": "2a02:8424:6fc4:3601:c13b:9426:51db:aa1"
+        },
+        ...
+    ],
+    ...
+
+
+For the FQDN which allows to pick one of the 4 addresses of it:
+
+::
+
+   "option-data": [
+       {
+           "space": "v6-ntp-server-suboptions",
+           "name": "ntp-server-fqdn",
+           "data": "2.pool.ntp.org"
+        },
+        ...
+    ],
+    ...
+
+
+Or for a closed site with its own NTP server using multicast:
+
+::
+
+   "option-data": [
+       {
+           "space": "v6-ntp-server-suboptions",
+           "name": "ntp-server-multicast",
+           "data": "ff05::101"
+        },
+        ...
+    ],
+    ...
+
+
+Note the standard requires to include only one suboption in the ntp-server
+option.
+
+
 .. _dhcp6-custom-options:
 
 Custom DHCPv6 Options
