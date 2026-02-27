@@ -13,6 +13,7 @@
 #include <config/unix_command_config.h>
 #include <util/filesystem.h>
 #include <limits>
+#include <list>
 
 using namespace isc;
 using namespace isc::asiolink;
@@ -54,12 +55,21 @@ UnixCommandConfig::UnixCommandConfig(ConstElementPtr config)
                       << socket_type_ << "' not 'unix'");
         }
     }
-    // Reject HTTP/HTTPS only socket-address.
-    if (config->contains("socket-address")) {
-        isc_throw(DhcpConfigError,
-                  "parameter 'socket-address' is not supported by UNIX "
-                  "control sockets");
+
+    // Reject HTTP/HTTPS only keywords.
+    list<string> bad_keywords = {
+        "socket-address", "socket-port", "authentication",
+        "trust-anchor", "cert-file", "key-file", "cert-required",
+        "http-headers"
+    };
+    for (auto const& keyword : bad_keywords) {
+        if (config->contains(keyword)) {
+            isc_throw(DhcpConfigError,
+                      "parameter '" << keyword << "' is not supported by UNIX "
+                      "control sockets");
+        }
     }
+
     // Get socket name.
     ConstElementPtr socket_name = config->get("socket-name");
     if (!socket_name) {

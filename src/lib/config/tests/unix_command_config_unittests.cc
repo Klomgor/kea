@@ -153,6 +153,41 @@ TEST_F(UnixCommandConfigTest, errors) {
             "parameter 'socket-address' is not supported by UNIX control sockets"
         },
         {
+            "unsupported socket-port",
+            R"( { "socket-port": 8000 } )",
+            "parameter 'socket-port' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported authentication",
+            R"( { "authentication": { } } )",
+            "parameter 'authentication' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported trust-anchor",
+            R"( { "trust-anchor": "myca" } )",
+            "parameter 'trust-anchor' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported cert-file",
+            R"( { "cert-file": "mycert" } )",
+            "parameter 'cert-file' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported key-file",
+            R"( { "key-file": "mykey" } )",
+            "parameter 'key-file' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported cert-required",
+            R"( { "cert-required": true } )",
+            "parameter 'cert-required' is not supported by UNIX control sockets"
+        },
+        {
+            "unsupported http-headers",
+            R"( { "http-headers": [ ] } )",
+            "parameter 'http-headers' is not supported by UNIX control sockets"
+        },
+        {
             "bad socket-name type",
             R"( { "socket-name": 8000 } )",
             "invalid type specified for parameter 'socket-name' "
