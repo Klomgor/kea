@@ -39,6 +39,7 @@ START TRANSACTION;
 
 -- This line starts the schema upgrade to version 33.0.
 
+-- Delete obsolete isJsonSupported function.
 DROP FUNCTION isJsonSupported;
 
 CREATE OR REPLACE FUNCTION func_lease4_AINS()
