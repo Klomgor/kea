@@ -179,6 +179,24 @@ Due to the upcoming MySQL 5.7 EOL, we recommend using MariaDB instead of MySQL 8
 MySQL 5.7, MySQL 8, MariaDB 10, and MariaDB 11 are fully compatible,
 interchangeable, and tested with Kea.
 
+
+.. note::
+
+    The MySQL or MariaDB variant you use must support JSON processing. Those listed
+    above or newer should. This can be verified with the following SQL statement:
+
+    .. code-block::
+
+        mysql> SELECT JSON_EXTRACT('{ "foo-bar": 1 }', '$."foo-bar"');
+        +-------------------------------------------------+
+        | JSON_EXTRACT('{ "foo-bar": 1 }', '$."foo-bar"') |
+        +-------------------------------------------------+
+        | 1                                               |
+        +-------------------------------------------------+
+        1 row in set (0.01 sec)
+
+    Any other result indicates JSON is not supported.
+
 .. _mysql-database-create:
 
 First-Time Creation of the MySQL Database
@@ -425,6 +443,21 @@ PostgreSQL
 
 PostgreSQL can store leases, host reservations, and options
 defined on a per-host basis.
+
+.. note::
+    The PostgreSQL version you use must support JSON processing. Any version
+    beginning with 9.4 should support it. This can be verified with the
+    following SQL statement:
+
+    .. code-block::
+
+        => SELECT proname FROM pg_proc WHERE proname = 'json_extract_path';
+            proname
+        -------------------
+        json_extract_path
+        (1 row)
+
+    Any other result indicates JSON is not supported.
 
 .. _pgsql-database-create:
 
