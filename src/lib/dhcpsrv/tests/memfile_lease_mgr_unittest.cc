@@ -2915,22 +2915,6 @@ TEST_F(MemfileLeaseMgrTest, testHWAddr) {
     }
 }
 
-// Verifies that isJsonSupported() returns true for Memfile.
-TEST_F(MemfileLeaseMgrTest, isJsonSupported4) {
-    startBackend(V4);
-    bool json_supported;
-    ASSERT_NO_THROW_LOG(json_supported = LeaseMgrFactory::instance().isJsonSupported());
-    ASSERT_TRUE(json_supported);
-}
-
-// Verifies that isJsonSupported() returns true for Memfile.
-TEST_F(MemfileLeaseMgrTest, isJsonSupported6) {
-    startBackend(V6);
-    bool json_supported;
-    ASSERT_NO_THROW_LOG(json_supported = LeaseMgrFactory::instance().isJsonSupported());
-    ASSERT_TRUE(json_supported);
-}
-
 // Verifies that v4 class lease counts are correctly adjusted
 // when leases have class lists.
 TEST_F(MemfileLeaseMgrTest, classLeaseCount4) {

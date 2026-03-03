@@ -599,11 +599,6 @@ PgSqlTaggedStatement tagged_statements[] = {
       "check_lease6_limits",
       "SELECT checkLease6Limits($1)" },
 
-    // IS_JSON_SUPPORTED
-    { 0, { OID_NONE },
-      "is_json_supported",
-      "SELECT isJsonSupported()" },
-
     // GET_LEASE4_COUNT_BY_CLASS
     { 1, { OID_VARCHAR },
       "get_lease4_count_by_class",
@@ -2985,23 +2980,6 @@ PgSqlLeaseMgr::checkLimits4(ConstElementPtr const& user_context) const {
 string
 PgSqlLeaseMgr::checkLimits6(ConstElementPtr const& user_context) const {
     return checkLimits(user_context, CHECK_LEASE6_LIMITS);
-}
-
-bool
-PgSqlLeaseMgr::isJsonSupported() const {
-    // Get a context.
-    PgSqlLeaseContextAlloc get_context(*this);
-    PgSqlLeaseContextPtr ctx(get_context.ctx_);
-
-    // Execute the select.
-    StatementIndex const stindex(IS_JSON_SUPPORTED);
-    PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
-                                 0, 0, 0, 0, 0));
-    ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
-
-    bool json_supported;
-    PgSqlExchange::getColumnValue(r, 0, 0, json_supported);
-    return json_supported;
 }
 
 size_t

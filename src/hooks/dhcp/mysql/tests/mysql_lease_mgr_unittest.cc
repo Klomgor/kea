@@ -1243,36 +1243,21 @@ TEST_F(MySqlGenericBackendTest, leaseCount) {
     EXPECT_EQ(0, countRows(conn, "lease4"));
 }
 
-/// @brief Checks that no exceptions are thrown when inquiring about JSON
-/// support and prints an informative message.
-TEST_F(MySqlLeaseMgrTest, isJsonSupported) {
-    bool json_supported;
-    ASSERT_NO_THROW_LOG(json_supported = LeaseMgrFactory::instance().isJsonSupported());
-    std::cout << "JSON support is " << (json_supported ? "" : "not ") <<
-                 "enabled in the database." << std::endl;
-}
-
 // Verifies that v4 class lease counts are correctly adjusted
 // when leases have class lists.
 TEST_F(MySqlLeaseMgrTest, classLeaseCount4) {
-    SKIP_IF(!LeaseMgrFactory::instance().isJsonSupported());
-
     testClassLeaseCount4();
 }
 
 // Verifies that v6 IA_NA class lease counts are correctly adjusted
 // when leases have class lists.
 TEST_F(MySqlLeaseMgrTest, classLeaseCount6_NA) {
-    SKIP_IF(!LeaseMgrFactory::instance().isJsonSupported());
-
     testClassLeaseCount6(Lease::TYPE_NA);
 }
 
 // Verifies that v6 IA_PD class lease counts are correctly adjusted
 // when leases have class lists.
 TEST_F(MySqlLeaseMgrTest, classLeaseCount6_PD) {
-    SKIP_IF(!LeaseMgrFactory::instance().isJsonSupported());
-
     testClassLeaseCount6(Lease::TYPE_PD);
 }
 
@@ -1287,17 +1272,11 @@ TEST_F(MySqlLeaseMgrTest, checkLimitsNull) {
 
 /// @brief Checks a few v4 limit checking scenarios.
 TEST_F(MySqlLeaseMgrTest, checkLimits4) {
-    SKIP_IF(!LeaseMgrFactory::instance().isJsonSupported());
-
-    // The rest of the checks are only for databases with JSON support.
     testLeaseLimits4();
 }
 
 /// @brief Checks a few v6 limit checking scenarios.
 TEST_F(MySqlLeaseMgrTest, checkLimits6) {
-    SKIP_IF(!LeaseMgrFactory::instance().isJsonSupported());
-
-    // The rest of the checks are only for databases with JSON support.
     testLeaseLimits6();
 }
 

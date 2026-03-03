@@ -158,7 +158,7 @@ pgsql_db_version_test() {
     run_command \
         "${kea_admin}" db-version pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}"
     version="${OUTPUT}"
-    assert_str_eq "32.0" "${version}" "Expected kea-admin to return %s, returned value was %s"
+    assert_str_eq "33.0" "${version}" "Expected kea-admin to return %s, returned value was %s"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -511,8 +511,7 @@ pgsql_upgrade_12_to_13_test() {
     assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
     assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
-    # Populate the lease tables. Also check that @json_supported is NULL at
-    # first, and then it is set after inserting leases.
+    # Populate the lease tables.
     run_command \
         pgsql_execute "
             INSERT INTO lease4 (address, subnet_id, state, user_context) VALUES (100,1,0,
@@ -547,167 +546,86 @@ pgsql_upgrade_12_to_13_test() {
     assert_eq 0 "${EXIT_CODE}" 'INSERT INTO leases when upgrading from 11 to 12 failed. expected %d, returned %d'
     assert_str_eq '' "${OUTPUT}" "INSERT INTO leases when upgrading from 11 to 12 failed. expected output %s, returned %s"
 
-    # Check that @json_supported is NULL by default.
-    query="SELECT isJsonSupported()"
-    run_command \
-        pgsql_execute "${query}"
-    assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-    json_supported="${OUTPUT}"
-    if test "${json_supported}" != 'f' && test "${json_supported}" != 't'; then
-        assert_str_eq '[ft]' "${json_supported}" "${query}. expected '[ft]', returned '${json_supported}'"
-    fi
-
     for v in 4 6; do
         # Check that client classes were counted correctly.
         query="SELECT leases FROM lease${v}_stat_by_client_class WHERE client_class = 'foo' LIMIT 1"
         run_command \
             pgsql_execute "${query}"
         assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        if test "${json_supported}" = 't'; then
-            assert_str_eq 2 "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_str_eq 2 "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         # -- Verify some calls to checkLeaseXLimits(). --
 
         query="SELECT checkLease${v}Limits('')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{}')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 1 } ] } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 1 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 1 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"subnet\": { \"id\": 1, \"address-limit\": 1 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 1 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 1 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 2 } ] } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 2 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 2 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"subnet\": { \"id\": 1, \"address-limit\": 2 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 2 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 2 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 4 } ] } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"subnet\": { \"id\": 1, \"address-limit\": 4 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 1 }, { \"name\": \"bar\", \"address-limit\": 1 } ], \"subnet\": { \"id\": 1, \"address-limit\": 1 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 1 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 1 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 2 }, { \"name\": \"bar\", \"address-limit\": 4 } ], \"subnet\": { \"id\": 1, \"address-limit\": 4 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 2 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 2 for client class \"foo\", current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 4 }, { \"name\": \"bar\", \"address-limit\": 4 } ], \"subnet\": { \"id\": 1, \"address-limit\": 2 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq "address limit 2 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq "address limit 2 for subnet ID 1, current lease count 2" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         query="SELECT checkLease${v}Limits('{ \"ISC\": { \"limits\": { \"client-classes\": [ { \"name\": \"foo\", \"address-limit\": 4 }, { \"name\": \"bar\", \"address-limit\": 4 } ], \"subnet\": { \"id\": 1, \"address-limit\": 4 } } } }')"
         run_command \
             pgsql_execute "${query}"
-        if test "${json_supported}" = 't'; then
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        else
-            # Should fail with ERROR: operator does not exist: json -> unknown
-            assert_eq 3 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-        fi
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
     done
 
@@ -726,20 +644,18 @@ pgsql_upgrade_12_to_13_test() {
         assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
-        if test "${json_supported}" = 't'; then
-            query="SELECT leases FROM lease${v}_stat_by_client_class WHERE client_class = 'foo' LIMIT 1"
-            run_command \
-                pgsql_execute "${query}"
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '2' "${OUTPUT}" "${query}: expected output %s, returned %s"
+        query="SELECT leases FROM lease${v}_stat_by_client_class WHERE client_class = 'foo' LIMIT 1"
+        run_command \
+            pgsql_execute "${query}"
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq '2' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
-            # Artificially change the client class counter from 2 down to 1.
-            query="UPDATE lease${v}_stat_by_client_class SET leases = 1 WHERE client_class = 'foo'"
-            run_command \
-                pgsql_execute "${query}"
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        # Artificially change the client class counter from 2 down to 1.
+        query="UPDATE lease${v}_stat_by_client_class SET leases = 1 WHERE client_class = 'foo'"
+        run_command \
+            pgsql_execute "${query}"
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq '' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
         # Clean up.
         query="DELETE FROM lease${v}"
@@ -755,14 +671,12 @@ pgsql_upgrade_12_to_13_test() {
         assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
         assert_str_eq '0' "${OUTPUT}" "${query}: expected output %s, returned %s"
 
-        if test "${json_supported}" = 't'; then
-            # SELECT should finish successfully and the client class counter should be 0.
-            query="SELECT leases FROM lease${v}_stat_by_client_class WHERE client_class = 'foo' LIMIT 1"
-            run_command \
-                pgsql_execute "${query}"
-            assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
-            assert_str_eq '0' "${OUTPUT}" "${query}: expected output %s, returned %s"
-        fi
+        # SELECT should finish successfully and the client class counter should be 0.
+        query="SELECT leases FROM lease${v}_stat_by_client_class WHERE client_class = 'foo' LIMIT 1"
+        run_command \
+            pgsql_execute "${query}"
+        assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+        assert_str_eq '0' "${OUTPUT}" "${query}: expected output %s, returned %s"
     done
 }
 
@@ -1178,6 +1092,14 @@ pgsql_upgrade_31_to_32_test() {
     assert_eq 1 "${OUTPUT}" "pg_indexes does not contain entry for lease6_by_state index in lease6 table. (record count %d, expected %d)"
 }
 
+pgsql_upgrade_32_to_33_test() {
+    # Check that isJsonSupported() is gone.
+    qry="select isJsonSupported();"
+    run_command \
+        pgsql_execute "${qry}"
+    assert_eq 3 "${EXIT_CODE}" "select isJsonSupported() should have failed. (expected status code %d, returned %d)"
+}
+
 pgsql_upgrade_test() {
     test_start "pgsql.upgrade"
 
@@ -1196,7 +1118,7 @@ pgsql_upgrade_test() {
 
     # Verify upgraded schema reports the latest version.
     version=$("${kea_admin}" db-version pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}")
-    assert_str_eq "32.0" "${version}" 'Expected kea-admin to return %s, returned value was %s'
+    assert_str_eq "33.0" "${version}" 'Expected kea-admin to return %s, returned value was %s'
 
     # Check 1.0 to 2.0 upgrade
     pgsql_upgrade_1_0_to_2_0_test
@@ -1284,6 +1206,9 @@ pgsql_upgrade_test() {
 
     # Check 31 to 32 upgrade
     pgsql_upgrade_31_to_32_test
+
+    # Check 32 to 33 upgrade
+    pgsql_upgrade_32_to_33_test
 
     # Let's wipe the whole database
     pgsql_wipe

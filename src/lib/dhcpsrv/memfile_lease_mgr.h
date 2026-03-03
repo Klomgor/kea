@@ -581,12 +581,6 @@ public:
     virtual std::string
     checkLimits6(isc::data::ConstElementPtr const& user_context) const override;
 
-    /// @brief Checks if JSON support is enabled in the database.
-    /// Memfile implementation assumes JSON support is always enabled.
-    ///
-    /// @return true if there is JSON support, false otherwise
-    virtual bool isJsonSupported() const override;
-
 private:
 
     /// @name Internal methods called while holding the mutex in multi threading

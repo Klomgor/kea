@@ -499,8 +499,6 @@ tagged_statements = { {
                     "SELECT checkLease4Limits(?)"},
     {MySqlLeaseMgr::CHECK_LEASE6_LIMITS,
                     "SELECT checkLease6Limits(?)"},
-    {MySqlLeaseMgr::IS_JSON_SUPPORTED,
-                    "SELECT isJsonSupported()"},
     {MySqlLeaseMgr::GET_LEASE4_COUNT_BY_CLASS,
                     "SELECT leases "
                         "FROM lease4_stat_by_client_class "
@@ -3841,28 +3839,6 @@ MySqlLeaseMgr::checkLimits4(ConstElementPtr const& user_context) const {
 string
 MySqlLeaseMgr::checkLimits6(ConstElementPtr const& user_context) const {
     return checkLimits(user_context, CHECK_LEASE6_LIMITS);
-}
-
-bool
-MySqlLeaseMgr::isJsonSupported() const {
-    // Get a context.
-    MySqlLeaseContextAlloc get_context(*this);
-    MySqlLeaseContextPtr ctx = get_context.ctx_;
-
-    // Create bindings.
-    MySqlBindingCollection in_bindings;
-    MySqlBindingCollection out_bindings({
-        MySqlBinding::createBool()
-    });
-
-    // Execute the select.
-    bool json_supported(false);
-    ctx->conn_.selectQuery(IS_JSON_SUPPORTED, in_bindings, out_bindings,
-                           [&json_supported] (MySqlBindingCollection const& result) {
-        json_supported = result[0]->getBool();
-    });
-
-    return json_supported;
 }
 
 size_t

@@ -333,11 +333,6 @@ public:
     virtual std::string
     checkLimits6(isc::data::ConstElementPtr const& /* user_context */) const override;
 
-    /// @brief Pretends to check if JSON support is enabled in the database.
-    ///
-    /// @return true if there is JSON support, false otherwise
-    virtual bool isJsonSupported() const override;
-
     /// @brief Pretends to return the class lease count for a given class and lease type.
     ///
     /// @param client_class client class for which the count is desired

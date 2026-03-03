@@ -6751,6 +6751,77 @@ UPDATE schema_version
 
 -- This line concludes the schema upgrade to version 32.0.
 
+-- This line starts the schema upgrade to version 33.0.
+
+-- Delete obsolete isJsonSupported function.
+DROP FUNCTION isJsonSupported;
+
+CREATE OR REPLACE FUNCTION func_lease4_AINS()
+RETURNS trigger AS $lease4_AINS$
+BEGIN
+    PERFORM lease4_AINS_lease4_stat_by_client_class(NEW.state, NEW.user_context);
+    PERFORM lease4_AINS_lease4_stat(NEW.state, NEW.subnet_id);
+    PERFORM lease4_AINS_lease4_pool_stat(NEW.state, NEW.subnet_id, NEW.pool_id);
+    RETURN NULL;
+END;
+$lease4_AINS$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lease4_AUPD()
+RETURNS trigger AS $lease4_AUPD$
+BEGIN
+    PERFORM lease4_AUPD_lease4_stat_by_client_class(OLD.state, OLD.user_context, NEW.state, NEW.user_context);
+    PERFORM lease4_AUPD_lease4_stat(OLD.state, OLD.subnet_id, NEW.state, NEW.subnet_id);
+    PERFORM lease4_AUPD_lease4_pool_stat(OLD.state, OLD.subnet_id, OLD.pool_id, NEW.state, NEW.subnet_id, NEW.pool_id);
+    RETURN NULL;
+END;
+$lease4_AUPD$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lease4_ADEL()
+RETURNS trigger AS $lease4_ADEL$
+BEGIN
+    PERFORM lease4_ADEL_lease4_stat_by_client_class(OLD.state, OLD.user_context);
+    PERFORM lease4_ADEL_lease4_stat(OLD.state, OLD.subnet_id);
+    PERFORM lease4_ADEL_lease4_pool_stat(OLD.state, OLD.subnet_id, OLD.pool_id);
+    RETURN NULL;
+END;
+$lease4_ADEL$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lease6_AINS()
+RETURNS trigger AS $lease6_AINS$
+BEGIN
+    PERFORM lease6_AINS_lease6_stat_by_client_class(NEW.state, NEW.user_context, NEW.lease_type);
+    PERFORM lease6_AINS_lease6_stat(NEW.state, NEW.subnet_id, NEW.lease_type);
+    PERFORM lease6_AINS_lease6_pool_stat(NEW.state, NEW.subnet_id, NEW.pool_id, NEW.lease_type);
+    RETURN NULL;
+END;
+$lease6_AINS$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lease6_AUPD()
+RETURNS trigger AS $lease6_AUPD$
+BEGIN
+    PERFORM lease6_AUPD_lease6_stat_by_client_class(OLD.state, OLD.user_context, OLD.lease_type, NEW.state, NEW.user_context, NEW.lease_type);
+    PERFORM lease6_AUPD_lease6_stat(OLD.state, OLD.subnet_id, OLD.lease_type, NEW.state, NEW.subnet_id, NEW.lease_type);
+    PERFORM lease6_AUPD_lease6_pool_stat(OLD.state, OLD.subnet_id, OLD.pool_id, OLD.lease_type, NEW.state, NEW.subnet_id, NEW.pool_id, NEW.lease_type);
+    RETURN NULL;
+END;
+$lease6_AUPD$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION func_lease6_ADEL()
+RETURNS trigger AS $lease6_ADEL$
+BEGIN
+    PERFORM lease6_ADEL_lease6_stat_by_client_class(OLD.state, OLD.user_context, OLD.lease_type);
+    PERFORM lease6_ADEL_lease6_stat(OLD.state, OLD.subnet_id, OLD.lease_type);
+    PERFORM lease6_ADEL_lease6_pool_stat(OLD.state, OLD.subnet_id, OLD.pool_id, OLD.lease_type);
+    RETURN NULL;
+END;
+$lease6_ADEL$ LANGUAGE plpgsql;
+
+-- Update the schema version number.
+UPDATE schema_version
+    SET version = '33', minor = '0';
+
+-- This line concludes the schema upgrade to version 33.0.
+
 -- Commit the script transaction.
 COMMIT;
 

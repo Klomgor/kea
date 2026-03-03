@@ -209,11 +209,6 @@ ConcreteLeaseMgr::checkLimits6(isc::data::ConstElementPtr const& /* user_context
     isc_throw(NotImplemented, "ConcreteLeaseMgr::checkLimits6() not implemented");
 }
 
-bool
-ConcreteLeaseMgr::isJsonSupported() const {
-    isc_throw(NotImplemented, "ConcreteLeaseMgr::isJsonSupported() not implemented");
-}
-
 size_t
 ConcreteLeaseMgr::getClassLeaseCount(const ClientClass& /* client_class */,
                                      const Lease::Type& /* ltype = Lease::TYPE_V4 */) const {

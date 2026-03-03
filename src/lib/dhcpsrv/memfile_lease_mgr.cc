@@ -3204,11 +3204,6 @@ Memfile_LeaseMgr::checkLimits6(isc::data::ConstElementPtr const& user_context) c
     return ("");
 }
 
-bool
-Memfile_LeaseMgr::isJsonSupported() const {
-    return true;
-}
-
 int64_t
 Memfile_LeaseMgr::getSubnetStat(const SubnetID& subnet_id, const std::string& stat_label) const {
     /// @todo This could be simplified if StatsMgr provided a mechanism to

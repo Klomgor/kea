@@ -834,7 +834,6 @@ public:
         ALL_POOL_LEASE6_STATS,       // Fetches IPv6 lease pool statistics
         CHECK_LEASE4_LIMITS,         // Check if allocated IPv4 leases are inside the set limits.
         CHECK_LEASE6_LIMITS,         // Check if allocated IPv6 leases are inside the set limits.
-        IS_JSON_SUPPORTED,           // Checks if JSON support is enabled in the database.
         GET_LEASE4_COUNT_BY_CLASS,   // Fetches the IPv4 lease count for a given class.
         GET_LEASE6_COUNT_BY_CLASS,   // Fetches the IPv6 lease count for given class and lease type.
         WIPE_RELAY_ID6,              // Wipe the lease6_relay_id table
@@ -1102,12 +1101,6 @@ private:
     /// string if no limits are exceeded
     virtual std::string
     checkLimits6(isc::data::ConstElementPtr const& user_context) const override;
-
-    /// @brief Checks if JSON support is enabled in the database.
-    /// MySQL implementation.
-    ///
-    /// @return true if there is JSON support, false otherwise
-    virtual bool isJsonSupported() const override;
 
     /// @brief Returns the class lease count for a given class and lease type.
     ///

@@ -136,16 +136,6 @@ struct LimitManager {
         }
 
         if (isc::dhcp::LeaseMgrFactory::haveInstance()) {
-            // If lease limiting is used, make sure the database has JSON support.
-            if (!isc::dhcp::LeaseMgrFactory::instance().isJsonSupported()) {
-                const std::string error("The lease database you have configured "
-                    "does not support JSON operations which are required for lease "
-                    "limiting.");
-                handle.setArgument("error", error);
-                handle.setStatus(isc::hooks::CalloutHandle::NEXT_STEP_DROP);
-                return (1);
-            }
-
             // Recount the leases by class.
             recountClassLeases<D>();
         } else {
