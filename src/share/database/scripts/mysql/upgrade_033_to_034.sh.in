@@ -119,6 +119,49 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Create the SFLQ tables.
+DROP TABLE IF EXISTS flq_pool4;
+CREATE TABLE IF NOT EXISTS flq_pool4 (
+    start_address INT UNSIGNED NOT NULL,
+    end_address INT UNSIGNED NOT NULL,
+    last_returned_address INT UNSIGNED DEFAULT 0,
+    subnet_id INT UNSIGNED NOT NULL,
+    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (start_address, end_address),
+    KEY flq_pool4_by_subnet_id (subnet_id)
+) ENGINE=InnoDB;
+
+
+DROP TABLE IF EXISTS free_lease4;
+CREATE TABLE IF NOT EXISTS free_lease4 (
+    address INT UNSIGNED NOT NULL,
+    modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (address)
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS flq_pool6;
+CREATE TABLE IF NOT EXISTS flq_pool6 (
+    start_address VARCHAR(45) NOT NULL,
+    end_address VARCHAR(45) NOT NULL,
+    lease_type TINYINT,
+    delegated_len TINYINT UNSIGNED,
+    last_returned_address VARCHAR(45) DEFAULT '::',
+    subnet_id INT UNSIGNED NOT NULL,
+    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (start_address, end_address),
+    KEY flq_pool6_by_subnet_id (subnet_id)
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS free_lease6;
+CREATE TABLE IF NOT EXISTS free_lease6 (
+    lease_type TINYINT,
+    address VARCHAR(45) NOT NULL,
+    modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (address, lease_type)
+) ENGINE=InnoDB;
+
 -- Update the schema version number.
 UPDATE schema_version
     SET version = '34', minor = '0';

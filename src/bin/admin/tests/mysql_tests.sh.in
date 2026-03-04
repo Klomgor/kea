@@ -1112,6 +1112,12 @@ mysql_upgrade_33_to_34_test() {
     run_command \
        mysql_execute "${query}"
     assert_eq 1 "${EXIT_CODE}" "${query}: expected %d, returned %d"
+
+    # Makse sure all four SFLQ tables exist.
+    check_table_column start_address flq_pool4
+    check_table_column address free_lease4
+    check_table_column start_address flq_pool6
+    check_table_column address free_lease4
 }
 
 mysql_upgrade_test() {
