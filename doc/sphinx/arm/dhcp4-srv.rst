@@ -3361,8 +3361,8 @@ seems to be particularly suited to make the distinction. The following
 example checks whether the client identifies itself as a PXE device with
 architecture EFI x86-64, and sets several fields if it does. See
 `Section 2.1 of RFC
-4578 <https://datatracker.ietf.org/doc/html/rfc4578#section-2.1>`__) or the
-client documentation for specific values.
+4578 <https://datatracker.ietf.org/doc/html/rfc4578#section-2.1>`__)
+corrected by its Errate or the client documentation for specific values.
 
 ::
 
@@ -3370,7 +3370,7 @@ client documentation for specific values.
        "client-classes": [
            {
                "name": "ipxe_efi_x64",
-               "test": "option[93].hex == 0x0009",
+               "test": "option[93].hex == 0x0007",
                "next-server": "192.0.2.254",
                "server-hostname": "hal9000",
                "boot-file-name": "/dev/null"
