@@ -4069,6 +4069,13 @@ mysql_migrate_dhcpX_options_client_classes() {
     test_finish 0
 }
 
+# Handy shortcut for running a single test.
+if [ $# -gt 0 ]; then
+    echo "RUNNING ${1} only"
+    ${1}
+    exit $?
+fi
+
 # Run tests.
 mysql_db_init_test
 mysql_host_reservation_init_test

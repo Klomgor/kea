@@ -248,3 +248,11 @@ DROP FUNCTION IF EXISTS json_cast(json_candidate TEXT);
 -- v6 BLQ cross-tables
 DROP TABLE IF EXISTS lease6_relay_id;
 DROP TABLE IF EXISTS lease6_remote_id;
+
+-- Drop SFLQ tables and procedures
+DROP PROCEDURE IF EXISTS createShareFlqPool4;
+DROP PROCEDURE IF EXISTS createShareFlqPool6;
+DROP TABLE IF EXISTS free_lease4;
+DROP TABLE IF EXISTS flq_pool4;
+DROP TABLE IF EXISTS free_lease6;
+DROP TABLE IF EXISTS flq_pool6;

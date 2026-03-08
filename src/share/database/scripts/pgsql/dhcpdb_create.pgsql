@@ -6816,6 +6816,52 @@ BEGIN
 END;
 $lease6_ADEL$ LANGUAGE plpgsql;
 
+-- Create the SFLQ tables.
+
+DROP TABLE IF EXISTS flq_pool4;
+CREATE TABLE IF NOT EXISTS flq_pool4 (
+    id SERIAL PRIMARY KEY NOT NULL,
+    start_address INET NOT NULL,
+    end_address INET NOT NULL,
+    last_returned_address INET NOT NULL DEFAULT '0.0.0.0',
+    subnet_id BIGINT NOT NULL,
+    created_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX flq_pool4_start_end_address ON flq_pool4 (start_address, end_address);
+CREATE INDEX flq_pool4_by_subnet_id ON flq_pool4 (subnet_id);
+
+DROP TABLE IF EXISTS free_lease4;
+CREATE TABLE IF NOT EXISTS free_lease4 (
+    address INET PRIMARY KEY NOT NULL,
+    modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS flq_pool6;
+CREATE TABLE IF NOT EXISTS flq_pool6 (
+    id SERIAL PRIMARY KEY NOT NULL,
+    start_address INET NOT NULL,
+    end_address INET NOT NULL,
+    lease_type SMALLINT NOT NULL,
+    delegated_len SMALLINT NOT NULL,
+    last_returned_address INET NOT NULL DEFAULT ('::'),
+    subnet_id BIGINT NOT NULL,
+    created_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX flq_pool6_start_end_address ON flq_pool6 (start_address, end_address);
+CREATE INDEX flq_pool6_by_subnet_id ON flq_pool6 (subnet_id);
+
+DROP TABLE IF EXISTS free_lease6;
+CREATE TABLE IF NOT EXISTS free_lease6 (
+    lease_type SMALLINT NOT NULL,
+    address INET NOT NULL,
+    modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (address, lease_type)
+);
+
 -- Update the schema version number.
 UPDATE schema_version
     SET version = '33', minor = '0';
