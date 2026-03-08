@@ -6540,15 +6540,18 @@ END $$
 DELIMITER ;
 
 -- Create the SFLQ tables.
+
 DROP TABLE IF EXISTS flq_pool4;
 CREATE TABLE IF NOT EXISTS flq_pool4 (
+    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     start_address INT UNSIGNED NOT NULL,
     end_address INT UNSIGNED NOT NULL,
     last_returned_address INT UNSIGNED DEFAULT 0,
     subnet_id INT UNSIGNED NOT NULL,
     created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (start_address, end_address),
+    PRIMARY KEY (id),
+    UNIQUE KEY flq_pool4_address_range (start_address, end_address),
     KEY flq_pool4_by_subnet_id (subnet_id)
 ) ENGINE=InnoDB;
 
@@ -6561,15 +6564,17 @@ CREATE TABLE IF NOT EXISTS free_lease4 (
 
 DROP TABLE IF EXISTS flq_pool6;
 CREATE TABLE IF NOT EXISTS flq_pool6 (
+    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     start_address VARCHAR(45) NOT NULL,
     end_address VARCHAR(45) NOT NULL,
     lease_type TINYINT,
-    delegated_len TINYINT UNSIGNED,
+    delegated_len TINYINT UNSIGNED,    
     last_returned_address VARCHAR(45) DEFAULT '::',
     subnet_id INT UNSIGNED NOT NULL,
     created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (start_address, end_address),
+    PRIMARY KEY (id),
+    UNIQUE KEY (start_address, end_address),
     KEY flq_pool6_by_subnet_id (subnet_id)
 ) ENGINE=InnoDB;
 
@@ -6580,6 +6585,336 @@ CREATE TABLE IF NOT EXISTS free_lease6 (
     modification_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (address, lease_type)
 ) ENGINE=InnoDB;
+
+DROP FUNCTION IF EXISTS incrementV6Prefix;
+DELIMITER $$
+CREATE FUNCTION incrementV6Prefix(prefix binary(16), prefix_len INT UNSIGNED)
+RETURNS binary(16)
+DETERMINISTIC
+BEGIN
+    DECLARE new_prefix BINARY(16);
+    DECLARE n_bytes INT UNSIGNED; 
+    DECLARE n_bits TINYINT UNSIGNED;
+    DECLARE mask TINYINT UNSIGNED;
+    DECLARE start_idx INT UNSIGNED; 
+    DECLARE tmp INT UNSIGNED;
+    DECLARE i TINYINT UNSIGNED;
+
+    IF (prefix_len < 1 OR prefix_len > 128)
+    THEN
+        return (prefix);
+    END IF; 
+
+    SET new_prefix = prefix;
+
+    -- Explanation: n_bytes specifies number of full bytes that are in-prefix.
+    -- They can also be used as an offset for the first byte that is not in
+    -- prefix. n_bits specifies number of bits on the last byte that is
+    -- (often partially) in prefix. For example for a /125 prefix, the values
+    -- are 15 and 3, respectively. Mask is a bitmask that has the least
+    -- significant bit from the prefix set.
+
+    SET n_bytes = (prefix_len - 1) DIV 8;
+    SET n_bits = 8 - (prefix_len - (n_bytes * 8));
+    IF (n_bits = 0)
+    THEN
+        SET mask = 1;
+    ELSE
+        SET mask = (n_bits * 2);
+    END IF;
+
+    -- Index of first byte to increment (1..16 i.e. not zero based)
+    SET start_idx = n_bytes + 1;      
+
+    -- Get the starting byte as an int and increment it.
+    SELECT (conv(hex(substring(new_prefix, start_idx, 1)), 16, 10) + mask) into tmp;
+
+    -- If the new value is less than 256, we safely increase just the starting byte.
+    IF (tmp < 256)
+    THEN
+        SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, n_bytes), unhex(hex(tmp)), 
+                                 SUBSTRING(new_prefix, start_idx + 1, 16 - n_bytes)); 
+        RETURN (new_prefix);
+    END IF;
+
+    -- Overflow, set the byte to the remainder.
+    SET tmp = tmp - 256;
+    SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, n_bytes), unhex(hex(tmp)), 
+                             SUBSTRING(new_prefix, start_idx + 1, 16 - n_bytes)); 
+
+    --  Now propagate the overflow.
+    SET i = start_idx - 1;
+    WHILE i >= 1 DO
+        SELECT (conv(hex(substring(new_prefix, i, 1)), 16, 10) + 1) into tmp;
+        IF (tmp != 256)
+        THEN
+            -- No more overflow, store the byte and we're done.
+            SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, i - 1), unhex(hex(tmp)), 
+                                     SUBSTRING(new_prefix, i + 1, (16 - i + 1))); 
+            RETURN (new_prefix);
+        END IF;
+
+        -- Store zero in the current byte, and move to the next one.
+        SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, i - 1), 0x00, 
+                                 SUBSTRING(new_prefix, i + 1, (16 - i + 1))); 
+        SET i = i - 1;
+    END WHILE;
+
+    -- All done.
+    RETURN (new_prefix);
+END $$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS createShareFlqPool4;
+DELIMITER $$
+CREATE PROCEDURE createShareFlqPool4(IN p_start_address INT UNSIGNED,
+                                     IN p_end_address INT UNSIGNED,
+                                     IN p_subnet_id INT UNSIGNED,
+                                     in p_recreate TINYINT)
+BEGIN
+    DECLARE loop_limit INT UNSIGNED;
+    DECLARE next_start_address INT UNSIGNED;
+    DECLARE next_end_address INT UNSIGNED;
+    DECLARE remaining INT UNSIGNED;
+
+    START TRANSACTION;
+
+    -- Create the flq_pool4 row. Concurrent attempts will hang until
+    -- this one commits and then they will fail with duplicate key
+    -- error. Callers should treat the duplicate error as success.
+    IF p_recreate = 1
+    THEN
+        -- (Re)creating should ignore duplicate on insert
+        INSERT IGNORE INTO flq_pool4 (start_address, end_address, subnet_id)
+           VALUES (p_start_address, p_end_address, p_subnet_id);
+    ELSE
+        INSERT INTO flq_pool4 (start_address, end_address, subnet_id)
+           VALUES (p_start_address, p_end_address, p_subnet_id);
+    END IF;
+
+    -- Insert available leases into free_lease4 table.  If insert fails on
+    -- duplicate ignore it. MySql limits recursive queries so we iterate
+    -- pool address range in chunks.
+    SET loop_limit = @@cte_max_recursion_depth - 1;
+    SET next_start_address = p_start_address;
+    SET next_end_address = p_start_address;
+    WHILE next_start_address < p_end_address DO
+        SET remaining = p_end_address - next_start_address;
+        IF (remaining > loop_limit)
+        THEN
+            SET next_end_address = next_end_address + loop_limit;
+        ELSE
+            SET next_end_address = next_end_address + remaining;
+        END IF;
+
+        INSERT IGNORE INTO free_lease4 (address)
+            WITH RECURSIVE addresses AS (
+                SELECT next_start_address AS avail
+                UNION ALL
+                SELECT avail + 1 FROM addresses WHERE avail < next_end_address
+            )
+            SELECT avail FROM addresses
+                LEFT JOIN lease4 on avail = lease4.address
+                WHERE lease4.address IS NULL OR lease4.state = 2;
+
+        SET next_start_address = next_start_address + loop_limit;
+    END WHILE;
+
+    -- Update the modification time in the flq_pool row.
+    UPDATE flq_pool4 SET modification_ts = now()
+        WHERE (start_address = p_start_address AND end_address = p_end_address);
+
+    COMMIT;
+END $$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS createShareFlqPool6;
+DELIMITER $$
+CREATE PROCEDURE createShareFlqPool6(IN p_start_address VARCHAR(45),
+                                     IN p_end_address VARCHAR(45),
+                                     IN p_lease_type TINYINT UNSIGNED,
+                                     In p_delegated_len TINYINT UNSIGNED,
+                                     IN p_subnet_id INT UNSIGNED,
+                                     in p_recreate TINYINT)
+BEGIN
+    DECLARE next_start_address BINARY(16);
+    DECLARE end_address BINARY(16);
+    DECLARE free_address BINARY(16);
+
+    START TRANSACTION;
+
+    -- Create the flq_pool4 row. Concurrent attempts will hang until
+    -- this one commits and then they will fail with duplicate key
+    -- error. Callers should treat the duplicate error as success.
+    IF p_recreate = 1
+    THEN
+        -- (Re)creating should ignore duplicate on insert
+        INSERT IGNORE INTO flq_pool6 
+            (start_address, end_address, lease_type, delegated_len, subnet_id)
+            VALUES 
+            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id);
+    ELSE
+        INSERT INTO flq_pool6 
+            (start_address, end_address, lease_type, delegated_len, subnet_id)
+            VALUES 
+            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id);
+    END IF;
+
+    -- Insert available leases into free_lease6 table.  If insert fails on
+    -- duplicate ignore it. MySQL doesn't provide math operations on
+    -- binrary(16) so we do it one address at time, using our own function
+    -- to increment the address/prefix.
+    SET next_start_address = INET6_ATON(p_start_address);
+    SET end_address = INET6_ATON(p_end_address);
+    WHILE next_start_address <= end_address
+    DO
+        SELECT address INTO free_address FROM lease6 
+            WHERE address = INET6_NTOA(next_start_address) AND lease6.state != 2;
+
+        IF (free_address IS NULL)
+        THEN
+            INSERT IGNORE INTO free_lease6(lease_type, address)
+                VALUES (p_lease_type, INET6_NTOA(next_start_address));
+        END IF; 
+
+        SET next_start_address = incrementV6Prefix(next_start_address, p_delegated_len);
+    END WHILE;
+
+    -- Update the modification time in the flq_pool row.
+    UPDATE flq_pool6 SET modification_ts = now()
+        WHERE (start_address = p_start_address AND end_address = p_end_address);
+
+    COMMIT;
+END $$
+DELIMITER ;
+
+DROP FUNCTION IF EXISTS pickFreeLease4;
+DELIMITER $$
+CREATE FUNCTION pickFreeLease4(alloc_start_address INT UNSIGNED,
+                               alloc_end_address INT UNSIGNED)
+RETURNS INT UNSIGNED
+DETERMINISTIC
+BEGIN
+    -- Declarations
+    DECLARE pool_id BIGINT(20);
+    DECLARE last_address INT UNSIGNED;
+    DECLARE free_address INT UNSIGNED;
+
+    SET free_address = 0;
+
+    -- Find the pool, get the id and last addressed picked.
+    SELECT id, last_returned_address INTO pool_id, last_address
+        FROM flq_pool4
+        WHERE start_address = alloc_start_address
+        AND end_address = alloc_end_address;
+
+    IF (pool_id IS NULL)
+    THEN
+        -- No matching pool, return empty address.
+        RETURN free_address;
+    END IF;
+
+    IF (last_address < alloc_start_address)
+    THEN
+        -- Set last pick to start address less one.
+        SET last_address = alloc_start_address - 1;
+    END IF; 
+
+    -- Find first address greater than the last pick.
+    SELECT f.address INTO free_address FROM free_lease4 f
+        LEFT JOIN lease4 on f.address = lease4.address
+        WHERE (f.address > last_address and f.address <= alloc_end_address)
+        AND (lease4.address IS NULL OR lease4.state = 2)
+        LIMIT 1;
+
+    -- Didn't find one, so try front half of the range, including
+    -- the last pick. This avoids returning nothing if there is only
+    -- one address free.
+    IF (free_address = 0 AND last_address != alloc_start_address)
+    THEN
+        SELECT f.address INTO free_address FROM free_lease4 f
+            LEFT JOIN lease4 on f.address = lease4.address
+            WHERE (f.address >= alloc_start_address AND f.address <= last_address)
+            AND (lease4.address IS NULL OR lease4.state = 2)
+            LIMIT 1;
+    END IF;
+
+    IF (free_address != 0)
+    THEN
+        -- Update the pool table with the pick.
+        UPDATE flq_pool4 SET last_returned_address = free_address
+            WHERE id = pool_id;
+    END IF;
+
+    RETURN free_address;
+END $$
+DELIMITER ;
+
+DROP FUNCTION IF EXISTS pickFreeLease6;
+DELIMITER $$
+CREATE FUNCTION pickFreeLease6(alloc_start_address VARCHAR(45),
+                               alloc_end_address VARCHAR(45))
+RETURNS VARCHAR(45)
+DETERMINISTIC
+BEGIN
+    -- Declarations
+    DECLARE pool_id BIGINT(20);
+    DECLARE free_address VARCHAR(45);
+    DECLARE bin_start_address BINARY(16);
+    DECLARE bin_end_address BINARY(16);
+    DECLARE bin_last_address BINARY(16);
+
+    -- Find the pool, get the id and last addressed picked.
+    SELECT id, INET6_ATON(last_returned_address) INTO pool_id, bin_last_address
+        FROM flq_pool6
+        WHERE start_address = alloc_start_address
+        AND end_address = alloc_end_address;
+
+    SET free_address = "::";
+    IF (pool_id IS NULL)
+    THEN
+        -- No matching pool, return empty address.
+        RETURN ("::");
+    END IF;
+
+    -- Convert to binary for range comparisons.
+    SET bin_start_address = INET6_ATON(alloc_start_address);
+    SET bin_end_address = INET6_ATON(alloc_end_address);
+
+    IF (bin_last_address < bin_start_address)
+    THEN
+        -- Set last pick to start address less one.
+        SET bin_last_address = bin_start_address;
+    END IF; 
+
+    -- Find first address greater than the last pick.
+    SELECT f.address INTO free_address FROM free_lease6 f
+        LEFT JOIN lease6 on f.address = lease6.address
+        WHERE ((INET6_ATON(f.address) > bin_last_address) 
+               AND (INET6_ATON(f.address) <= bin_end_address))
+        AND (lease6.address IS NULL OR lease6.state = 2)
+        LIMIT 1;
+
+    -- Didn't find one, so try front half of the range, including
+    -- the last pick. This avoids returning nothing if there is only
+    -- one address free.
+    IF (found_rows() = 0)
+    THEN
+        SELECT f.address INTO free_address FROM free_lease6 f
+            LEFT JOIN lease6 on f.address = lease6.address
+            WHERE ((INET6_ATON(f.address) >= bin_start_address) 
+                AND (INET6_ATON(f.address) <= bin_last_address))
+            AND (lease6.address IS NULL OR lease6.state = 2)
+            LIMIT 1;
+    END IF;
+
+    -- Update the pool table with the pick, even if there wasn't one.
+    UPDATE flq_pool6 SET last_returned_address = free_address
+            WHERE id = pool_id;
+
+    RETURN free_address;
+END $$
+DELIMITER ;
 
 -- Update the schema version number.
 UPDATE schema_version

@@ -1118,6 +1118,71 @@ mysql_upgrade_33_to_34_test() {
     check_table_column address free_lease4
     check_table_column start_address flq_pool6
     check_table_column address free_lease4
+
+    # Verify incrementV6Prefix.
+    qry="select inet6_ntoa(incrementV6Prefix(inet6_aton('1020:3040:5060:70FF:90A0:B0C0:0DE0:F000'), 64))"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select incrementV6Prefix failed. (expected status code %d, returned %d)"
+    count=$(echo "${OUTPUT}" | grep -Fci "1020:3040:5060:7100:90a0:b0c0:de0:f000")
+    assert_eq 1 "${count}" "incrementV6Prefix output is wrong. (expected count %d, actual %d)"
+
+    # Verify createShareFlqPool4.
+    qry="call createShareFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.1'), 0, 0)"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "call createShareFlqPool4 failed. (expected status code %d, returned %d)"
+
+    qry="select count(start_address) from flq_pool4 where start_address = inet_aton('127.0.0.0')\
+         and end_address = inet_aton('127.0.0.1')"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from flq_pool4 failed. (expected status code %d, returned %d)"
+    count="${OUTPUT}"
+    assert_eq 1 "${count}" "flq_pool4 content wrong. (expected count %d, actual %d)"
+
+    qry="select count(address) from free_lease4 join flq_pool4 where\
+         address >= flq_pool4.start_address and address <= flq_pool4.end_address"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from free_lease4 failed. (expected status code %d, returned %d)"
+    count="${OUTPUT}"
+    assert_eq 2 "${count}" "free_lease4 content wrong. (expected count %d, actual %d)"
+
+    # Verify pickFreeLease4.
+    qry="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'),inet_aton('127.0.0.1')))"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from pickFreeLease4 failed. (expected status code %d, returned %d)"
+    assert_str_eq '127.0.0.0' "${OUTPUT}"
+
+    # Verify createShareFlqPool6.
+    qry="call createShareFlqPool6('3001::', '3001::1', 2, 1, 128, 0)"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "call createShareFlqPool6 failed. (expected status code %d, returned %d)"
+
+    qry="select count(start_address) from flq_pool6 where start_address = '3001::'\
+         and end_address = '3001::1'"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from flq_pool6 failed. (expected status code %d, returned %d)"
+    count="${OUTPUT}"
+    assert_eq 1 "${count}" "flq_pool6 content wrong. (expected count %d, actual %d)"
+
+    qry="select count(address) from free_lease6 join flq_pool6 where\
+         address >= flq_pool6.start_address and address <= flq_pool6.end_address"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from free_lease6 failed. (expected status code %d, returned %d)"
+    count="${OUTPUT}"
+
+    # Verify pickFreeLease6.
+    qry="select pickFreeLease6('3001::', '3001::1')"
+    run_command \
+        mysql_execute "${qry}"
+    assert_eq 0 "${EXIT_CODE}" "select from pickFreeLease6 failed. (expected status code %d, returned %d)"
+    assert_str_eq '3001::' "${OUTPUT}"
 }
 
 mysql_upgrade_test() {
