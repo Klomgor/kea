@@ -17,33 +17,33 @@ additional capabilities, such as using negotiated dynamic keys.
 Kea supports GSS-TSIG to protect DNS updates sent by
 the Kea DHCP-DDNS (D2) server in a hook, called :ischooklib:`libddns_gss_tsig.so`.
 
-GSS-TSIG is defined in `RFC 3645 <https://tools.ietf.org/html/rfc3645>`__.
+GSS-TSIG is defined in `RFC 3645 <https://datatracker.ietf.org/doc/html/rfc3645>`__.
 The GSS-TSIG protocol itself is an implementation of generic GSS-API v2
-services, defined in `RFC 2743 <https://tools.ietf.org/html/rfc2743>`__.
+services, defined in `RFC 2743 <https://datatracker.ietf.org/doc/html/rfc2743>`__.
 
 Many protocols are involved in this mechanism:
 
- - Kerberos 5 - `RFC 4120 <https://tools.ietf.org/html/rfc4120>`__, which
+ - Kerberos 5 - `RFC 4120 <https://datatracker.ietf.org/doc/html/rfc4120>`__, which
    provides the security framework;
  - GSS-API (Generic Security Services Application Program Interface) -
-   `RFC 2743 <https://tools.ietf.org/html/rfc2743>`__ for the API,
-   `RFC 2744 <https://tools.ietf.org/html/rfc2743>`__ for the C bindings, and
-   `RFC 4121 <https://tools.ietf.org/html/rfc4121>`__ for the application
+   `RFC 2743 <https://datatracker.ietf.org/doc/html/rfc2743>`__ for the API,
+   `RFC 2744 <https://datatracker.ietf.org/doc/html/rfc2743>`__ for the C bindings, and
+   `RFC 4121 <https://datatracker.ietf.org/doc/html/rfc4121>`__ for the application
    to Kerberos 5;
  - SPNEGO (Simple and Protected GSS-API Negotiation Mechanism) -
-   `RFC 4178 <https://tools.ietf.org/html/rfc4178>`__ for the negotiation;
- - DNS update `RFC 2136 <https://tools.ietf.org/html/rfc2136>`__;
+   `RFC 4178 <https://datatracker.ietf.org/doc/html/rfc4178>`__ for the negotiation;
+ - DNS update `RFC 2136 <https://datatracker.ietf.org/doc/html/rfc2136>`__;
  - TSIG (Secret Key Transaction Authentication for DNS) -
-   `RFC 8945 <https://tools.ietf.org/html/rfc8945>`__, which
+   `RFC 8945 <https://datatracker.ietf.org/doc/html/rfc8945>`__, which
    protects DNS exchanges;
  - Secure Domain Name System (DNS) Dynamic Update -
-   `RFC 3007 <https://tools.ietf.org/html/rfc3007>`__, which is the
+   `RFC 3007 <https://datatracker.ietf.org/doc/html/rfc3007>`__, which is the
    application of TSIG to DNS update protection;
  - TKEY (Secret Key Establishment for DNS) -
-   `RFC 2930 <https://tools.ietf.org/html/rfc2930>`__, which establishes
+   `RFC 2930 <https://datatracker.ietf.org/doc/html/rfc2930>`__, which establishes
    secret keys for TSIG by transmitting crypto payloads between DNS
    parties; and
- - GSS-TSIG - `RFC 3645 <https://tools.ietf.org/html/rfc3645>`__, which
+ - GSS-TSIG - `RFC 3645 <https://datatracker.ietf.org/doc/html/rfc3645>`__, which
    is the application of GSS-API to TSIG.
 
 To summarize, GSS-API for Kerberos 5 with SPNEGO and TKEY are used to

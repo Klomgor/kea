@@ -535,7 +535,7 @@ Security can be enhanced if configuring HTTPS connections for all daemons.
 Authentication for Kea's RESTful API
 ------------------------------------
 
-Kea 1.9.0 added support for basic HTTP authentication (`RFC 7617 <https://tools.ietf.org/html/rfc7617>`_),
+Kea 1.9.0 added support for basic HTTP authentication (`RFC 7617 <https://datatracker.ietf.org/doc/html/rfc7617>`_),
 to control access for incoming REST commands over HTTP. The credentials (username, password) are
 stored in a local Kea configuration file on disk. The username is logged with the API command, so it
 is possible to determine which authenticated user performed each command. The access control details

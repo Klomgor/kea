@@ -5,8 +5,8 @@
 ==============================================
 
 This library provides support for DHCPv4 Leasequery as described in
-`RFC 4388 <https://tools.ietf.org/html/rfc4388>`__; and for DHCPv6
-Leasequery as described in (`RFC 5007 <https://tools.ietf.org/html/rfc5007>`__).
+`RFC 4388 <https://datatracker.ietf.org/doc/html/rfc4388>`__; and for DHCPv6
+Leasequery as described in (`RFC 5007 <https://datatracker.ietf.org/doc/html/rfc5007>`__).
 
 .. note::
 
@@ -20,9 +20,9 @@ Leasequery as described in (`RFC 5007 <https://tools.ietf.org/html/rfc5007>`__).
    :iscman:`kea-dhcp6` process.
 
 Kea version 2.3.4 added support for DHCPv6 Bulk Leasequery
-(`RFC 5460  <https://tools.ietf.org/html/rfc5460>`__);
+(`RFC 5460  <https://datatracker.ietf.org/doc/html/rfc5460>`__);
 Kea version 2.3.5 added support for DHCPv4 Bulk Leasequery
-(`RFC 6926  <https://tools.ietf.org/html/rfc6926>`__) using
+(`RFC 6926  <https://datatracker.ietf.org/doc/html/rfc6926>`__) using
 the memfile lease backend.
 
 .. _lease-query-dhcpv4:
@@ -190,7 +190,7 @@ attached to a ``DHCPV6_LEASEQUERY`` message:
 
 .. note::
 
-    `RFC 5007, Section 3.3 <https://tools.ietf.org/html/rfc5007#section-3.3>`__
+    `RFC 5007, Section 3.3 <https://datatracker.ietf.org/doc/html/rfc5007#section-3.3>`__
     states that querying by IP address should return either a lease (e.g.
     binding) for the address itself or a lease for a delegated prefix that
     contains the address.
@@ -258,14 +258,14 @@ When a query finds active leases in more than one subnet and the query's ``link-
 is empty, then, in addition to the status-code, the ``DHCPV6_LEASEQUERY_REPLY``
 contains an ``lq-client-link`` option (48). The ``lq-client-link`` contains a list of
 IPv6 addresses, one for each subnet in which a lease was found (see
-`RFC 5007, Section 4.1.2.5 <https://tools.ietf.org/html/rfc5007#section-4.1.2.5>`__)
+`RFC 5007, Section 4.1.2.5 <https://datatracker.ietf.org/doc/html/rfc5007#section-4.1.2.5>`__)
 If, however, the query's ``link-address`` is not empty, the list of queries is
 pruned to contain only leases that belong to that subnet.
 
 When the query results in one or more active leases which all belong to a single
 subnet, in addition to the ``status-code``, the ``DHCPV6_LEASEQUERY_REPLY`` contains a
 ``client-data`` option (45) (see
-`RFC 5007, Section 4.1.2.2 <https://tools.ietf.org/html/rfc5007#section-4.1.2.2>`__).
+`RFC 5007, Section 4.1.2.2 <https://datatracker.ietf.org/doc/html/rfc5007#section-4.1.2.2>`__).
 The client-data option encapsulates the following options:
 
 .. tabularcolumns:: |p{0.2\linewidth}|p{0.1\linewidth}|p{0.7\linewidth}|
@@ -302,7 +302,7 @@ If the lease with the most recent client-last-transaction-time (CLTT)
 value has relay information in its user context (see
 :ref:`store-extended-info-v6`), then an ``OPTION_LQ_RELAY_DATA`` option is
 added to the reply (see
-`RFC 5007, Section 4.1.2.4 <https://tools.ietf.org/html/rfc5007#section-4.1.2.4>`__).
+`RFC 5007, Section 4.1.2.4 <https://datatracker.ietf.org/doc/html/rfc5007#section-4.1.2.4>`__).
 
 The relay information on the lease is a list with an entry for each
 relay layer the client packet (e.g. ``DHCPV6_REQUEST``) traversed, with the

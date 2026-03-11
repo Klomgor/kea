@@ -7,7 +7,7 @@
 This hook library adds the ability to perform a "ping check" of a candidate
 IPv4 address prior to offering it to a DHCP client. This feature is similar
 to a behavior available in ISC DHCP and one suggested in `RFC
-2131 <https://tools.ietf.org/html/rfc2131>`__, section 3.1, item 2.
+2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__, section 3.1, item 2.
 
 .. note::
 

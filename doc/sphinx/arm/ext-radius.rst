@@ -778,7 +778,7 @@ The Message-Authenticator attribute is specified in the EAP extension in
 `RFC 3579 <https://datatracker.ietf.org/doc/html/rfc3579>`__.
 
 The Status-Server message is specified in
-`RFC 5997 <https://www.rfc-editor.org/rfc/rfc5997.html>`__.
+`RFC 5997 <https://datatracker.ietf.org/doc/html/rfc5997>`__.
 
 The TCP transport (not supported by heavily referenced for TLS) is specified
 in `RFC 6613 <https://datatracker.ietf.org/doc/html/rfc6613>`__.

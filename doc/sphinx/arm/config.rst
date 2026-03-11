@@ -29,7 +29,7 @@ JSON Syntax
 
 Configuration files for the DHCPv4, DHCPv6, DDNS, Control Agent, and
 NETCONF modules are defined in an extended JSON format. Basic JSON is
-defined in `RFC 7159 <https://tools.ietf.org/html/rfc7159>`__ and `ECMA
+defined in `RFC 7159 <https://datatracker.ietf.org/doc/html/rfc7159>`__ and `ECMA
 404 <https://www.ecma-international.org/publications/standards/Ecma-404.htm>`__.
 In particular, the only boolean values allowed are true or false (all
 lowercase). The capitalized versions (True or False) are not accepted.

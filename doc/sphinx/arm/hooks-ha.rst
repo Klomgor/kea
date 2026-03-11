@@ -50,7 +50,7 @@ The Kea HA hook library supports three configurations, also known as HA modes:
 ``load-balancing``, ``hot-standby``, and ``passive-backup``. In the
 ``load-balancing`` mode, two servers respond to DHCP requests. The
 ``load-balancing`` function is implemented as described in `RFC
-3074 <https://tools.ietf.org/html/rfc3074>`__, with each server responding to
+3074 <https://datatracker.ietf.org/doc/html/rfc3074>`__, with each server responding to
 half the received DHCP queries. When one of the servers allocates a lease for a
 client, it notifies the partner server over the control channel (via the RESTful
 API), so the partner can save the lease information in its own database. If the

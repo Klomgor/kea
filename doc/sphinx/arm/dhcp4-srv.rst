@@ -254,7 +254,7 @@ client begins the renewal and rebind processes.
    only sends ``renew-timer``, via DHCPv4 option code 58, if it is less
    than ``rebind-timer`` (or ``valid-lifetime`` if ``rebind-timer`` was not
    specified). In their absence, the client should select values for T1
-   and T2 timers according to `RFC 2131 <https://tools.ietf.org/html/rfc2131>`_.
+   and T2 timers according to `RFC 2131 <https://datatracker.ietf.org/doc/html/rfc2131>`_.
    See section :ref:`dhcp4-t1-t2-times`
    for more details on generating T1 and T2.
 
@@ -1233,7 +1233,7 @@ may impair the DHCP server's operation.
 
 In this section we focus on the case when the server receives the
 DHCPINFORM message from the client via a relay. According to `RFC
-2131 <https://tools.ietf.org/html/rfc2131>`__, the server should unicast
+2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__, the server should unicast
 the DHCPACK response to the address carried in the ``ciaddr`` field. When
 the UDP socket is in use, the DHCP server relies on the low-level
 functions of an operating system to build the data link, IP, and UDP
@@ -1462,7 +1462,7 @@ has a host reservation for an address in .0 or .255, it will get it.
 Sending T1 (Option 58) and T2 (Option 59)
 -----------------------------------------
 
-According to `RFC 2131 <https://tools.ietf.org/html/rfc2131>`__,
+According to `RFC 2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__,
 servers should send values for T1 and T2 that are 50% and 87.5% of the
 lease lifetime, respectively. By default, :iscman:`kea-dhcp4` does not send
 either value; it can be configured to send values that are either specified
@@ -2106,7 +2106,7 @@ types are given in :ref:`dhcp-types`.
 .. note::
 
   The ``default-url`` option was replaced with ``v4-captive-portal`` in Kea 2.1.2, as introduced by
-  `RFC 8910 <https://tools.ietf.org/html/rfc8910>`_. The new option has exactly the same format as the
+  `RFC 8910 <https://datatracker.ietf.org/doc/html/rfc8910>`_. The new option has exactly the same format as the
   old one. The general perception is that ``default-url`` was seldom used. Migrating users should
   replace ``default-url`` with ``v4-captive-portal`` in their configurations.
 
@@ -2174,98 +2174,98 @@ what values are accepted for them.
 
 .. table:: List of standard DHCP option types
 
-   +-----------------+-------------------------------------------------------+
-   | Name            | Meaning                                               |
-   +=================+=======================================================+
-   | binary          | An arbitrary string of bytes, specified as a set      |
-   |                 | of hexadecimal digits.                                |
-   +-----------------+-------------------------------------------------------+
-   | boolean         | A boolean value with allowed                          |
-   |                 | values true or false.                                 |
-   +-----------------+-------------------------------------------------------+
-   | empty           | No value; data is carried in                          |
-   |                 | sub-options.                                          |
-   +-----------------+-------------------------------------------------------+
-   | fqdn            | Fully qualified domain name (e.g.                     |
-   |                 | www.example.com).                                     |
-   +-----------------+-------------------------------------------------------+
-   | ipv4-address    | IPv4 address in the usual                             |
-   |                 | dotted-decimal notation (e.g.                         |
-   |                 | 192.0.2.1).                                           |
-   +-----------------+-------------------------------------------------------+
-   | ipv6-address    | IPv6 address in the usual colon                       |
-   |                 | notation (e.g. 2001:db8::1).                          |
-   +-----------------+-------------------------------------------------------+
-   | ipv6-prefix     | IPv6 prefix and prefix length                         |
-   |                 | specified using CIDR notation,                        |
-   |                 | e.g. 2001:db8:1::/64. This data                       |
-   |                 | type is used to represent an                          |
-   |                 | 8-bit field conveying a prefix                        |
-   |                 | length and the variable length                        |
-   |                 | prefix value.                                         |
-   +-----------------+-------------------------------------------------------+
-   | psid            | PSID and PSID length separated by                     |
-   |                 | a slash, e.g. 3/4 specifies                           |
-   |                 | PSID=3 and PSID length=4. In the                      |
-   |                 | wire format it is represented by                      |
-   |                 | an 8-bit field carrying PSID                          |
-   |                 | length (in this case equal to 4)                      |
-   |                 | and the 16-bits-long PSID value                       |
-   |                 | field (in this case equal to                          |
-   |                 | "0011000000000000b" using binary                      |
-   |                 | notation). Allowed values for a                       |
-   |                 | PSID length are 0 to 16. See `RFC                     |
-   |                 | 7597 <https://tools.ietf.org/html/rfc7597>`__         |
-   |                 | for details about the PSID wire                       |
-   |                 | representation.                                       |
-   +-----------------+-------------------------------------------------------+
-   | record          | Structured data that may be                           |
-   |                 | comprised of any types (except                        |
-   |                 | "record" and "empty"). The array                      |
-   |                 | flag applies to the last field                        |
-   |                 | only.                                                 |
-   +-----------------+-------------------------------------------------------+
-   | string          | Any text. Please note that Kea                        |
-   |                 | silently discards any                                 |
-   |                 | terminating/trailing nulls from                       |
-   |                 | the end of "string" options when                      |
-   |                 | unpacking received packets. This                      |
-   |                 | is in keeping with `RFC 2132,                         |
-   |                 | Section                                               |
-   |                 | 2 <https://tools.ietf.org/html/rfc2132#section-2>`__. |
-   +-----------------+-------------------------------------------------------+
-   | tuple           | A length field encoded as an 8-bit                    |
-   |                 | or 16-bit unsigned integer followed by                |
-   |                 | a string of this length. Typically, for DHCPv4,       |
-   |                 | the length is 8-bit, and for DHCPv6, it is 16-bit.    |
-   |                 | However, there are exceptions to that rule.           |
-   |                 | E.g. for the DHCPv4 SZTP Redirect Option,             |
-   |                 | bootstrap-server-list is encoded as a list of         |
-   |                 | tuples where the URI-length in each tuple is          |
-   |                 | a 16-bit unsigned integer.                            |
-   +-----------------+-------------------------------------------------------+
-   | uint8           | An 8-bit unsigned integer with                        |
-   |                 | allowed values 0 to 255.                              |
-   +-----------------+-------------------------------------------------------+
-   | uint16          | A 16-bit unsigned integer with                        |
-   |                 | allowed values 0 to 65535.                            |
-   +-----------------+-------------------------------------------------------+
-   | uint32          | A 32-bit unsigned integer with                        |
-   |                 | allowed values 0 to 4294967295.                       |
-   +-----------------+-------------------------------------------------------+
-   | int8            | An 8-bit signed integer with allowed                  |
-   |                 | values -128 to 127.                                   |
-   +-----------------+-------------------------------------------------------+
-   | int16           | A 16-bit signed integer with                          |
-   |                 | allowed values -32768 to 32767.                       |
-   +-----------------+-------------------------------------------------------+
-   | int32           | A 32-bit signed integer with                          |
-   |                 | allowed values -2147483648 to                         |
-   |                 | 2147483647.                                           |
-   +-----------------+-------------------------------------------------------+
+   +-----------------+---------------------------------------------------------------+
+   | Name            | Meaning                                                       |
+   +=================+===============================================================+
+   | binary          | An arbitrary string of bytes, specified as a set              |
+   |                 | of hexadecimal digits.                                        |
+   +-----------------+---------------------------------------------------------------+
+   | boolean         | A boolean value with allowed                                  |
+   |                 | values true or false.                                         |
+   +-----------------+---------------------------------------------------------------+
+   | empty           | No value; data is carried in                                  |
+   |                 | sub-options.                                                  |
+   +-----------------+---------------------------------------------------------------+
+   | fqdn            | Fully qualified domain name (e.g.                             |
+   |                 | www.example.com).                                             |
+   +-----------------+---------------------------------------------------------------+
+   | ipv4-address    | IPv4 address in the usual                                     |
+   |                 | dotted-decimal notation (e.g.                                 |
+   |                 | 192.0.2.1).                                                   |
+   +-----------------+---------------------------------------------------------------+
+   | ipv6-address    | IPv6 address in the usual colon                               |
+   |                 | notation (e.g. 2001:db8::1).                                  |
+   +-----------------+---------------------------------------------------------------+
+   | ipv6-prefix     | IPv6 prefix and prefix length                                 |
+   |                 | specified using CIDR notation,                                |
+   |                 | e.g. 2001:db8:1::/64. This data                               |
+   |                 | type is used to represent an                                  |
+   |                 | 8-bit field conveying a prefix                                |
+   |                 | length and the variable length                                |
+   |                 | prefix value.                                                 |
+   +-----------------+---------------------------------------------------------------+
+   | psid            | PSID and PSID length separated by                             |
+   |                 | a slash, e.g. 3/4 specifies                                   |
+   |                 | PSID=3 and PSID length=4. In the                              |
+   |                 | wire format it is represented by                              |
+   |                 | an 8-bit field carrying PSID                                  |
+   |                 | length (in this case equal to 4)                              |
+   |                 | and the 16-bits-long PSID value                               |
+   |                 | field (in this case equal to                                  |
+   |                 | "0011000000000000b" using binary                              |
+   |                 | notation). Allowed values for a                               |
+   |                 | PSID length are 0 to 16. See `RFC 7597                        |
+   |                 | <https://datatracker.ietf.org/doc/html/rfc7597>`__            |
+   |                 | for details about the PSID wire                               |
+   |                 | representation.                                               |
+   +-----------------+---------------------------------------------------------------+
+   | record          | Structured data that may be                                   |
+   |                 | comprised of any types (except                                |
+   |                 | "record" and "empty"). The array                              |
+   |                 | flag applies to the last field                                |
+   |                 | only.                                                         |
+   +-----------------+---------------------------------------------------------------+
+   | string          | Any text. Please note that Kea                                |
+   |                 | silently discards any                                         |
+   |                 | terminating/trailing nulls from                               |
+   |                 | the end of "string" options when                              |
+   |                 | unpacking received packets. This                              |
+   |                 | is in keeping with `RFC 2132,                                 |
+   |                 | Section 2                                                     |
+   |                 | <https://datatracker.ietf.org/doc/html/rfc2132#section-2>`__. |
+   +-----------------+---------------------------------------------------------------+
+   | tuple           | A length field encoded as an 8-bit                            |
+   |                 | or 16-bit unsigned integer followed by                        |
+   |                 | a string of this length. Typically, for DHCPv4,               |
+   |                 | the length is 8-bit, and for DHCPv6, it is 16-bit.            |
+   |                 | However, there are exceptions to that rule.                   |
+   |                 | E.g. for the DHCPv4 SZTP Redirect Option,                     |
+   |                 | bootstrap-server-list is encoded as a list of                 |
+   |                 | tuples where the URI-length in each tuple is                  |
+   |                 | a 16-bit unsigned integer.                                    |
+   +-----------------+---------------------------------------------------------------+
+   | uint8           | An 8-bit unsigned integer with                                |
+   |                 | allowed values 0 to 255.                                      |
+   +-----------------+---------------------------------------------------------------+
+   | uint16          | A 16-bit unsigned integer with                                |
+   |                 | allowed values 0 to 65535.                                    |
+   +-----------------+---------------------------------------------------------------+
+   | uint32          | A 32-bit unsigned integer with                                |
+   |                 | allowed values 0 to 4294967295.                               |
+   +-----------------+---------------------------------------------------------------+
+   | int8            | An 8-bit signed integer with allowed                          |
+   |                 | values -128 to 127.                                           |
+   +-----------------+---------------------------------------------------------------+
+   | int16           | A 16-bit signed integer with                                  |
+   |                 | allowed values -32768 to 32767.                               |
+   +-----------------+---------------------------------------------------------------+
+   | int32           | A 32-bit signed integer with                                  |
+   |                 | allowed values -2147483648 to                                 |
+   |                 | 2147483647.                                                   |
+   +-----------------+---------------------------------------------------------------+
 
 Kea also supports the Relay Agent Information (RAI, defined in
-`RFC 3046 <https://tools.ietf.org/html/rfc3046>`_) option, sometimes referred to as the relay option, agent
+`RFC 3046 <https://datatracker.ietf.org/doc/html/rfc3046>`_) option, sometimes referred to as the relay option, agent
 option, or simply option 82. The option itself is just a container and does not convey any information
 on its own. The following table contains a list of RAI sub-options that Kea can understand. The RAI
 and its sub-options are inserted by the relay agent and received by Kea; there is no need for Kea
@@ -2351,10 +2351,10 @@ the table below.
    +------------------------+------+-----------------------------+
 
 These suboptions are defined in
-`RFC 3495 <https://tools.ietf.org/html/rfc3495>`_ including its errata
+`RFC 3495 <https://datatracker.ietf.org/doc/html/rfc3495>`_ including its errata
 which clarifies the realm format,
-`RFC 3594 <https://tools.ietf.org/html/rfc3594>`_ and
-`RFC 3634 <https://tools.ietf.org/html/rfc3634>`_.
+`RFC 3594 <https://datatracker.ietf.org/doc/html/rfc3594>`_ and
+`RFC 3634 <https://datatracker.ietf.org/doc/html/rfc3634>`_.
 
 .. note::
 
@@ -2654,7 +2654,7 @@ The definition used to decode a VSI option is:
 
    By default, in the Vendor-Specific Information option (code 43),
    sub-option code 0 and 255 mean PAD and END respectively, according to
-   `RFC 2132 <https://tools.ietf.org/html/rfc2132>`_. In other words, the
+   `RFC 2132 <https://datatracker.ietf.org/doc/html/rfc2132>`_. In other words, the
    sub-option code values of 0 and 255 are reserved. Kea does, however,
    allow users to define sub-option codes from 0 to 255. If
    sub-options with codes 0 and/or 255 are defined, bytes with that value are
@@ -3193,7 +3193,7 @@ Support for IPv6-Only Preferred Option
 --------------------------------------
 
 The ``v6-only-preferred`` (code 108) option is handled in a specific
-way described in `RFC 8925 <https://tools.ietf.org/html/rfc8925>`_
+way described in `RFC 8925 <https://datatracker.ietf.org/doc/html/rfc8925>`_
 by :iscman:`kea-dhcp4` when it is configured in a subnet or a
 shared network: when the client requests the option (i.e. puts
 the 108 code in the DHCP parameter request list option) and
@@ -3361,7 +3361,7 @@ seems to be particularly suited to make the distinction. The following
 example checks whether the client identifies itself as a PXE device with
 architecture EFI x86-64, and sets several fields if it does. See
 `Section 2.1 of RFC
-4578 <https://tools.ietf.org/html/rfc4578#section-2.1>`__) or the
+4578 <https://datatracker.ietf.org/doc/html/rfc4578#section-2.1>`__) or the
 client documentation for specific values.
 
 ::
@@ -3721,7 +3721,7 @@ to add DNS entries or they were somehow lost by the DNS server.
 
 The second parameter added in Kea 1.9.1 is ``ddns-use-conflict-resolution``.  This
 boolean parameter was passed through to D2 and enabled or disabled conflict resolution
-as described in `RFC 4703 <https://tools.ietf.org/html/rfc4703>`__.  Beginning with
+as described in `RFC 4703 <https://datatracker.ietf.org/doc/html/rfc4703>`__.  Beginning with
 Kea 2.5.0, it is deprecated and replaced by ``ddns-conflict-resolution-mode``, which
 offers four modes of conflict resolution-related behavior:
 
@@ -3758,7 +3758,7 @@ offers four modes of conflict resolution-related behavior:
     Setting ``ddns-conflict-resolution-mode`` to any value other than
     ``check-with-dhcid`` disables the overwrite safeguards
     that the rules of conflict resolution (from
-    `RFC 4703 <https://tools.ietf.org/html/rfc4703>`__) are intended to
+    `RFC 4703 <https://datatracker.ietf.org/doc/html/rfc4703>`__) are intended to
     prevent. This means that existing entries for an FQDN or an
     IP address made for Client-A can be deleted or replaced by entries
     for Client-B. Furthermore, there are two scenarios by which entries
@@ -3787,7 +3787,7 @@ offers four modes of conflict resolution-related behavior:
 
 The DNS entries Kea creates contain a value for TTL (time to live).
 By default, the :iscman:`kea-dhcp4` server calculates that value based on
-`RFC 4702, Section 5 <https://tools.ietf.org/html/rfc4702#section-5>`__,
+`RFC 4702, Section 5 <https://datatracker.ietf.org/doc/html/rfc4702#section-5>`__,
 which suggests that the TTL value be 1/3 of the lease's lifetime, with
 a minimum value of 10 minutes.  There are four optional parameters which
 may be used to influence the TTL calculation:
@@ -3882,7 +3882,7 @@ When Does the :iscman:`kea-dhcp4` Server Generate a DDNS Request?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :iscman:`kea-dhcp4` server follows the behavior prescribed for DHCP servers in
-`RFC 4702 <https://tools.ietf.org/html/rfc4702>`__. It is important to keep
+`RFC 4702 <https://datatracker.ietf.org/doc/html/rfc4702>`__. It is important to keep
 in mind that :iscman:`kea-dhcp4` makes the initial decision of when and what to
 update and forwards that information to D2 in the form of NCRs. Carrying
 out the actual DNS updates and dealing with such things as conflict
@@ -3951,7 +3951,7 @@ the N-S-O flags in the server's response to the client will be 0-1-1
 respectively.
 
 (Note that the flag combination N=1, S=1 is prohibited according to `RFC
-4702 <https://tools.ietf.org/html/rfc4702>`__. If such a combination is
+4702 <https://datatracker.ietf.org/doc/html/rfc4702>`__. If such a combination is
 received from the client, the packet is dropped by :iscman:`kea-dhcp4`.)
 
 To override client delegation, set the following values in the
@@ -4234,17 +4234,17 @@ Echoing Client-ID (RFC 6842)
 ----------------------------
 
 The original DHCPv4 specification (`RFC
-2131 <https://tools.ietf.org/html/rfc2131>`__) states that the DHCPv4
+2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__) states that the DHCPv4
 server must not send back client-id options when responding to clients.
 However, in some cases that results in confused clients that do not have a MAC
 address or client-id; see `RFC
-6842 <https://tools.ietf.org/html/rfc6842>`__ for details. That behavior
+6842 <https://datatracker.ietf.org/doc/html/rfc6842>`__ for details. That behavior
 changed with the publication of `RFC
-6842 <https://tools.ietf.org/html/rfc6842>`__, which updated `RFC
-2131 <https://tools.ietf.org/html/rfc2131>`__. That update states that
+6842 <https://datatracker.ietf.org/doc/html/rfc6842>`__, which updated `RFC
+2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__. That update states that
 the server must send the client-id if the client sent it, and that is Kea's
 default behavior. However, in some cases older devices that do not
-support `RFC 6842 <https://tools.ietf.org/html/rfc6842>`__ may refuse to
+support `RFC 6842 <https://datatracker.ietf.org/doc/html/rfc6842>`__ may refuse to
 accept responses that include the client-id option. To enable backward
 compatibility, an optional configuration parameter has been introduced.
 To configure it, use the following configuration statement:
@@ -4286,7 +4286,7 @@ ones are:
    correlation and better administer the network.  Beginning with
    release 2.1.2, Kea supports DHCPv6 DUIDs embedded within DHCPv4
    Client Identifier options as described in
-   `RFC 4361 <https://tools.ietf.org/html/rfc4361>`__.
+   `RFC 4361 <https://datatracker.ietf.org/doc/html/rfc4361>`__.
 
 DHCPv4 uses two distinct identifiers which are placed by the client in
 the queries sent to the server and copied by the server to its responses
@@ -4295,9 +4295,9 @@ introduced as a part of the BOOTP specification and it is also used by
 DHCP to carry the hardware address of the interface used to send the
 query to the server (MAC address for the Ethernet). The latter is
 carried in the client-identifier option, introduced in `RFC
-2132 <https://tools.ietf.org/html/rfc2132>`__.
+2132 <https://datatracker.ietf.org/doc/html/rfc2132>`__.
 
-`RFC 2131 <https://tools.ietf.org/html/rfc2131>`__ indicates that the
+`RFC 2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__ indicates that the
 server may use both of these identifiers to identify the client but the
 client identifier, if present, takes precedence over ``chaddr``. One of
 the reasons for this is that the client identifier is independent from the
@@ -4305,8 +4305,8 @@ hardware used by the client to communicate with the server. For example,
 if the client obtained the lease using one network card and then the
 network card is moved to another host, the server will wrongly identify
 this host as the one which obtained the lease. Moreover, `RFC
-4361 <https://tools.ietf.org/html/rfc4361>`__ gives the recommendation
-to use a DUID (see `RFC 8415 <https://tools.ietf.org/html/rfc8415>`__,
+4361 <https://datatracker.ietf.org/doc/html/rfc4361>`__ gives the recommendation
+to use a DUID (see `RFC 8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__,
 the DHCPv6 specification) carried as a client identifier when dual-stack
 networks are in use to provide consistent identification information for
 the client, regardless of the type of protocol it is using. Kea adheres to
@@ -4420,7 +4420,7 @@ Authoritative DHCPv4 Server Behavior
 ------------------------------------
 
 The original DHCPv4 specification (`RFC
-2131 <https://tools.ietf.org/html/rfc2131>`__) states that if a client
+2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__) states that if a client
 requests an address in the INIT-REBOOT state of which the server has no
 knowledge, the server must remain silent, except if the server knows
 that the client has requested an IP address from the wrong network. By
@@ -4446,7 +4446,7 @@ DHCPv4-over-DHCPv6: DHCPv4 Side
 -------------------------------
 
 The support of DHCPv4-over-DHCPv6 transport is described in `RFC
-7341 <https://tools.ietf.org/html/rfc7341>`__ and is implemented using
+7341 <https://datatracker.ietf.org/doc/html/rfc7341>`__ and is implemented using
 cooperating DHCPv4 and DHCPv6 servers. This section is about the
 configuration of the DHCPv4 side (the DHCPv6 side is described in
 :ref:`dhcp6-dhcp4o6-config`).
@@ -4599,7 +4599,7 @@ Storing Extended Lease Information
 ----------------------------------
 
 To support such features as DHCP Leasequery
-(`RFC 4388 <https://tools.ietf.org/html/rfc4388>`__) and
+(`RFC 4388 <https://datatracker.ietf.org/doc/html/rfc4388>`__) and
 stash agent options (:ref:`stash-agent-options`),
 additional information must be stored with each lease. Because the amount
 of information for each lease has ramifications in terms of
@@ -4771,7 +4771,7 @@ We saw the best results in our benchmarks with the following settings:
 IPv6-Only Preferred Networks
 ----------------------------
 
-`RFC 8925 <https://tools.ietf.org/html/rfc8925>`_, recently published by the IETF,
+`RFC 8925 <https://datatracker.ietf.org/doc/html/rfc8925>`_, recently published by the IETF,
 specifies a DHCPv4 option to indicate that a host supports an IPv6-only mode and is willing to
 forgo obtaining an IPv4 address if the network provides IPv6 connectivity. The general idea is that
 a network administrator can enable this option to signal to compatible dual-stack devices that
@@ -4945,7 +4945,7 @@ DNR (Discovery of Network-designated Resolvers) Options for DHCPv4
 ------------------------------------------------------------------
 
 The Discovery of Network-designated Resolvers, or DNR option, was
-introduced in `RFC 9463 <https://tools.ietf.org/html/rfc9463>`__ as
+introduced in `RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463>`__ as
 a way to communicate location of DNS resolvers available over means other than
 the classic DNS over UDP over port 53. As of spring 2024, the supported technologies
 are DoT (DNS-over-TLS), DoH (DNS-over-HTTPS), and DoQ (DNS-over-QUIC), but the option was
@@ -8214,129 +8214,129 @@ Supported DHCP Standards
 The following standards are currently supported in Kea:
 
 -  *BOOTP Vendor Information Extensions*, `RFC 1497
-   <https://tools.ietf.org/html/rfc1497>`__: This requires the open source
+   <https://datatracker.ietf.org/doc/html/rfc1497>`__: This requires the open source
    BOOTP hook to be loaded. See :ref:`hooks-bootp` for details.
 
 -  *Dynamic Host Configuration Protocol*, `RFC 1531
-   <https://tools.ietf.org/html/rfc1531>`__: This RFC is obsolete and
+   <https://datatracker.ietf.org/doc/html/rfc1531>`__: This RFC is obsolete and
    was replaced by RFC 1541, which in turn was replaced by RFC 2131.
    Kea supports all three RFCs.
 
 -  *Clarifications and Extensions for the Bootstrap Protocol*, `RFC 1532
-   <https://tools.ietf.org/html/rfc1532>`__: This RFC has an editorial
+   <https://datatracker.ietf.org/doc/html/rfc1532>`__: This RFC has an editorial
    error and was quickly superseeded by RFC 1542. Kea supports them both.
 
 -  *DHCP Options and BOOTP Vendor Extensions*, `RFC 1533
-   <https://tools.ietf.org/html/rfc1533>`__: This RFC is obsolete and
+   <https://datatracker.ietf.org/doc/html/rfc1533>`__: This RFC is obsolete and
    was replaced by RFC 2132. Nevertheless, Kea supports the options
    defined in it.
 
 -  *Dynamic Host Configuration Protocol*, `RFC 1541
-   <https://tools.ietf.org/html/rfc1541>`__: This RFC is obsolete and
+   <https://datatracker.ietf.org/doc/html/rfc1541>`__: This RFC is obsolete and
    was replaced by RFC 2131. Kea supports both.
 
 -  *Clarifications and Extensions for the Bootstrap Protocol*, `RFC 1542
-   <https://tools.ietf.org/html/rfc1542>`__: This RFC is supported.
+   <https://datatracker.ietf.org/doc/html/rfc1542>`__: This RFC is supported.
 
 -  *Dynamic Host Configuration Protocol*, `RFC 2131
-   <https://tools.ietf.org/html/rfc2131>`__: Supported messages are
+   <https://datatracker.ietf.org/doc/html/rfc2131>`__: Supported messages are
    DHCPDISCOVER (1), DHCPOFFER (2), DHCPREQUEST (3), DHCPRELEASE (7),
    DHCPINFORM (8), DHCPACK (5), and DHCPNAK(6).
 
 -  *DHCP Options and BOOTP Vendor Extensions*, `RFC 2132
-   <https://tools.ietf.org/html/rfc2132>`__: Supported options are PAD (0),
+   <https://datatracker.ietf.org/doc/html/rfc2132>`__: Supported options are PAD (0),
    END(255), Message Type(53), DHCP Server Identifier (54), Domain Name (15),
    DNS Servers (6), IP Address Lease Time (51), Subnet Mask (1), and Routers (3).
 
 -  *DHCP Options for Novell Directory Services*, `RFC 2241
-   <https://tools.ietf.org/html/rfc2241>`__: All three options are supported.
+   <https://datatracker.ietf.org/doc/html/rfc2241>`__: All three options are supported.
 
 -  *Management of IP numbers by peg-dhcp*,
-   `RFC 2322 <https://tools.ietf.org/html/rfc2322>`__: This RFC is supported,
+   `RFC 2322 <https://datatracker.ietf.org/doc/html/rfc2322>`__: This RFC is supported,
    although additional hardware is required for full deployment.
 
 -  *DHCP Option for The Open Group's User Authentication Protocol*,
-   `RFC 2485 <https://tools.ietf.org/html/rfc2485>`__: The option is supported.
+   `RFC 2485 <https://datatracker.ietf.org/doc/html/rfc2485>`__: The option is supported.
 
 -  *DHCP Option to Disable Stateless Auto-Configuration in IPv4 Clients*,
-   `RFC 2563 <https://tools.ietf.org/html/rfc2563>`__: The option is supported.
+   `RFC 2563 <https://datatracker.ietf.org/doc/html/rfc2563>`__: The option is supported.
 
 -  *DHCP Options for Service Location Protocol*, `RFC 2610
-   <https://tools.ietf.org/html/rfc2610>`__: Both options are supported.
+   <https://datatracker.ietf.org/doc/html/rfc2610>`__: Both options are supported.
 
 -  *The Name Service Search Option for DHCP*, `RFC 2937
-   <https://tools.ietf.org/html/rfc2937>`__: The option is supported.
+   <https://datatracker.ietf.org/doc/html/rfc2937>`__: The option is supported.
 
--  *The User Class Option for DHCP*, `RFC 3004 <https://tools.ietf.org/html/rfc3004>`__:
+-  *The User Class Option for DHCP*, `RFC 3004 <https://datatracker.ietf.org/doc/html/rfc3004>`__:
    The user class is supported and can be used in any expression. The option's
    structure is not parsed and has to be referenced using hex.
 
 -  *The IPv4 Subnet Selection Option for DHCP*, `RFC 3011
-   <https://tools.ietf.org/html/rfc3011>`__: The subnet-selection option is
+   <https://datatracker.ietf.org/doc/html/rfc3011>`__: The subnet-selection option is
    supported; if received in a packet, it is used in the subnet-selection
    process.
 
 -  *DHCP Relay Agent Information Option*, `RFC 3046
-   <https://tools.ietf.org/html/rfc3046>`__: Relay Agent Information,
+   <https://datatracker.ietf.org/doc/html/rfc3046>`__: Relay Agent Information,
    Circuit ID, and Remote ID options are supported.
 
 -  *The DOCSIS (Data-Over-Cable Service Interface Specifications) Device Class
    DHCP (Dynamic Host Configuration Protocol) Relay Agent Information Sub-option*,
-   `RFC 3256 <https://tools.ietf.org/html/rfc3256>`__: The DOCSIS sub-option
+   `RFC 3256 <https://datatracker.ietf.org/doc/html/rfc3256>`__: The DOCSIS sub-option
    is supported and can be used in any expression.
 
 -  *Encoding Long Options in the Dynamic Host Configuration Protocol (DHCPv4)*,
-   `RFC 3396 <https://tools.ietf.org/html/rfc3396>`__: The Kea server can both
+   `RFC 3396 <https://datatracker.ietf.org/doc/html/rfc3396>`__: The Kea server can both
    receive and send long options. The long options can be configured and Kea
    will send them as separate instances if the payload length is longer than
    255 octets.
 
 -  *Dynamic Host Configuration Protocol (DHCP) Domain Search Option*, `RFC 3397
-   <https://tools.ietf.org/html/rfc3397>`__: The option is supported.
+   <https://datatracker.ietf.org/doc/html/rfc3397>`__: The option is supported.
 
 -  *The Classless Static Route Option for Dynamic Host Configuration Protocol
-   (DHCP) version 4*, `RFC 3442 <https://tools.ietf.org/html/rfc3442>`__:
+   (DHCP) version 4*, `RFC 3442 <https://datatracker.ietf.org/doc/html/rfc3442>`__:
    The option is supported.
 
 -  *Dynamic Host Configuration Protocol (DHCP) Option for CableLabs Client
-   Configuration*, `RFC 3495 <https://tools.ietf.org/html/rfc3495>`__:
+   Configuration*, `RFC 3495 <https://datatracker.ietf.org/doc/html/rfc3495>`__:
    The option and its suboptions 1, 2, 4, 5, 6, 7 and 8 are supported.
    See :ref:`cablelabs-client-conf-suboptions` for details.
 
 -  *Link Selection sub-option for the Relay Agent Option*, `RFC 3527
-   <https://tools.ietf.org/html/rfc3527>`__: The link selection sub-option
+   <https://datatracker.ietf.org/doc/html/rfc3527>`__: The link selection sub-option
    is supported.
 
 -  *PacketCable Security Ticket Control Sub-Option for the DHCP CableLabs
    Client Configuration (CCC) Option*, `RFC 3594
-   <https://tools.ietf.org/html/rfc3594>`__: The Security Ticket Control
+   <https://datatracker.ietf.org/doc/html/rfc3594>`__: The Security Ticket Control
    sub-option is supported.
 
 -  *Key Distribution Center (KDC) Server Address Sub-option for the
    Dynamic Host Configuration Protocol (DHCP) CableLabs Client
    Configuration (CCC) Option*, `RFC 3634
-   <https://tools.ietf.org/html/rfc3634>`__: The Key Distribution Center
+   <https://datatracker.ietf.org/doc/html/rfc3634>`__: The Key Distribution Center
    IP Address sub-option is supported.
 
 -  *Unused Dynamic Host Configuration Protocol (DHCP) Option Codes*, `RFC 3679
-   <https://tools.ietf.org/html/rfc3679>`__: Kea does not support any of the
+   <https://datatracker.ietf.org/doc/html/rfc3679>`__: Kea does not support any of the
    old options that were obsoleted by this RFC.
 
 -  *Vendor-Identifying Vendor Options for Dynamic Host Configuration
    Protocol version 4*, `RFC 3925
-   <https://tools.ietf.org/html/rfc3925>`__: The Vendor-Identifying Vendor Class
+   <https://datatracker.ietf.org/doc/html/rfc3925>`__: The Vendor-Identifying Vendor Class
    and Vendor-Identifying Vendor-Specific Information options are supported.
 
 -  *Reclassifying Dynamic Host Configuration Protocol version 4 (DHCPv4) Options*,
-   `RFC 3942 <https://tools.ietf.org/html/rfc3942>`__: Kea supports options with
+   `RFC 3942 <https://datatracker.ietf.org/doc/html/rfc3942>`__: Kea supports options with
    codes greater than 127.
 
 -  *Subscriber-ID Suboption for the DHCP Relay Agent Option*, `RFC 3993
-   <https://tools.ietf.org/html/rfc3993>`__: The Subscriber-ID option is
+   <https://datatracker.ietf.org/doc/html/rfc3993>`__: The Subscriber-ID option is
    supported.
 
 -  *Dynamic Host Configuration Protocol (DHCP) Options for Broadcast and Multicast
-   Control Servers*, `RFC 4280 <https://tools.ietf.org/html/rfc4280>`__:
+   Control Servers*, `RFC 4280 <https://datatracker.ietf.org/doc/html/rfc4280>`__:
    The DHCPv4 options are supported.
 
 -  *Node-specific Client Identifiers for Dynamic Host Configuration Protocol
@@ -8353,80 +8353,80 @@ The following standards are currently supported in Kea:
    are supported.
 
 -  *A DNS Resource Record (RR) for Encoding Dynamic Host Configuration Protocol
-   (DHCP) Information (DHCID RR)*, `RFC 4701 <https://tools.ietf.org/html/rfc4701>`__:
+   (DHCP) Information (DHCID RR)*, `RFC 4701 <https://datatracker.ietf.org/doc/html/rfc4701>`__:
    The DHCPv4 server supports DHCID records. The DHCP-DDNS server must be running
    to add, update, and/or delete DHCID records.
 
 -  *The Dynamic Host Configuration Protocol (DHCP) Client Fully
    Qualified Domain Name (FQDN) Option*, `RFC 4702
-   <https://tools.ietf.org/html/rfc4702>`__: The Kea server is able to handle
+   <https://datatracker.ietf.org/doc/html/rfc4702>`__: The Kea server is able to handle
    the Client FQDN option. Also, it is able to use the :iscman:`kea-dhcp-ddns`
    component to initiate appropriate DNS Update operations.
 
 -  *Resolution of Fully Qualified Domain Name (FQDN) Conflicts among Dynamic
    Host Configuration Protocol (DHCP) Clients*, `RFC 4703
-   <https://tools.ietf.org/html/rfc4703>`__: The DHCPv6 server uses a DHCP-DDNS
+   <https://datatracker.ietf.org/doc/html/rfc4703>`__: The DHCPv6 server uses a DHCP-DDNS
    server to resolve conflicts.
 
--  *Timezone Options for DHCP*: `RFC 4833 <https://tools.ietf.org/html/rfc4833>`__:
+-  *Timezone Options for DHCP*: `RFC 4833 <https://datatracker.ietf.org/doc/html/rfc4833>`__:
    Both DHCPv4 options are supported.
 
 -  *The Dynamic Host Configuration Protocol Version 4 (DHCPv4) Relay Agent Flags
-   Suboption*: `RFC 5010 <https://tools.ietf.org/html/rfc5010>`__: The Relay Agent
+   Suboption*: `RFC 5010 <https://datatracker.ietf.org/doc/html/rfc5010>`__: The Relay Agent
    Flags sub-option is understood by Kea and can be used in an expression.
 
 -  *Server Identifier Override sub-option for the Relay Agent Option*, `RFC 5107
-   <https://tools.ietf.org/html/rfc5107>`__: The server identifier override
+   <https://datatracker.ietf.org/doc/html/rfc5107>`__: The server identifier override
    sub-option is supported. The implementation is not complete according to the
    RFC, because the server does not store the RAI, but the functionality handles
    expected use cases.
 
 -  *DHCP Options for Protocol for Carrying Authentication for Network Access
-   (PANA) Authentication Agents*: `RFC 5192 <https://tools.ietf.org/html/rfc5192>`__:
+   (PANA) Authentication Agents*: `RFC 5192 <https://datatracker.ietf.org/doc/html/rfc5192>`__:
    The PANA option is supported.
 
 -  *Discovering Location-to-Service Translation (LoST) Servers Using the
    Dynamic Host Configuration Protocol (DHCP)*: `RFC 5223
-   <https://tools.ietf.org/html/rfc5223>`__: The LOST option is supported.
+   <https://datatracker.ietf.org/doc/html/rfc5223>`__: The LOST option is supported.
 
 -  *Control And Provisioning of Wireless Access Points (CAPWAP) Access Controller
-   DHCP Option*: `RFC 5417 <https://tools.ietf.org/html/rfc5417>`__: The CAPWAP
+   DHCP Option*: `RFC 5417 <https://datatracker.ietf.org/doc/html/rfc5417>`__: The CAPWAP
    for IPv4 option is supported.
 
 -  *DHCPv4 Lease Query by Relay Agent Remote ID*, `RFC 6148
-   <https://tools.ietf.org/html/rfc6148>`__: The leasequery by remote-id is
+   <https://datatracker.ietf.org/doc/html/rfc6148>`__: The leasequery by remote-id is
    supported. This requires leasequery hook. See :ref:`hooks-lease-query` for details.
 
 -  *Client Identifier Option in DHCP Server Replies*, `RFC 6842
-   <https://tools.ietf.org/html/rfc6842>`__: The server by default sends back
+   <https://datatracker.ietf.org/doc/html/rfc6842>`__: The server by default sends back
    the ``client-id`` option. That capability can be disabled. See
    :ref:`dhcp4-echo-client-id` for details.
 
 -  *The DHCPv4 Relay Agent Identifier Sub-Option*, `RFC 6925
-   <https://tools.ietf.org/html/rfc6925>`__: The relay-id option is supported and
+   <https://datatracker.ietf.org/doc/html/rfc6925>`__: The relay-id option is supported and
    can be used in all features that are using expressions (client classification,
    flex-id reservations, etc.).
 
--  *DHCPv4 Bulk Leasequery*, `RFC 6926 <https://tools.ietf.org/html/rfc6926>`__: The
+-  *DHCPv4 Bulk Leasequery*, `RFC 6926 <https://datatracker.ietf.org/doc/html/rfc6926>`__: The
    server functionality (TCP connections, new query types, multiple responses, etc.)
    is supported. This requires leasequery hook. See :ref:`hooks-lease-query` for details.
 
 -  *Generalized UDP Source Port for the DHCP Relay Agent Option*, `RFC 8357
-   <https://tools.ietf.org/html/rfc8357>`__: The Kea server handles the Relay
+   <https://datatracker.ietf.org/doc/html/rfc8357>`__: The Kea server handles the Relay
    Agent Information Source Port sub-option in a received message, remembers the
    UDP port, and sends back a reply to the same relay agent using this UDP port.
 
 -  *Captive-Portal Identification in DHCP and Router Advertisements (RAs)*, `RFC
-   8910 <https://tools.ietf.org/html/rfc8910>`__: The Kea server can configure
+   8910 <https://datatracker.ietf.org/doc/html/rfc8910>`__: The Kea server can configure
    both v4 and v6 versions of the captive portal options.
 
 -  *IPv6-Only Preferred Option for DHCPv4*, `RFC 8925
-   <https://tools.ietf.org/html/rfc8925>`__: The Kea server is able to designate
+   <https://datatracker.ietf.org/doc/html/rfc8925>`__: The Kea server is able to designate
    its pools and subnets as IPv6-Only Preferred and send back the
    ``v6-only-preferred`` option to clients that requested it.
 
 -  *DHCP and Router Advertisement Options for the Discovery of Network-designated
-   Resolvers (DNR)*, `RFC 9463 <https://tools.ietf.org/html/rfc9463>`__. The Kea server
+   Resolvers (DNR)*, `RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463>`__. The Kea server
    supports the DNR option.
 
 Known RFC Violations
@@ -8435,12 +8435,12 @@ Known RFC Violations
 In principle, Kea aspires to be a reference implementation and aims to implement 100% of the RFC standards.
 However, in some cases there are practical aspects that prevent Kea from completely adhering to the text of all RFC documents.
 
-- `RFC 2131 <https://tools.ietf.org/html/rfc2131>`__, page 30, says that if the incoming DHCPREQUEST packet has no
+- `RFC 2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__, page 30, says that if the incoming DHCPREQUEST packet has no
   "requested IP address" option and ``ciaddr`` is not set, the server is supposed to respond with NAK. However,
   broken clients exist that will always send a DHCPREQUEST without those options indicated. In that event, Kea accepts the DHCPREQUEST,
   assigns an address, and responds with an ACK.
 
-- `RFC 2131 <https://tools.ietf.org/html/rfc2131>`__, table 5, says that messages
+- `RFC 2131 <https://datatracker.ietf.org/doc/html/rfc2131>`__, table 5, says that messages
   of type DHCPDECLINE or DHCPRELEASE must have the server identifier set and
   should be dropped if that option is missing. However, ISC DHCP does not enforce this, presumably as a compatibility
   effort for broken clients, and the Kea team decided to follow suit.

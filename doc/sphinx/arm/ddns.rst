@@ -11,7 +11,7 @@ Overview
 
 The DHCP-DDNS Server (:iscman:`kea-dhcp-ddns`, known informally as D2) conducts
 the client side of the Dynamic DNS protocol (DDNS, defined in `RFC
-2136 <https://tools.ietf.org/html/rfc2136>`__) on behalf of the DHCPv4
+2136 <https://datatracker.ietf.org/doc/html/rfc2136>`__) on behalf of the DHCPv4
 and DHCPv6 servers (:iscman:`kea-dhcp4` and :iscman:`kea-dhcp6`, respectively).
 The DHCP servers construct DDNS update requests, known as NameChangeRequests
 (NCRs), based on DHCP lease change events and then post them to D2. D2
@@ -67,7 +67,7 @@ Conflict Resolution
 -------------------
 
 D2 implements the conflict resolution strategy prescribed by `RFC
-4703 <https://tools.ietf.org/html/rfc4703>`__. Conflict resolution is
+4703 <https://datatracker.ietf.org/doc/html/rfc4703>`__. Conflict resolution is
 intended to prevent different clients from mapping to the same FQDN at
 the same time. To make this possible, the RFC requires that forward DNS
 entries for a given FQDN must be accompanied by a DHCID resource record
@@ -98,12 +98,12 @@ Dual-Stack Environments
 -----------------------
 
 `RFC 4703, section
-5.2, <https://tools.ietf.org/html/rfc4703#section-5.2>`__ describes
+5.2, <https://datatracker.ietf.org/doc/html/rfc4703#section-5.2>`__ describes
 issues that may arise with dual-stack clients. These are clients that
 wish to have both IPv4 and IPv6 mappings for the same FQDN.
 To work properly, clients must embed their IPv6 DUID
 within their IPv4 client identifier option, as described in `RFC
-4361 <https://tools.ietf.org/html/rfc4361>`__. In this way, DNS updates
+4361 <https://datatracker.ietf.org/doc/html/rfc4361>`__. In this way, DNS updates
 for both IPv4 and IPv6 can be managed under the same DHCID RR. This feature
 is supported by Kea beginning with release 2.1.2.
 
@@ -496,7 +496,7 @@ TSIG Key List
 
 A DDNS protocol exchange can be conducted with or without a transaction
 signature, or TSIG (defined
-in `RFC 2845 <https://tools.ietf.org/html/rfc2845>`__). This
+in `RFC 2845 <https://datatracker.ietf.org/doc/html/rfc2845>`__). This
 configuration section allows the administrator to define the set of TSIG
 keys that may be used in such exchanges.
 
@@ -1150,19 +1150,19 @@ Supported Standards
 The following RFCs are supported by the DHCP-DDNS server:
 
 - *Secret Key Transaction Authentication for DNS (TSIG)*, `RFC 2845
-  <https://tools.ietf.org/html/rfc2845>`__: All DNS update packets sent and
+  <https://datatracker.ietf.org/doc/html/rfc2845>`__: All DNS update packets sent and
   received by the DHCP-DDNS server can be protected by TSIG signatures.
 
 - *Dynamic Updates in the Domain Name System (DNS UPDATE)*, `RFC 2136
-  <https://tools.ietf.org/html/rfc2136>`__: The complete DNS update mechanism is
+  <https://datatracker.ietf.org/doc/html/rfc2136>`__: The complete DNS update mechanism is
   supported.
 
 - *Resolution of Fully Qualified Domain Name (FQDN) Conflicts among Dynamic Host
   Configuration Protocol (DHCP) Clients*, `RFC 4703
-  <https://tools.ietf.org/html/rfc4703>`__: DHCP-DDNS takes care of
+  <https://datatracker.ietf.org/doc/html/rfc4703>`__: DHCP-DDNS takes care of
   conflict resolution, for both DHCPv4 and DHCPv6 servers.
 
 - *A DNS Resource Record (RR) for Encoding Dynamic Host Configuration Protocol
   (DHCP) Information (DHCID RR)*, `RFC 4701
-  <https://tools.ietf.org/html/rfc4701>`__: The DHCP-DDNS server uses DHCID
+  <https://datatracker.ietf.org/doc/html/rfc4701>`__: The DHCP-DDNS server uses DHCID
   records.

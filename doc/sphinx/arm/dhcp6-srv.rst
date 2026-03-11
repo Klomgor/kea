@@ -1272,7 +1272,7 @@ Subnet and Prefix Delegation Pools
 ----------------------------------
 
 Subnets may also be configured to delegate prefixes, as defined in `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__, section 6.3. A subnet may
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__, section 6.3. A subnet may
 have one or more prefix delegation pools. Each pool has a prefixed
 address, which is specified as a prefix (``prefix``) and a prefix length
 (``prefix-len``), as well as a delegated prefix length
@@ -1311,7 +1311,7 @@ Prefix Exclude Option
 
 For each delegated prefix, the delegating router may choose to exclude a
 single prefix out of the delegated prefix as specified in `RFC
-6603 <https://tools.ietf.org/html/rfc6603>`__. The requesting router must
+6603 <https://datatracker.ietf.org/doc/html/rfc6603>`__. The requesting router must
 not assign the excluded prefix to any of its downstream interfaces.
 The excluded prefix is intended to be used on a link through which the delegating router
 exchanges DHCPv6 messages with the requesting router. The configuration
@@ -1974,7 +1974,7 @@ Common Softwire46 Options
 
 Softwire46 options are involved in IPv4-over-IPv6 provisioning by means
 of tunneling or translation, as specified in `RFC
-7598 <https://tools.ietf.org/html/rfc7598>`__. The following sections
+7598 <https://datatracker.ietf.org/doc/html/rfc7598>`__. The following sections
 provide configuration examples of these options.
 
 .. _s46-containers:
@@ -2131,7 +2131,7 @@ DNR (Discovery of Network-designated Resolvers) Options for DHCPv6
 ------------------------------------------------------------------
 
 The Discovery of Network-designated Resolvers, or DNR option, was
-introduced in `RFC 9463 <https://tools.ietf.org/html/rfc9463>`__ as
+introduced in `RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463>`__ as
 a way to communicate location of DNS resolvers available over means other than
 the classic DNS over UDP over port 53. As of spring 2024, the supported technologies
 are DoT (DNS-over-TLS), DoH (DNS-over-HTTPS), and DoQ (DNS-over-QUIC), but the option was
@@ -2230,12 +2230,12 @@ The above option will be encoded on-wire as follows:
    protocol, to separate them. The "pipe" (``0x7C``) character can be used in the ``dohpath`` service parameter,
    as it is allowed in a URI.
 
-`RFC 9463 <https://www.rfc-editor.org/rfc/rfc9463#name-option-format>`__, Section 4.1
+`RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463#name-option-format>`__, Section 4.1
 encourages the use of the ``ALPN`` (Application-Layer Protocol Negotiation) SvcParam, as it is required in most cases.
 It defines the protocol for reaching the encrypted resolver. The most common values are
 ``dot``, ``doq``, and ``h2`` (meaning HTTP/2.0 over TLS, used in DoH).
 
-Per `RFC 9461 <https://www.rfc-editor.org/rfc/rfc9461.html#name-new-svcparamkey-dohpath>`__ Section 5: if the
+Per `RFC 9461 <https://datatracker.ietf.org/doc/html/rfc9461#name-new-svcparamkey-dohpath>`__ Section 5: if the
 ``alpn`` SvcParam indicates support for HTTP, ``dohpath`` MUST be present. The URI Template MUST contain
 a "dns" variable. For example, when advertising a DoH resolver available at
 ``https://doh1.example.org/query{?dns}``, the ``dohpath`` should be set to relative URI ``/query{?dns}``.
@@ -2243,18 +2243,18 @@ a "dns" variable. For example, when advertising a DoH resolver available at
 Users interested in configuring this option are encouraged to read the following materials:
 
 - A very nice set of examples is available in Section 7 of `RFC 9461
-  <https://www.rfc-editor.org/rfc/rfc9461#name-examples>`__.
+  <https://datatracker.ietf.org/doc/html/rfc9461#name-examples>`__.
 - A list of all currently defined service parameters is maintained in the `IANA registry
   <https://www.iana.org/assignments/dns-svcb/dns-svcb.xhtml>`__. This specifies records that can be
   stored in the svcParams field of the DNR option.
 - A list of currently allowed protocols in the ALPN parameter is maintained in `another IANA registry
   <https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids>`__.
 
-- `RFC 9463 <https://www.rfc-editor.org/rfc/rfc9463>`__ provides option definitions. In terms of SvcParams, it states
+- `RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463>`__ provides option definitions. In terms of SvcParams, it states
   that ``alpn`` and ``port`` must be supported, and support for ``dohpath`` (used for DoH) is recommended.
-- Section 2.2 of `RFC 9460 <https://www.rfc-editor.org/rfc/rfc9460>`__ defines the on-wire format for SvcParams.
-- Sections 7.1 and 7.2 of `RFC 9460 <https://www.rfc-editor.org/rfc/rfc9460>`__ define the on-wire format for alpn and port.
-- Section 5 of `RFC 9461 <https://www.rfc-editor.org/rfc/rfc9461#name-new-svcparamkey-dohpath>`__ defines the
+- Section 2.2 of `RFC 9460 <https://datatracker.ietf.org/doc/html/rfc9460>`__ defines the on-wire format for SvcParams.
+- Sections 7.1 and 7.2 of `RFC 9460 <https://datatracker.ietf.org/doc/html/rfc9460>`__ define the on-wire format for alpn and port.
+- Section 5 of `RFC 9461 <https://datatracker.ietf.org/doc/html/rfc9461#name-new-svcparamkey-dohpath>`__ defines the
   on-wire format for ``dohpath``.
 
 Kea currently supports the following service parameters:
@@ -2284,7 +2284,7 @@ NTP Server Suboptions
 NTP server option is a container of suboptions: ntp-server-address (1), ntp-server-multicast (2)
 carrying an IPv6 address, and ntp-server-fqdn (3) carrying a FQDN in wire format defined
 in the "v6-ntp-server-suboptions" option space. Each option instance carries one and only one
-suboption as required by `RFC 5908 <https://tools.ietf.org/html/rfc5908>`__.
+suboption as required by `RFC 5908 <https://datatracker.ietf.org/doc/html/rfc5908>`__.
 
 .. _dhcp6-custom-options:
 
@@ -2903,7 +2903,7 @@ Rapid Commit
 ------------
 
 The Rapid Commit option, described in `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__, is supported by the Kea
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__, is supported by the Kea
 DHCPv6 server. However, support is disabled by default. It can be
 enabled on a per-subnet basis using the ``rapid-commit`` parameter as
 shown below:
@@ -3003,7 +3003,7 @@ with a value of "vlan123":
 Relay-Supplied Options
 ----------------------
 
-`RFC 6422 <https://tools.ietf.org/html/rfc6422>`__ defines a mechanism
+`RFC 6422 <https://datatracker.ietf.org/doc/html/rfc6422>`__ defines a mechanism
 called Relay-Supplied DHCP Options. In certain cases relay agents are
 the only entities that may have specific information, and they can
 insert options when relaying messages from the client to the server. The
@@ -3411,7 +3411,7 @@ to add DNS entries or they were somehow lost by the DNS server.
 
 The second parameter added in Kea 1.9.1 is ``ddns-use-conflict-resolution``.  This
 boolean parameter was passed through to D2 and enabled or disabled conflict resolution
-as described in `RFC 4703 <https://tools.ietf.org/html/rfc4703>`__.  Beginning with
+as described in `RFC 4703 <https://datatracker.ietf.org/doc/html/rfc4703>`__.  Beginning with
 Kea 2.5.0, it is deprecated and replaced by ``ddns-conflict-resolution-mode``, which
 offers four modes of conflict resolution-related behavior:
 
@@ -3448,7 +3448,7 @@ offers four modes of conflict resolution-related behavior:
     Setting ``ddns-conflict-resolution-mode`` to any value other than
     ``check-with-dhcid`` disables the overwrite safeguards
     that the rules of conflict resolution (from
-    `RFC 4703 <https://tools.ietf.org/html/rfc4703>`__) are intended to
+    `RFC 4703 <https://datatracker.ietf.org/doc/html/rfc4703>`__) are intended to
     prevent. This means that existing entries for an FQDN or an
     IP address made for Client-A can be deleted or replaced by entries
     for Client-B. Furthermore, there are two scenarios by which entries
@@ -3477,7 +3477,7 @@ offers four modes of conflict resolution-related behavior:
 
 The DNS entries Kea creates contain a value for TTL (time to live).
 By default, the :iscman:`kea-dhcp4` server calculates that value based on
-`RFC 4702, Section 5 <https://tools.ietf.org/html/rfc4702#section-5>`__,
+`RFC 4702, Section 5 <https://datatracker.ietf.org/doc/html/rfc4702#section-5>`__,
 which suggests that the TTL value be 1/3 of the lease's life time, with
 a minimum value of 10 minutes.  There are four optional parameters which
 may be used to influence the TTL calculation:
@@ -3571,7 +3571,7 @@ When Does the :iscman:`kea-dhcp6` Server Generate a DDNS Request?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :iscman:`kea-dhcp6` server follows the behavior prescribed for DHCP servers in
-`RFC 4704 <https://tools.ietf.org/html/rfc4704>`__. It is important to keep
+`RFC 4704 <https://datatracker.ietf.org/doc/html/rfc4704>`__. It is important to keep
 in mind that :iscman:`kea-dhcp6` makes the initial decision of when and what to
 update and forwards that information to D2 in the form of NCRs. Carrying
 out the actual DNS updates and dealing with such things as conflict
@@ -3646,7 +3646,7 @@ the N-S-O flags in the server's response to the client will be 0-1-1,
 respectively.
 
 (Note that the flag combination N=1, S=1 is prohibited according to `RFC
-4702 <https://tools.ietf.org/html/rfc4702>`__. If such a combination is
+4702 <https://datatracker.ietf.org/doc/html/rfc4702>`__. If such a combination is
 received from the client, the packet will be dropped by :iscman:`kea-dhcp6`.)
 
 To override client delegation, set the following values in the
@@ -3883,7 +3883,7 @@ DHCPv4-over-DHCPv6: DHCPv6 Side
 -------------------------------
 
 The support of DHCPv4-over-DHCPv6 transport is described in `RFC
-7341 <https://tools.ietf.org/html/rfc7341>`__ and is implemented using
+7341 <https://datatracker.ietf.org/doc/html/rfc7341>`__ and is implemented using
 cooperating DHCPv4 and DHCPv6 servers. This section is about the
 configuration of the DHCPv6 side (the DHCPv4 side is described in
 :ref:`dhcp4-dhcp4o6-config`).
@@ -4038,8 +4038,8 @@ An example configuration that sets this parameter looks as follows:
 Storing Extended Lease Information
 ----------------------------------
 To support such features as DHCPv6 Reconfigure
-(`RFC 3315 <https://tools.ietf.org/html/rfc3315>`__) and Leasequery
-(`RFC 5007 <https://tools.ietf.org/html/rfc5007>`__),
+(`RFC 3315 <https://datatracker.ietf.org/doc/html/rfc3315>`__) and Leasequery
+(`RFC 5007 <https://datatracker.ietf.org/doc/html/rfc5007>`__),
 additional information must be stored with each lease. Because the amount
 of information stored for each lease has ramifications in terms of
 performance and system resource consumption, storage of this additional
@@ -6263,7 +6263,7 @@ Server Identifier in DHCPv6
 
 The DHCPv6 protocol uses a "server identifier" (also known as a DUID) to
 allow clients to discriminate between several servers present on the
-same link. `RFC 8415 <https://tools.ietf.org/html/rfc8415>`__ currently
+same link. `RFC 8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__ currently
 defines four DUID types: DUID-LLT, DUID-EN, DUID-LL, and DUID-UUID.
 
 The Kea DHCPv6 server generates a server identifier once, upon the first
@@ -6271,7 +6271,7 @@ startup, and stores it in a file. This identifier is not modified across
 restarts of the server and so is a stable identifier.
 
 Kea follows the recommendation from `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__ to use DUID-LLT as the
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__ to use DUID-LLT as the
 default server identifier. However, ISC has received reports that some
 deployments require different DUID types, and that there is a need to
 administratively select both the DUID type and/or its contents.
@@ -6553,16 +6553,16 @@ requires a lease database to be specified even if it is not used.
 Support for RFC 7550 (now part of RFC 8415)
 ===========================================
 
-`RFC 7550 <https://tools.ietf.org/html/rfc7550>`__ introduced some
+`RFC 7550 <https://datatracker.ietf.org/doc/html/rfc7550>`__ introduced some
 changes to the previous DHCPv6 specifications, `RFC
-3315 <https://tools.ietf.org/html/rfc3315>`__ and `RFC
-3633 <https://tools.ietf.org/html/rfc3633>`__, to resolve issues
+3315 <https://datatracker.ietf.org/doc/html/rfc3315>`__ and `RFC
+3633 <https://datatracker.ietf.org/doc/html/rfc3633>`__, to resolve issues
 with the coexistence of multiple stateful options in the messages sent
 between clients and servers. Those changes were later included in
 the most recent DHCPv6 protocol specification, `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__, which obsoleted `RFC
-7550 <https://tools.ietf.org/html/rfc7550>`__. Kea supports `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__ along with these protocol
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__, which obsoleted `RFC
+7550 <https://datatracker.ietf.org/doc/html/rfc7550>`__. Kea supports `RFC
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__ along with these protocol
 changes, which are briefly described below.
 
 When a client, such as a requesting router, requests an allocation of
@@ -6589,8 +6589,8 @@ DHCPv6 server, and the server provides no configuration mechanisms to
 disable this behavior.
 
 The following are the other behaviors first introduced in `RFC
-7550 <https://tools.ietf.org/html/rfc7550>`__ (now part of `RFC
-8415 <https://tools.ietf.org/html/rfc8415>`__) and supported by the Kea
+7550 <https://datatracker.ietf.org/doc/html/rfc7550>`__ (now part of `RFC
+8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__) and supported by the Kea
 DHCPv6 server:
 
 -  Set T1/T2 timers to the same value for all stateful (IA_NA and IA_PD)
@@ -6777,7 +6777,7 @@ Supported methods are:
 -  ``duid`` - DHCPv6 uses DUID identifiers instead of MAC addresses.
    There are currently four DUID types defined, and two of them
    (DUID-LLT, which is the default, and DUID-LL) convey MAC address
-   information. Although `RFC 8415 <https://tools.ietf.org/html/rfc8415>`__
+   information. Although `RFC 8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__
    forbids it, it is possible to
    parse those DUIDs and extract necessary information from them. This
    method is not completely reliable, as clients may use other DUID
@@ -6789,28 +6789,28 @@ Supported methods are:
    those addresses are based on EUI-64, which contains a MAC address.
    This method is not completely reliable, as clients may use other
    link-local address types. In particular, privacy extensions, defined
-   in `RFC 4941 <https://tools.ietf.org/html/rfc4941>`__, do not use MAC
+   in `RFC 4941 <https://datatracker.ietf.org/doc/html/rfc4941>`__, do not use MAC
    addresses. Also note that successful extraction requires that the
    address's u-bit must be set to "1" and its g-bit set to "0", indicating
    that it is an interface identifier as per `RFC 2373, section
-   2.5.1 <https://tools.ietf.org/html/rfc2373#section-2.5.1>`__.
+   2.5.1 <https://datatracker.ietf.org/doc/html/rfc2373#section-2.5.1>`__.
 
 -  ``client-link-addr-option`` - one extension defined to alleviate
    missing MAC issues is the client link-layer address option, defined
-   in `RFC 6939 <https://tools.ietf.org/html/rfc6939>`__. This is an
+   in `RFC 6939 <https://datatracker.ietf.org/doc/html/rfc6939>`__. This is an
    option that is inserted by a relay and contains information about a
    client's MAC address. This method requires a relay agent that
    supports the option and is configured to insert it. This method is
    useless for directly connected clients. The value ``rfc6939`` is an alias for
    ``client-link-addr-option``.
 
--  ``remote-id`` - `RFC 4649 <https://tools.ietf.org/html/rfc4649>`__
+-  ``remote-id`` - `RFC 4649 <https://datatracker.ietf.org/doc/html/rfc4649>`__
    defines a ``remote-id`` option that is inserted by a relay agent.
    Depending on the relay agent configuration, the inserted option may
    convey the client's MAC address information. The value ``rfc4649``
    is an alias for ``remote-id``.
 
--  ``subscriber-id`` - Defined in `RFC 4580 <https://tools.ietf.org/html/rfc4580>`__,
+-  ``subscriber-id`` - Defined in `RFC 4580 <https://datatracker.ietf.org/doc/html/rfc4580>`__,
    ``subscriber-id`` is somewhat similar to ``remote-id``; it is also inserted
    by a relay agent. The value ``rfc4580`` is an alias for
    ``subscriber-id``. This method is currently not implemented.
@@ -6917,7 +6917,7 @@ Address Registration (RFC 9686 Support)
 =======================================
 
 Kea version 2.7.7 introduces the support of self-generated address registration
-as defined in `RFC 9686 <https://tools.ietf.org/html/rfc9686>`__ i.e.
+as defined in `RFC 9686 <https://datatracker.ietf.org/doc/html/rfc9686>`__ i.e.
 when a valid ADDR-REG-INFORM (36) message is received a registered lease is
 added or updated and a ADDR-REG-REPLY (37) is sent back to the client.
 
@@ -6925,7 +6925,7 @@ As of Kea 3.1.4, this feature can be enabled or disabled globally by
 setting the parameter, ``allow-address-registration`` to true or false
 respectively. It is enabled by default.
 
-`RFC 9686 <https://tools.ietf.org/html/rfc9686>`__ calls for servers
+`RFC 9686 <https://datatracker.ietf.org/doc/html/rfc9686>`__ calls for servers
 that support address registration to return option 148 to clients that
 request it via the ORO option. As with any other standard option, this
 option must be specified in the server configuration in order to be
@@ -8128,7 +8128,7 @@ Supported DHCPv6 Standards
 The following standards are currently supported in Kea:
 
 -  *Dynamic Host Configuration Protocol for IPv6*, `RFC
-   3315 <https://tools.ietf.org/html/rfc3315>`__: Supported messages are
+   3315 <https://datatracker.ietf.org/doc/html/rfc3315>`__: Supported messages are
    SOLICIT, ADVERTISE, REQUEST, RELEASE, RENEW, REBIND,
    INFORMATION-REQUEST, CONFIRM, DECLINE and REPLY. The only
    unsupported message is RECONFIGURE. Almost all options are supported,
@@ -8136,151 +8136,151 @@ The following standards are currently supported in Kea:
 
 -  *Dynamic Host Configuration Protocol (DHCPv6) Options for
    Session Initiation Protocol (SIP) Servers*, `RFC 3319
-   <https://tools.ietf.org/html/rfc3319>`__: All defined options are supported.
+   <https://datatracker.ietf.org/doc/html/rfc3319>`__: All defined options are supported.
 
 -  *IPv6 Prefix Options for Dynamic Host Configuration Protocol (DHCP)
-   version 6*, `RFC 3633 <https://tools.ietf.org/html/rfc3633>`__:
+   version 6*, `RFC 3633 <https://datatracker.ietf.org/doc/html/rfc3633>`__:
    Supported options are IA_PD and IA_PREFIX. Also supported is the
    status code NoPrefixAvail.
 
 -  *DNS Configuration options for Dynamic Host Configuration Protocol for IPv6
-   (DHCPv6)*, `RFC 3646 <https://tools.ietf.org/html/rfc3646>`__: All defined
+   (DHCPv6)*, `RFC 3646 <https://datatracker.ietf.org/doc/html/rfc3646>`__: All defined
    options are supported.
 
 -  *Stateless Dynamic Host Configuration Protocol (DHCP) Service for IPv6*, `RFC
-   3736 <https://tools.ietf.org/html/rfc3736>`__: Server operation in
+   3736 <https://datatracker.ietf.org/doc/html/rfc3736>`__: Server operation in
    stateless mode is supported. Kea is currently server-only, so the client side
    is not implemented.
 
 -  *Simple Network Time Protocol (SNTP) Configuration Option for DHCPv6*, `RFC
-   4075 <https://tools.ietf.org/html/rfc4075>`__: The SNTP option is supported.
+   4075 <https://datatracker.ietf.org/doc/html/rfc4075>`__: The SNTP option is supported.
 
 -  *Renumbering Requirements for Stateless Dynamic Host Configuration Protocol for
-   IPv6 (DHCPv6)*, `RFC 4076 <https://tools.ietf.org/html/rfc4076>`__: The server
+   IPv6 (DHCPv6)*, `RFC 4076 <https://datatracker.ietf.org/doc/html/rfc4076>`__: The server
    supports all the stateless renumbering requirements.
 
 -  *Information Refresh Time Option for Dynamic Host Configuration Protocol for
-   IPv6 (DHCPv6)*, `RFC 4242 <https://tools.ietf.org/html/rfc4242>`__: The
+   IPv6 (DHCPv6)*, `RFC 4242 <https://datatracker.ietf.org/doc/html/rfc4242>`__: The
    sole defined option (``information-refresh-time``) is supported.
 
 -  *Dynamic Host Configuration Protocol (DHCP) Options for Broadcast and Multicast
-   Control Servers*, `RFC 4280 <https://tools.ietf.org/html/rfc4280>`__:
+   Control Servers*, `RFC 4280 <https://datatracker.ietf.org/doc/html/rfc4280>`__:
    The DHCPv6 options are supported.
 
 -  *Dynamic Host Configuration Protocol for IPv6 (DHCPv6) Relay Agent Subscriber-ID
-   Option*, `RFC 4580 <https://tools.ietf.org/html/rfc4580>`__: The
+   Option*, `RFC 4580 <https://datatracker.ietf.org/doc/html/rfc4580>`__: The
    subscribed-id option is supported and can be used in any expression.
 
 -  *The Dynamic Host Configuration Protocol for IPv6 (DHCPv6) Relay
    Agent Remote-ID Option*, `RFC
-   4649 <https://tools.ietf.org/html/rfc4649>`__: The Remote-ID option is
+   4649 <https://datatracker.ietf.org/doc/html/rfc4649>`__: The Remote-ID option is
    supported.
 
 -  *A DNS Resource Record (RR) for Encoding Dynamic Host Configuration Protocol
-   (DHCP) Information (DHCID RR)*, `RFC 4701 <https://tools.ietf.org/html/rfc4701>`__:
+   (DHCP) Information (DHCID RR)*, `RFC 4701 <https://datatracker.ietf.org/doc/html/rfc4701>`__:
    The DHCPv6 server supports DHCID records. The DHCP-DDNS server must be running
    to add, update, and/or delete DHCID records.
 
 -  *Resolution of Fully Qualified Domain Name (FQDN) Conflicts among Dynamic Host
    Configuration Protocol (DHCP) Clients*, `RFC 4703
-   <https://tools.ietf.org/html/rfc4703>`__: The DHCPv6 server uses the DHCP-DDNS
+   <https://datatracker.ietf.org/doc/html/rfc4703>`__: The DHCPv6 server uses the DHCP-DDNS
    server to resolve conflicts.
 
 -  *The Dynamic Host Configuration Protocol for IPv6 (DHCPv6) Client
    Fully Qualified Domain Name (FQDN) Option*, `RFC
-   4704 <https://tools.ietf.org/html/rfc4704>`__: The supported option is
+   4704 <https://datatracker.ietf.org/doc/html/rfc4704>`__: The supported option is
    CLIENT_FQDN.
 
--  *Timezone Options for DHCP*: `RFC 4833 <https://tools.ietf.org/html/rfc4833>`__:
+-  *Timezone Options for DHCP*: `RFC 4833 <https://datatracker.ietf.org/doc/html/rfc4833>`__:
    Both DHCPv6 options are supported.
 
--  *DHCPv6 Leasequery*: `RFC 5007 <https://tools.ietf.org/html/rfc5007>`__: The
+-  *DHCPv6 Leasequery*: `RFC 5007 <https://datatracker.ietf.org/doc/html/rfc5007>`__: The
    server functionality (message types, options) is supported. This requires
    the leasequery hook. See :ref:`hooks-lease-query` for details.
 
 -  *DHCP Options for Protocol for Carrying Authentication for Network Access
-   (PANA) Authentication Agents*: `RFC 5192 <https://tools.ietf.org/html/rfc5192>`__:
+   (PANA) Authentication Agents*: `RFC 5192 <https://datatracker.ietf.org/doc/html/rfc5192>`__:
    The PANA option is supported.
 
 -  *Discovering Location-to-Service Translation (LoST) Servers Using the
    Dynamic Host Configuration Protocol (DHCP)*: `RFC 5223
-   <https://tools.ietf.org/html/rfc5223>`__: The LOST option is supported.
+   <https://datatracker.ietf.org/doc/html/rfc5223>`__: The LOST option is supported.
 
 -  *Control And Provisioning of Wireless Access Points (CAPWAP) Access Controller
-   DHCP Option*: `RFC 5417 <https://tools.ietf.org/html/rfc5417>`__: The CAPWAP for IPv6
+   DHCP Option*: `RFC 5417 <https://datatracker.ietf.org/doc/html/rfc5417>`__: The CAPWAP for IPv6
    option is supported.
 
--  *DHCPv6 Bulk Leasequery*: `RFC 5460 <https://tools.ietf.org/html/rfc5460>`__:
+-  *DHCPv6 Bulk Leasequery*: `RFC 5460 <https://datatracker.ietf.org/doc/html/rfc5460>`__:
    The server functionality (TCP connection, new message types and options, new
    query types) is supported. This requires the leasequery hook. See
    :ref:`hooks-lease-query` for details.
 
 -  *Network Time Protocol (NTP) Server Option for DHCPv6*:
-   `RFC 5908 <https://tools.ietf.org/html/rfc5908>`__: The NTP server option and its
+   `RFC 5908 <https://datatracker.ietf.org/doc/html/rfc5908>`__: The NTP server option and its
    suboptions are supported. See :ref:`ntp-server-suboptions` for details.
 
--  *DHCPv6 Options for Network Boot*: `RFC 5970 <https://tools.ietf.org/html/rfc5970>`__:
+-  *DHCPv6 Options for Network Boot*: `RFC 5970 <https://datatracker.ietf.org/doc/html/rfc5970>`__:
    The network boot options are supported.
 
 -  *Lightweight DHCPv6 Relay Agent*, `RFC 6221
-   <https://tools.ietf.org/html/rfc6221>`__: Kea can handle lightweight relay
+   <https://datatracker.ietf.org/doc/html/rfc6221>`__: Kea can handle lightweight relay
    messages and use other methods than link address to perform subnet selection.
 
 -  *Dynamic Host Configuration Protocol for IPv6 (DHCPv6) Option for
-   Dual-Stack Lite*, `RFC 6334 <https://tools.ietf.org/html/rfc6334>`__:
+   Dual-Stack Lite*, `RFC 6334 <https://datatracker.ietf.org/doc/html/rfc6334>`__:
    The AFTR-Name DHCPv6 Option is supported.
 
 -  *Relay-Supplied DHCP Options*, `RFC
-   6422 <https://tools.ietf.org/html/rfc6422>`__: The full functionality is
+   6422 <https://datatracker.ietf.org/doc/html/rfc6422>`__: The full functionality is
    supported, including OPTION_RSOO; the ability of the server to echo back the
    options; verification of whether an option is RSOO-enabled; and the ability to mark
    additional options as RSOO-enabled.
 
 -  *The EAP Re-authentication Protocol (ERP) Local Domain Name DHCPv6 Option*,
-   `RFC 6440 <https://tools.ietf.org/html/rfc6440>`__: The option is supported.
+   `RFC 6440 <https://datatracker.ietf.org/doc/html/rfc6440>`__: The option is supported.
 
 -  *Prefix Exclude Option for DHCPv6-based Prefix Delegation*, `RFC
-   6603 <https://tools.ietf.org/html/rfc6603>`__: The Prefix Exclude option
+   6603 <https://datatracker.ietf.org/doc/html/rfc6603>`__: The Prefix Exclude option
    is supported.
 
 -  *Client Link-Layer Address Option in DHCPv6*, `RFC
-   6939 <https://tools.ietf.org/html/rfc6939>`__: The supported option is
+   6939 <https://datatracker.ietf.org/doc/html/rfc6939>`__: The supported option is
    the client link-layer address option.
 
 -  *Modification to Default values of SOL_MAX_RT and INF_MAX_RT*, `RFC 7083
-   <https://tools.ietf.org/html/rfc7083>`__: The new options are
+   <https://datatracker.ietf.org/doc/html/rfc7083>`__: The new options are
    supported.
 
 -  *Issues and Recommendations with Multiple Stateful DHCPv6 Options*,
-   `RFC 7550 <https://tools.ietf.org/html/rfc7550>`__: All
+   `RFC 7550 <https://datatracker.ietf.org/doc/html/rfc7550>`__: All
    recommendations related to the DHCPv6 server operation are supported.
 
 -  *DHCPv6 Options for Configuration of Softwire Address and Port-Mapped
-   Clients*, `RFC 7598 <https://tools.ietf.org/html/rfc7598>`__: All
+   Clients*, `RFC 7598 <https://datatracker.ietf.org/doc/html/rfc7598>`__: All
    options indicated in this specification are supported by the DHCPv6
    server.
 
 -  *Generalized UDP Source Port for DHCP Relay*, `RFC 8357
-   <https://tools.ietf.org/html/rfc8357>`__: The Kea server is able
+   <https://datatracker.ietf.org/doc/html/rfc8357>`__: The Kea server is able
    to handle the Relay Source Port option in a received Relay-forward
    message, remembers the UDP port, and sends back Relay-reply with a
    copy of the option to the relay agent using this UDP port.
 
 -  *Dynamic Host Configuration Protocol for IPv6 (DHCPv6)*, `RFC 8415
-   <https://tools.ietf.org/html/rfc8415>`__: This new DHCPv6 protocol specification
+   <https://datatracker.ietf.org/doc/html/rfc8415>`__: This new DHCPv6 protocol specification
    obsoletes RFC 3315, RFC 3633, RFC 3736, RFC 4242, RFC 7083, RFC 7283,
    and RFC 7550. All features, with the exception of the RECONFIGURE mechanism and
    the now-deprecated temporary addresses (IA_TA) mechanism, are supported.
 
 -  *Captive-Portal Identification in DHCP and Router Advertisements (RAs)*, `RFC 8910
-   <https://tools.ietf.org/html/rfc8910>`__: The Kea server can configure both v4
+   <https://datatracker.ietf.org/doc/html/rfc8910>`__: The Kea server can configure both v4
    and v6 versions of the captive portal options.
 
 -  *DHCP and Router Advertisement Options for the Discovery of Network-designated
-   Resolvers (DNR)*, `RFC 9463 <https://tools.ietf.org/html/rfc9463>`__. The Kea server
+   Resolvers (DNR)*, `RFC 9463 <https://datatracker.ietf.org/doc/html/rfc9463>`__. The Kea server
    supports the DNR option.
 
--  *Registering Self-Generated IPv6 Addresses Using DHCPv6*, `RFC 9686 <https://tools.ietf.org/html/rfc9686>`__. The Kea server supports self-generated address registration. See :ref:`dhcp6-address-registration` for details.
+-  *Registering Self-Generated IPv6 Addresses Using DHCPv6*, `RFC 9686 <https://datatracker.ietf.org/doc/html/rfc9686>`__. The Kea server supports self-generated address registration. See :ref:`dhcp6-address-registration` for details.
 
 
 .. _dhcp6-limit:
@@ -8294,12 +8294,12 @@ treated as “not yet implemented,” rather than actual limitations.
 
 -  The server allocates, renews, or rebinds a maximum of one lease for
    a particular IA option (IA_NA or IA_PD) sent by a client. `RFC
-   8415 <https://tools.ietf.org/html/rfc8415>`__ allows for multiple
+   8415 <https://datatracker.ietf.org/doc/html/rfc8415>`__ allows for multiple
    addresses or prefixes to be allocated for a single IA.
 
 -  Temporary addresses are not supported. There is no intention to ever
    implement this feature, as it is deprecated in `RFC 8415
-   <https://tools.ietf.org/html/rfc8415>`__.
+   <https://datatracker.ietf.org/doc/html/rfc8415>`__.
 
 -  Client reconfiguration (RECONFIGURE) is not yet supported.
 

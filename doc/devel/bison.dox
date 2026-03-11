@@ -9,7 +9,7 @@
 
 @section parserIntro Parser background
 
-Kea's data format of choice is JSON (defined in https://tools.ietf.org/html/rfc7159), which is used
+Kea's data format of choice is JSON (defined in https://datatracker.ietf.org/doc/html/rfc7159), which is used
 in configuration files, in the command channel and also when communicating between the DHCP servers
 and the DHCP-DDNS component. It is almost certain to be used as the data format for any new
 features.

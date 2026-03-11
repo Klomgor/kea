@@ -10,7 +10,7 @@ Overview
 
 The Network Configuration Protocol, or NETCONF, is a network management protocol defined
 in `RFC 6241 <https://datatracker.ietf.org/doc/html/rfc6241>`__. It uses the YANG modeling language,
-defined in `RFC 6020 <https://tools.ietf.org/html/rfc6020>`__, to provide a uniform way
+defined in `RFC 6020 <https://datatracker.ietf.org/doc/html/rfc6020>`__, to provide a uniform way
 of handling the configuration syntax of various networking devices. Kea provides optional
 support for a YANG/NETCONF interface with the :iscman:`kea-netconf` agent.
 

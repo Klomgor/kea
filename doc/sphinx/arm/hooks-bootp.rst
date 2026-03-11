@@ -5,7 +5,7 @@
 ===============================================
 
 This hook library adds support for BOOTP with vendor-information extensions
-(`RFC 1497 <https://tools.ietf.org/html/rfc1497>`__). Received BOOTP
+(`RFC 1497 <https://datatracker.ietf.org/doc/html/rfc1497>`__). Received BOOTP
 requests are recognized, translated into DHCPREQUEST packets by adding
 a ``dhcp-message-type`` option, and put into the "BOOTP" client class.
 Members of this class get infinite lifetime leases but the class can
@@ -87,5 +87,5 @@ BOOTP Hooks Limitations
 Currently the BOOTP library has the following limitation:
 
 - Basic BOOTP, as defined in `RFC 951
-  <https://tools.ietf.org/html/rfc951>`__, is not supported. Kea only
+  <https://datatracker.ietf.org/doc/html/rfc951>`__, is not supported. Kea only
   supports BOOTP with vendor-information extensions.
