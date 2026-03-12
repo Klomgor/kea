@@ -338,7 +338,7 @@ BEGIN
         RETURN free_address;
     END IF;
 
-    IF (last_address < alloc_start_address)
+    IF (last_address < alloc_start_address OR last_address >= alloc_end_address)
     THEN
         -- Set last pick to start address less one.
         SET last_address = alloc_start_address - 1;
@@ -469,7 +469,7 @@ BEGIN
     SET bin_start_address = INET6_ATON(alloc_start_address);
     SET bin_end_address = INET6_ATON(alloc_end_address);
 
-    IF (bin_last_address < bin_start_address)
+    IF (bin_last_address < bin_start_address OR bin_last_address >= alloc_end_address)
     THEN
         -- Set last pick to start address less one.
         SET bin_last_address = bin_start_address;
@@ -477,10 +477,11 @@ BEGIN
 
     -- Find first address greater than the last pick.
     SELECT f.address INTO free_address FROM free_lease6 f
-        LEFT JOIN lease6 on f.address = lease6.address
+        LEFT JOIN lease6 on f.bin_address = lease6.address
         WHERE (f.bin_address > bin_last_address
                AND f.bin_address <= bin_end_address)
         AND (lease6.address IS NULL OR lease6.state = 2)
+        ORDER BY f.bin_address
         LIMIT 1;
 
     -- Didn't find one, so try front half of the range, including
@@ -489,10 +490,11 @@ BEGIN
     IF (found_rows() = 0)
     THEN
         SELECT f.address INTO free_address FROM free_lease6 f
-            LEFT JOIN lease6 on f.address = lease6.address
+            LEFT JOIN lease6 on f.bin_address = lease6.address
             WHERE (f.bin_address >= bin_start_address
                 AND f.bin_address <= bin_last_address)
             AND (lease6.address IS NULL OR lease6.state = 2)
+            ORDER BY f.bin_address
             LIMIT 1;
     END IF;
 

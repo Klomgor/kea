@@ -4071,6 +4071,110 @@ mysql_migrate_dhcpX_options_client_classes() {
     test_finish 0
 }
 
+# Verifies basic SFLQ for V4 
+mysql_SFLQ4() {
+    test_start "mysql.mysql_SFLQ4"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # We need to create an older database with lease data so we can
+
+    sql="call createSharedFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2'), 1, false)"
+    run_statement "createSharedFlqPool4" "$sql"  
+
+    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "pickFreeLease4.1" "$sql"  "127.0.0.0"; 
+    run_statement "pickFreeLease4.2" "$sql"  "127.0.0.1"; 
+    run_statement "pickFreeLease4.3" "$sql"  "127.0.0.2"; 
+
+    sql="insert into lease4 (address, subnet_id) values (inet_aton('127.0.0.1'), 1)";
+    run_statement "insert 127.0.0.1" "$sql"  ""; 
+
+    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "pickFreeLease4.4" "$sql"  "127.0.0.0"; 
+    run_statement "pickFreeLease4.5" "$sql"  "127.0.0.2"; 
+    run_statement "pickFreeLease4.6" "$sql"  "127.0.0.0"; 
+
+    sql="update lease4 set state = 2 where address = (inet_aton('127.0.0.1'));"
+    run_statement "update 127.0.0.1" "$sql"  ""; 
+
+    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "pickFreeLease4.7" "$sql"  "127.0.0.1"; 
+    run_statement "pickFreeLease4.8" "$sql"  "127.0.0.2"; 
+    run_statement "pickFreeLease4.9" "$sql"  "127.0.0.0"; 
+
+    sql="delete from lease4"
+    run_statement "delete 127.0.0.1" "$sql"  ""; 
+
+    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "pickFreeLease4.10" "$sql"  "127.0.0.1"; 
+    run_statement "pickFreeLease4.11" "$sql"  "127.0.0.2"; 
+    run_statement "pickFreeLease4.12" "$sql"  "127.0.0.0"; 
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+# Verifies basic SFLQ for V6 
+mysql_SFLQ6() {
+    test_start "mysql.mysql_SFLQ6"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # We need to create an older database with lease data so we can
+
+    sql="call createSharedFlqPool6('3001::', '3001::02', 1, 128, 1, false)"
+    run_statement "createSharedFlqPool6" "$sql"  
+
+    sql="select pickFreeLease6('3001::', '3001::02')"
+    run_statement "pickFreeLease6.1" "$sql"  "3001::1"; 
+    run_statement "pickFreeLease6.2" "$sql"  "3001::2"; 
+    run_statement "pickFreeLease6.3" "$sql"  "3001::"; 
+
+    sql="insert into lease6 (address, lease_type, subnet_id) values (inet6_aton('3001::1'), 1, 1)";
+    run_statement "insert 3001::1" "$sql"  ""; 
+
+    sql="select pickFreeLease6('3001::', '3001::02')"
+    run_statement "pickFreeLease6.4" "$sql"  "3001::2"; 
+    run_statement "pickFreeLease6.5" "$sql"  "3001::"; 
+    run_statement "pickFreeLease6.6" "$sql"  "3001::2"; 
+
+    sql="update lease6 set state = 2 where address = (inet6_aton('3001::1'));"
+    run_statement "update 3001::1" "$sql"  ""; 
+
+    sql="select pickFreeLease6('3001::', '3001::02')"
+    run_statement "pickFreeLease6.7" "$sql"  "3001::"; 
+    run_statement "pickFreeLease6.8" "$sql"  "3001::1"; 
+    run_statement "pickFreeLease6.9" "$sql"  "3001::2"; 
+
+    sql="delete from lease6"
+    run_statement "delete 3001::1" "$sql"  ""; 
+
+    sql="select pickFreeLease6('3001::', '3001::02')"
+    run_statement "pickFreeLease6.10" "$sql"  "3001::"; 
+    run_statement "pickFreeLease6.11" "$sql"  "3001::1"; 
+    run_statement "pickFreeLease6.12" "$sql"  "3001::2"; 
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
 # Handy shortcut for running a single test.
 if [ $# -gt 0 ]; then
     echo "RUNNING ${1} only"
@@ -4114,3 +4218,5 @@ mysql_migrate_opt_record_type
 mysql_remove_control_socket_parameters_test
 mysql_migrate_client_class_test
 mysql_migrate_dhcpX_options_client_classes
+mysql_SFLQ4
+mysql_SFLQ6
