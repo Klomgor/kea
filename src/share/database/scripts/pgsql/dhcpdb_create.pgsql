@@ -6835,8 +6835,11 @@ CREATE INDEX flq_pool4_by_subnet_id ON flq_pool4 (subnet_id);
 DROP TABLE IF EXISTS free_lease4;
 CREATE TABLE IF NOT EXISTS free_lease4 (
     address INET PRIMARY KEY NOT NULL,
+    bin_address INT NOT NULL,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX free_lease4_bin_address ON free_lease4 (bin_address);
 
 DROP TABLE IF EXISTS flq_pool6;
 CREATE TABLE IF NOT EXISTS flq_pool6 (
@@ -6858,9 +6861,458 @@ DROP TABLE IF EXISTS free_lease6;
 CREATE TABLE IF NOT EXISTS free_lease6 (
     lease_type SMALLINT NOT NULL,
     address INET NOT NULL,
+    bin_address BYTEA NOT NULL,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (address, lease_type)
 );
+
+CREATE UNIQUE INDEX free_lease6_bin_address ON free_lease6 (bin_address);
+
+-- Populate flq_pool4 and free_lease4 based on an address range.
+CREATE OR REPLACE PROCEDURE createSharedFlqPool4(p_start_address INET,
+                                                 p_end_address INET,
+                                                 p_subnet_id BIGINT,
+                                                 p_recreate BOOLEAN)
+LANGUAGE plpgsql AS $$
+DECLARE
+    zero_inet INET := '0.0.0.0.'::INET;
+    next_address INET;
+    free_address INET;
+BEGIN
+    -- Create the flq_pool4 row. Concurrent attempts will hang until
+    -- this one commits and then they will fail with duplicate key
+    -- error. Callers should treat the duplicate error as success.
+    IF (p_recreate = true)
+    THEN
+        -- (Re)creating should ignore duplicate on insert
+        INSERT INTO flq_pool4 (start_address, end_address, subnet_id, last_returned_address)
+           VALUES (p_start_address, p_end_address, p_subnet_id, zero_inet)
+           ON CONFLICT DO NOTHING;
+    ELSE
+        INSERT INTO flq_pool4 (start_address, end_address, subnet_id, last_returned_address)
+           VALUES (p_start_address, p_end_address, p_subnet_id, zero_inet);
+    END IF;
+
+    -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
+    DELETE FROM free_lease4 WHERE address >= p_start_address and address <= p_end_address;
+
+    INSERT INTO free_lease4 (address, bin_address)
+        SELECT zero_inet + avail, avail FROM generate_series((p_start_address - zero_inet),
+                                          (p_end_address - zero_inet), 1) AS avail
+            LEFT JOIN lease4 on avail = lease4.address
+            WHERE lease4.address IS NULL OR lease4.state = 2
+            ON CONFLICT DO NOTHING;
+
+    -- Update the modification time in the flq_pool row.
+    UPDATE flq_pool4 SET modification_ts = now()
+        WHERE (start_address = p_start_address AND end_address = p_end_address);
+
+    COMMIT;
+END;
+$$;
+
+-- Select a free address from an address range.
+CREATE OR REPLACE FUNCTION pickFreeLease4(alloc_start_address INET,
+                                          alloc_end_address INET)
+RETURNS INET
+AS $$
+DECLARE
+    -- Declarations
+    DECLARE pool_id BIGINT;
+    DECLARE last_address INET;
+    DECLARE free_address INET;
+    DECLARE zero_inet INET;
+
+    DECLARE bin_start_address BIGINT;
+    DECLARE bin_end_address BIGINT;
+    DECLARE bin_last_address BIGINT;
+BEGIN
+    zero_inet = '0.0.0.0'::INET;
+    free_address = zero_inet;
+
+    -- Find the pool, get the id and last addressed picked.
+    SELECT id, last_returned_address INTO pool_id, last_address
+        FROM flq_pool4
+        WHERE start_address = alloc_start_address
+        AND end_address = alloc_end_address;
+
+    IF (pool_id IS NULL)
+    THEN
+        -- No matching pool, return empty address.
+        RETURN free_address;
+    END IF;
+
+    bin_last_address = last_address - zero_inet;
+    bin_start_address = alloc_start_address - zero_inet;
+    bin_end_address = alloc_end_address - zero_inet;
+
+    IF (bin_last_address < bin_start_address or bin_last_address >= bin_end_address)
+    THEN
+        -- Set last pick to start address less one.
+       bin_last_address = bin_start_address - 1;
+    END IF;
+
+    -- Find first address greater than the last pick.
+    SELECT f.address INTO free_address FROM free_lease4 f
+        LEFT JOIN lease4 ON f.bin_address = lease4.address
+        WHERE (f.bin_address > bin_last_address and f.bin_address <= bin_end_address)
+        AND (lease4.address IS NULL OR lease4.state = 2)
+        ORDER BY f.bin_address
+        LIMIT 1;
+
+    -- Didn't find one, so try front half of the range, including
+    -- the last pick. This avoids returning nothing if there is only
+    -- one address free.
+    IF (free_address IS NULL AND bin_last_address != bin_start_address)
+    THEN
+        SELECT f.address INTO free_address FROM free_lease4 f
+            LEFT JOIN lease4 ON f.bin_address = lease4.address
+            WHERE (f.bin_address >= bin_start_address AND f.bin_address <= bin_last_address)
+            AND (lease4.address IS NULL OR lease4.state = 2)
+            ORDER BY f.bin_address
+            LIMIT 1;
+    END IF;
+
+    IF (free_address IS NOT NULL)
+    THEN
+        -- Update the pool table with the pick.
+        UPDATE flq_pool4 SET last_returned_address = free_address
+            WHERE id = pool_id;
+    END IF;
+
+    RETURN free_address;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to convert a hex ascii digit value to an integer.
+CREATE OR REPLACE FUNCTION hexToBin(digit SMALLINT)
+RETURNS SMALLINT
+AS $$
+DECLARE
+BEGIN
+    IF (digit >= 48 and digit <= 57)
+    THEN
+        return (digit - 48);
+    END IF;
+
+    IF (digit >= 65 and digit <= 70)
+    THEN
+        return (digit - 55);
+    END IF;
+
+    IF (digit >= 97 and digit <= 102)
+    THEN
+        return (digit - 87);
+    END IF;
+
+    RETURN (-1);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to convert INET to BYTEA (16 byte binary).
+CREATE OR REPLACE FUNCTION inetToBytea(inet_address inet)
+RETURNS bytea
+AS $$
+DECLARE
+    octets TEXT[];
+    num_octets SMALLINT;
+    octet_idx SMALLINT;
+    octet_len SMALLINT;
+    octet TEXT;
+    dummy VARCHAR(256);
+    bin_address bytea;
+    bin_idx SMALLINT;
+    digit_idx SMALLINT;
+    digit SMALLINT;
+    digit_place SMALLINT;
+    cur_byte SMALLINT;
+    num_pad SMALLINT;
+BEGIN
+    octets = string_to_array(host(inet_address), ':');
+
+    num_octets = array_length(octets, 1);
+    octet_idx = 1;
+    dummy = '';
+    bin_idx = 0;
+    bin_address = '\x00000000000000000000000000000000'::bytea;
+    WHILE (octet_idx <= num_octets) LOOP
+        octet = octets[octet_idx];
+        octet_len = char_length(octet);
+        IF (octet_len = 0)
+        THEN
+            -- Skip over omitted octets.
+            num_pad = 8 - num_octets + 1;
+            bin_idx = bin_idx + (num_pad * 2);
+        ELSE
+            num_pad = 4 - octet_len;
+            digit_idx = 1;
+            digit_place = 1;
+            WHILE (digit_place <= 4) LOOP
+                IF (num_pad > 0)
+                THEN
+                    digit = 0;
+                    num_pad = num_pad - 1;
+                ELSE
+                    digit = hexToBin(ascii(substring(octet from digit_idx for 1))::smallint);
+                    digit_idx = digit_idx + 1;
+                END IF;
+
+                IF (digit_place = 1 or digit_place = 3)
+                THEN
+                    cur_byte = digit << 4;
+                ELSE
+                    cur_byte = cur_byte + digit;
+                    select set_byte(bin_address, bin_idx, cur_byte) into bin_address;
+                    bin_idx = bin_idx + 1;
+                    cur_byte = 0;
+                END IF;
+                digit_place = digit_place + 1;
+            END LOOP;
+            dummy = dummy || octet || '+';
+        END IF;
+        octet_idx = octet_idx + 1;
+    END LOOP;
+
+    RETURN (bin_address);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to convert BYTEA (16 byte binary) to INET.
+CREATE OR REPLACE FUNCTION byteaToInet(bin_address bytea)
+RETURNS inet
+AS $$
+DECLARE
+    DECLARE new_prefix varchar(100);
+    DECLARE hex_string varchar(45);
+    DECLARE pos SMALLINT;
+BEGIN
+    IF (octet_length(bin_address) != 16)
+    THEN
+        RETURN ('::');
+    END IF;
+
+    pos = 1;
+    new_prefix = '';
+    hex_string = encode(bin_address, 'hex');
+
+    FOR i IN 0..7 LOOP
+        IF (i > 0)
+        THEN
+            new_prefix = new_prefix || ':';
+        END IF;
+
+        new_prefix = new_prefix || substring(hex_string, pos, 4);
+        pos = pos + 4;
+    END LOOP;
+
+    RETURN (new_prefix::inet);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to increment a V6 prefix by one added at prefix_len.
+CREATE OR REPLACE FUNCTION incrementV6Prefix(prefix bytea, prefix_len SMALLINT)
+RETURNS bytea
+AS $$
+DECLARE
+    DECLARE new_prefix bytea;
+    DECLARE n_bytes SMALLINT;
+    DECLARE n_bits SMALLINT;
+    DECLARE mask SMALLINT;
+    DECLARE start_idx SMALLINT;
+    DECLARE tmp SMALLINT;
+    DECLARE i SMALLINT;
+BEGIN
+    IF (prefix_len < 1 OR prefix_len > 128)
+    THEN
+        return (prefix);
+    END IF;
+
+    new_prefix = prefix;
+
+    -- Explanation: n_bytes specifies number of full bytes that are in-prefix.
+    -- They can also be used as an offset for the first byte that is not in
+    -- prefix. n_bits specifies number of bits on the last byte that is
+    -- (often partially) in prefix. For example for a /125 prefix, the values
+    -- are 15 and 3, respectively. Mask is a bitmask that has the least
+    -- significant bit from the prefix set.
+
+    n_bytes = (prefix_len - 1) / 8;
+    n_bits = 8 - (prefix_len - (n_bytes * 8));
+    mask = 1 << n_bits;
+
+    -- Index of first byte to increment (0..15)
+    start_idx = n_bytes;
+
+    -- Get the starting byte as an int and increment it.
+    tmp = get_byte(new_prefix, start_idx) + mask;
+
+    -- If the new value is less than 256, we safely increase just the starting byte.
+    IF (tmp < 256)
+    THEN
+        new_prefix = set_byte(new_prefix, start_idx, tmp);
+        RETURN (new_prefix);
+    END IF;
+
+    -- Overflow, set the byte to the remainder.
+    tmp = tmp - 256;
+    new_prefix = set_byte(new_prefix, start_idx, tmp);
+
+    --  Now propagate the overflow.
+    i = start_idx - 1;
+    WHILE i >= 0 LOOP
+        tmp = get_byte(new_prefix, i) + 1;
+        IF (tmp != 256)
+        THEN
+            -- No more overflow, store the byte and we're done.
+            new_prefix = set_byte(new_prefix, i, tmp);
+            RETURN (new_prefix);
+        END IF;
+
+        -- Store zero in the current byte, and move to the next one.
+        new_prefix = set_byte(new_prefix, i, 0);
+        i = i - 1;
+    END LOOP;
+
+    -- All done.
+    RETURN (new_prefix);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Populate flq_pool6 and free_lease6 based on an address
+-- range and delegated len. Use 128 for NA addresses.
+CREATE OR REPLACE PROCEDURE createSharedFlqPool6(p_start_address INET,
+                                                 p_end_address INET,
+                                                 p_lease_type SMALLINT,
+                                                 p_delegated_len SMALLiNT,
+                                                 p_subnet_id BIGINT,
+                                                 p_recreate BOOLEAN)
+LANGUAGE plpgsql AS $$
+DECLARE
+    zero_inet INET := '::'::INET;
+    bin_next_address BYTEA;
+    next_address INET;
+    free_address INET;
+BEGIN
+    -- Create the flq_pool6 row. Concurrent attempts will hang until
+    -- this one commits and then they will fail with duplicate key
+    -- error. Callers should treat the duplicate error as success.
+    IF (p_recreate = true)
+    THEN
+        -- (Re)creating should ignore duplicate on insert
+        INSERT INTO flq_pool6
+            (start_address, end_address, lease_type, delegated_len, subnet_id)
+            VALUES
+            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id)
+            ON CONFLICT DO NOTHING;
+    ELSE
+        INSERT INTO flq_pool6
+            (start_address, end_address, lease_type, delegated_len, subnet_id)
+            VALUES
+            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id);
+    END IF;
+
+    -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
+    DELETE FROM free_lease6 WHERE address >= p_start_address and address <= p_end_address;
+
+    -- Insert available leases into free_lease6 table.  If insert fails on
+    -- duplicate ignore it. MySQL doesn't provide math operations on
+    -- binrary(16) so we do it one address at time, using our own function
+    -- to increment the address/prefix.
+
+    next_address = p_start_address;
+    bin_next_address = inetToBytea(next_address);
+    WHILE next_address <= p_end_address
+    LOOP
+        SELECT address INTO free_address FROM lease6
+            WHERE address = next_address AND lease6.state != 2;
+
+        IF (free_address IS NULL)
+        THEN
+            INSERT INTO free_lease6(lease_type, address, bin_address)
+                VALUES (p_lease_type, next_address, inetToBytea(next_address))
+                ON CONFLICT DO NOTHING;
+        END IF;
+
+       bin_next_address = incrementV6Prefix(bin_next_address, p_delegated_len);
+       next_address = byteaToInet(bin_next_address);
+    END LOOP;
+
+    -- Update the modification time in the flq_pool row.
+    UPDATE flq_pool6 SET modification_ts = now()
+        WHERE (start_address = p_start_address AND end_address = p_end_address);
+
+    COMMIT;
+END;
+$$;
+
+-- Find a free lease with an address range.
+CREATE OR REPLACE FUNCTION pickFreeLease6(alloc_start_address INET,
+                                          alloc_end_address INET)
+RETURNS INET
+AS $$
+DECLARE
+    -- Declarations
+    DECLARE pool_id BIGINT;
+    DECLARE last_address INET;
+    DECLARE free_address INET;
+
+    DECLARE bin_start_address BYTEA;
+    DECLARE bin_end_address BYTEA;
+    DECLARE bin_last_address BYTEA;
+BEGIN
+
+    -- Find the pool, get the id and last addressed picked.
+    SELECT id, last_returned_address INTO pool_id, last_address
+        FROM flq_pool6
+        WHERE start_address = alloc_start_address
+        AND end_address = alloc_end_address;
+
+    IF (pool_id IS NULL)
+    THEN
+        -- No matching pool, return empty address.
+        RETURN ("::");
+    END IF;
+
+    bin_start_address = inetToBytea(alloc_start_address);
+    bin_end_address = inetToBytea(alloc_end_address);
+    IF (last_address < alloc_start_address OR last_address >= alloc_end_address)
+    THEN
+        -- Set last pick to start address - 1.
+        last_address = alloc_start_address - 1;
+    END IF;
+
+    bin_last_address = inetToBytea(last_address);
+    -- Find first address greater than the last pick.
+    SELECT f.address INTO free_address FROM free_lease6 f
+        LEFT JOIN lease6 ON f.address = lease6.address
+        WHERE ((f.bin_address > bin_last_address AND f.bin_address <= bin_end_address)
+                AND (lease6.address IS NULL OR lease6.state = 2))
+        ORDER BY f.bin_address
+        LIMIT 1;
+
+    -- Didn't find one, so try front half of the range, including
+    -- the last pick. This avoids returning nothing if there is only
+    -- one address free.
+    IF (free_address IS NULL AND bin_last_address != bin_start_address)
+    THEN
+        SELECT f.address INTO free_address FROM free_lease6 f
+            LEFT JOIN lease6 on f.address = lease6.address
+            WHERE ((f.bin_address >= bin_start_address AND
+                    f.bin_address <= bin_last_address)
+            AND (lease6.address IS NULL OR lease6.state = 2))
+            LIMIT 1;
+    END IF;
+
+    IF (free_address IS NOT NULL)
+    THEN
+        -- Update the pool table with the pick.
+        UPDATE flq_pool6 SET last_returned_address = free_address
+            WHERE id = pool_id;
+    END IF;
+
+    RETURN free_address;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Update the schema version number.
 UPDATE schema_version

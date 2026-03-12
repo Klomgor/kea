@@ -817,6 +817,25 @@ TEST_F(IterativeAllocatorTest6, prefixIncrease) {
     checkPrefixIncrease(alloc, "::", 1, "8000::");
 }
 
+TEST(toms, toms) {
+    IOAddress org("1020:3040:5060:7080:90A0::");
+    auto inc = IterativeAllocator::increasePrefix(org, 64);
+    std::cout << "org is: " << org.toText() << " inc is: " << inc.toText() << "len is 64" << std::endl;
+
+    inc = IterativeAllocator::increasePrefix(org, 72);
+    std::cout << "org is: " << org.toText() << " inc is: " << inc.toText() << "len is 72" << std::endl;
+
+
+    IOAddress ovr("1020:3040:5060:70FF:90A0::");
+    inc = IterativeAllocator::increasePrefix(ovr, 64);
+    std::cout << "ovr is: " << ovr.toText() << " inc is: " << inc.toText() << "len is 64" << std::endl;
+
+    IOAddress ovr2("1020:3040:5060:FFFF:90A0::");
+    inc = IterativeAllocator::increasePrefix(ovr2, 64);
+    std::cout << "ovr2 is: " << ovr2.toText() << " inc is: " << inc.toText() << "len is 64" << std::endl;
+}
+
+
 } // end of namespace isc::dhcp::test
 } // end of namespace isc::dhcp
 } // end of namespace isc

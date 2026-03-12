@@ -164,8 +164,8 @@ DROP TABLE IF EXISTS lease6_remote_id;
 DROP TABLE IF EXISTS option_def_data_type;
 -- Drop SFLQ tables and procedures
 DROP FUNCTION IF EXISTS incrementV6Prefix;
-DROP PROCEDURE IF EXISTS createShareFlqPool4;
-DROP PROCEDURE IF EXISTS createShareFlqPool6;
+DROP PROCEDURE IF EXISTS createSharedFlqPool4;
+DROP PROCEDURE IF EXISTS createSharedFlqPool6;
 DROP TABLE IF EXISTS free_lease4;
 DROP TABLE IF EXISTS flq_pool4;
 DROP TABLE IF EXISTS free_lease6;
