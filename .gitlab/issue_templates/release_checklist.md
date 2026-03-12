@@ -34,8 +34,9 @@ When you see the following marks, only do the task if the current release matche
 Some of these checks and updates can be made before the actual freeze.
 
 1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Enable the kea-cve/build-tarball job.
-1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/kea/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) \
+1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/kea/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) for both Kea and Forge \
    Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/kea`.
+   Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/forge`.
 1. [ ] Check Jenkins results:
    1. [ ] Check Jenkins jobs for failures: [ut-dist](https://jenkins.aws.isc.org/job/kea-dev/job/ut-dist/), etc...
    1. [ ] Check [Jenkins Tests Report](https://jenkins.aws.isc.org/job/kea-dev/job/jenkins-tests-report/).
@@ -63,8 +64,9 @@ Some of these checks and updates can be made before the actual freeze.
 
 The following steps may involve changing files in the repository.
 
-1. [ ] <mark>🟥 Security</mark>: Sync release branches from public repository into private. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
+1. [ ] <mark>🟥 Security</mark>: Sync release branches from public repository into private. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) for both Kea and Forge \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-projects/kea --target-project isc-private/kea --branch master`.
+   Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-projects/forge --target-project isc-private/forge --branch master`.
 1. [ ] Run QA script [update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/kea/build/update-code-for-release.py) \
    Example command: `GITLAB_TOKEN='...' ./update-code-for-release.py 2.3.4 --repo-dir ~/isc/repos/kea/`. \
    Help: `GITLAB_TOKEN='...' ./update-code-for-release.py --help`. \
@@ -230,6 +232,7 @@ Now it's time to publish the code.
     * Or you can use the Cloudsmith GUI. Consider using the filter from the script in the previous bullet point.
 1. [ ] <mark>🟥 Security</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-braches.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/kea --target-project isc-projects/kea --branch master`.
+   Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/forge --target-project isc-projects/forge --branch master`.
 1. [ ] <mark>Latest 🟩 Stable</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/kea/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `Kea-A.B.C`.
 1. [ ] Update docs on <https://app.readthedocs.org/projects/kea/>.
     1. Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
@@ -271,7 +274,8 @@ Now it's time to publish the code.
 ## QA
 
 1. [ ] <mark>🟥 Security</mark>: Disable the kea-cve/build-tarball job.
-1. [ ] <mark>🟥 Security</mark>: Mirroring can be turned back on for both Github and Gitlab. You an check it [here](https://gitlab.isc.org/isc-projects/kea/-/settings/repository#js-push-remote-settings). To turn it on, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) \
+1. [ ] <mark>🟥 Security</mark>: Mirroring can be turned back on for both Github and Gitlab. You an check it [here](https://gitlab.isc.org/isc-projects/kea/-/settings/repository#js-push-remote-settings). To turn it on, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) for both Kea and Forge \
    Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --on isc-projects/kea`.
+   Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --on isc-projects/forge`.
 1. [ ] Close the signing ticket.
 1. [ ] Close this ticket.
