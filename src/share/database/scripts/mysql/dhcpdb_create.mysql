@@ -6588,6 +6588,7 @@ CREATE TABLE IF NOT EXISTS free_lease6 (
     UNIQUE KEY (bin_address, lease_type)
 ) ENGINE=InnoDB;
 
+-- Function to increment a V6 prefix by one added at prefix_len.
 DROP FUNCTION IF EXISTS incrementV6Prefix;
 DELIMITER $$
 CREATE FUNCTION incrementV6Prefix(prefix binary(16), prefix_len INT UNSIGNED)
@@ -6634,15 +6635,13 @@ BEGIN
     -- If the new value is less than 256, we safely increase just the starting byte.
     IF (tmp < 256)
     THEN
-        SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, n_bytes), unhex(hex(tmp)),
-                                 SUBSTRING(new_prefix, start_idx + 1, 16 - n_bytes));
+        SET new_prefix = INSERT(new_prefix, start_idx, 1, UNHEX(HEX(tmp)));
         RETURN (new_prefix);
     END IF;
 
     -- Overflow, set the byte to the remainder.
     SET tmp = tmp - 256;
-    SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, n_bytes), unhex(hex(tmp)),
-                             SUBSTRING(new_prefix, start_idx + 1, 16 - n_bytes));
+    SET new_prefix = INSERT(new_prefix, start_idx, 1, UNHEX(HEX(tmp)));
 
     --  Now propagate the overflow.
     SET i = start_idx - 1;
@@ -6651,14 +6650,12 @@ BEGIN
         IF (tmp != 256)
         THEN
             -- No more overflow, store the byte and we're done.
-            SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, i - 1), unhex(hex(tmp)),
-                                     SUBSTRING(new_prefix, i + 1, (16 - i + 1)));
+            SET new_prefix = INSERT(new_prefix, i, 1, UNHEX(HEX(tmp)));
             RETURN (new_prefix);
         END IF;
 
         -- Store zero in the current byte, and move to the next one.
-        SET new_prefix = CONCAT(SUBSTRING(new_prefix, 1, i - 1), 0x00,
-                                 SUBSTRING(new_prefix, i + 1, (16 - i + 1)));
+        SET new_prefix = INSERT(new_prefix, i, 1, 0x00);
         SET i = i - 1;
     END WHILE;
 
@@ -6667,6 +6664,7 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Populate flq_pool4 and free_lease4 based on an address range.
 DROP PROCEDURE IF EXISTS createSharedFlqPool4;
 DELIMITER $$
 CREATE PROCEDURE createSharedFlqPool4(IN p_start_address INT UNSIGNED,
@@ -6733,6 +6731,7 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Select a free address from an address range.
 DROP FUNCTION IF EXISTS pickFreeLease4;
 DELIMITER $$
 CREATE FUNCTION pickFreeLease4(alloc_start_address INT UNSIGNED,
@@ -6795,6 +6794,8 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Populate flq_pool6 and free_lease6 based on an address
+-- range and delegated len. Use 128 for NA addresses.
 DROP PROCEDURE IF EXISTS createSharedFlqPool6;
 DELIMITER $$
 CREATE PROCEDURE createSharedFlqPool6(IN p_start_address VARCHAR(45),
@@ -6859,6 +6860,7 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Find a free lease with an address range.
 DROP FUNCTION IF EXISTS pickFreeLease6;
 DELIMITER $$
 CREATE FUNCTION pickFreeLease6(alloc_start_address VARCHAR(45),
