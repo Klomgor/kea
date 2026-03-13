@@ -906,6 +906,15 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 }
             }
         } else {
+
+            if (!IfaceMgr::instance().isTestMode()) {
+                // Destroy lease manager before hooks unload.
+                LeaseMgrFactory::destroy();
+
+                // Destroy host manager before hooks unload.
+                HostMgr::create();
+            }
+
             // disable multi-threading (it will be applied by new configuration)
             // this must be done in order to properly handle MT to ST transition
             // when 'multi-threading' structure is missing from new config and
@@ -954,6 +963,8 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 status_code = CONTROL_RESULT_ERROR;
             }
         }
+    } else if (!check_only) {
+        status_code = CONTROL_RESULT_ERROR_RECOVERABLE;
     }
 
     // So far so good, there was no parsing error so let's commit the

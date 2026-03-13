@@ -3448,6 +3448,10 @@ TEST_F(Dhcpv4SrvTest, matchClassification) {
     Pkt4Ptr response2 = srv_->processDiscover(query2);
     Pkt4Ptr response3 = srv_->processDiscover(query3);
 
+    ASSERT_TRUE(response1);
+    ASSERT_TRUE(response2);
+    ASSERT_TRUE(response3);
+
     // Classification processing should add an ip-forwarding option
     OptionPtr opt1 = response1->getOption(DHO_IP_FORWARDING);
     EXPECT_TRUE(opt1);
@@ -3627,6 +3631,8 @@ TEST_F(Dhcpv4SrvTest, subnetClassPriority) {
     // Process the query
     Pkt4Ptr response = srv_->processDiscover(query);
 
+    ASSERT_TRUE(response);
+
     // Processing should add an ip-forwarding option
     OptionPtr opt = response->getOption(DHO_IP_FORWARDING);
     ASSERT_TRUE(opt);
@@ -3693,6 +3699,8 @@ TEST_F(Dhcpv4SrvTest, subnetGlobalPriority) {
 
     // Process the query
     Pkt4Ptr response = srv_->processDiscover(query);
+
+    ASSERT_TRUE(response);
 
     // Processing should add an ip-forwarding option
     OptionPtr opt = response->getOption(DHO_IP_FORWARDING);
@@ -3772,6 +3780,8 @@ TEST_F(Dhcpv4SrvTest, classGlobalPriority) {
     // Process the query
     Pkt4Ptr response = srv_->processDiscover(query);
 
+    ASSERT_TRUE(response);
+
     // Processing should add an ip-forwarding option
     OptionPtr opt = response->getOption(DHO_IP_FORWARDING);
     ASSERT_TRUE(opt);
@@ -3850,6 +3860,8 @@ TEST_F(Dhcpv4SrvTest, classGlobalPersistency) {
 
     // Process the query
     Pkt4Ptr response = srv_->processDiscover(query);
+
+    ASSERT_TRUE(response);
 
     // Processing should add an ip-forwarding option
     OptionPtr opt = response->getOption(DHO_IP_FORWARDING);
@@ -4189,6 +4201,8 @@ TEST_F(Dhcpv4SrvTest, privateOption) {
     // Pass it to the server and get an offer
     Pkt4Ptr offer = srv_->processDiscover(query);
 
+    ASSERT_TRUE(offer);
+
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
 
@@ -4235,6 +4249,8 @@ TEST_F(Dhcpv4SrvTest, prlPersistency) {
     // Let the server process it.
     Pkt4Ptr response = srv_->processDiscover(query);
 
+    ASSERT_TRUE(response);
+
     // Processing should add an ip-forwarding option
     ASSERT_TRUE(response->getOption(DHO_IP_FORWARDING));
     // But no default-ip-ttl
@@ -4249,6 +4265,8 @@ TEST_F(Dhcpv4SrvTest, prlPersistency) {
 
     // Let the server process it again.
     response = srv_->processDiscover(query);
+
+    ASSERT_TRUE(response);
 
     // Processing should add an ip-forwarding option
     ASSERT_TRUE(response->getOption(DHO_IP_FORWARDING));
@@ -4288,6 +4306,8 @@ TEST_F(Dhcpv4SrvTest, neverSend) {
     // Let the server process it.
     Pkt4Ptr response = srv_->processDiscover(query);
 
+    ASSERT_TRUE(response);
+
     // Processing should not add an ip-forwarding option
     ASSERT_FALSE(response->getOption(DHO_IP_FORWARDING));
     // And no default-ip-ttl
@@ -4302,6 +4322,8 @@ TEST_F(Dhcpv4SrvTest, neverSend) {
 
     // Let the server process it again.
     response = srv_->processDiscover(query);
+
+    ASSERT_TRUE(response);
 
     // Processing should not add an ip-forwarding option
     ASSERT_FALSE(response->getOption(DHO_IP_FORWARDING));
@@ -5297,6 +5319,8 @@ TEST_F(Dhcpv4SrvTest, fixedFieldsInClassOrder) {
 
             // Process it.
             Pkt4Ptr response = srv_->processDiscover(query);
+
+            ASSERT_TRUE(response);
 
             // Make sure class list is as expected.
             ASSERT_EQ(scenario.exp_classes_, query->getClasses().toText());

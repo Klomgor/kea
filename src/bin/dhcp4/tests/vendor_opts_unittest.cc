@@ -1799,6 +1799,7 @@ TEST_F(VendorOptsTest, option43LastResort) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -1884,6 +1885,7 @@ TEST_F(VendorOptsTest, option43BadRaw) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2038,6 +2040,7 @@ TEST_F(VendorOptsTest, option43RawGlobal) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2127,6 +2130,7 @@ TEST_F(VendorOptsTest, option43RawClass) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2233,6 +2237,7 @@ TEST_F(VendorOptsTest, option43Class) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2361,6 +2366,7 @@ TEST_F(VendorOptsTest, option43ClassPriority) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2495,6 +2501,7 @@ TEST_F(VendorOptsTest, option43Classes) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
@@ -2653,7 +2660,7 @@ TEST_F(VendorOptsTest, clientOption43RawClass) {
 
 // Verifies that a client query with a truncated length in
 // vendor option (125) will still be processed by the server.
-TEST_F(Dhcpv4SrvTest, truncatedVIVSOOption) {
+TEST_F(VendorOptsTest, truncatedVIVSOOption) {
     string config = "{ \"interfaces-config\": {"
         "    \"interfaces\": [ \"*\" ]"
         "},"
@@ -2804,6 +2811,7 @@ TEST_F(VendorOptsTest, vendorOpsSubOption0) {
 
     // Pass it to the server and get a DHCPOFFER.
     Pkt4Ptr offer = srv_->processDiscover(query);
+    ASSERT_TRUE(offer);
 
     // Check if we get response at all
     checkResponse(offer, DHCPOFFER, 1234);
