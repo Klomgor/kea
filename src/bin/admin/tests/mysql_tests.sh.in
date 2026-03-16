@@ -1127,11 +1127,11 @@ mysql_upgrade_33_to_34_test() {
     count=$(echo "${OUTPUT}" | grep -Fci "1020:3040:5060:7100:90a0:b0c0:de0:f000")
     assert_eq 1 "${count}" "incrementV6Prefix output is wrong. (expected count %d, actual %d)"
 
-    # Verify createSharedFlqPool4.
-    qry="call createSharedFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.1'), 0, 0)"
+    # Verify sflqCreateFlqPool4.
+    qry="call sflqCreateFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.1'), 0, 0)"
     run_command \
         mysql_execute "${qry}"
-    assert_eq 0 "${EXIT_CODE}" "call createSharedFlqPool4 failed. (expected status code %d, returned %d)"
+    assert_eq 0 "${EXIT_CODE}" "call sflqCreateFlqPool4 failed. (expected status code %d, returned %d)"
 
     qry="select count(start_address) from flq_pool4 where start_address = inet_aton('127.0.0.0')\
          and end_address = inet_aton('127.0.0.1')"
@@ -1149,18 +1149,18 @@ mysql_upgrade_33_to_34_test() {
     count="${OUTPUT}"
     assert_eq 2 "${count}" "free_lease4 content wrong. (expected count %d, actual %d)"
 
-    # Verify pickFreeLease4.
-    qry="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'),inet_aton('127.0.0.1')))"
+    # Verify sflqPickFreeLease4.
+    qry="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'),inet_aton('127.0.0.1')))"
     run_command \
         mysql_execute "${qry}"
-    assert_eq 0 "${EXIT_CODE}" "select from pickFreeLease4 failed. (expected status code %d, returned %d)"
+    assert_eq 0 "${EXIT_CODE}" "select from sflqPickFreeLease4 failed. (expected status code %d, returned %d)"
     assert_str_eq '127.0.0.0' "${OUTPUT}"
 
-    # Verify createSharedFlqPool6.
-    qry="call createSharedFlqPool6('3001::', '3001::10', 2, 128, 1, 0)"
+    # Verify sflqCreateFlqPool6.
+    qry="call sflqCreateFlqPool6('3001::', '3001::10', 2, 128, 1, 0)"
     run_command \
         mysql_execute "${qry}"
-    assert_eq 0 "${EXIT_CODE}" "call createSharedFlqPool6 failed. (expected status code %d, returned %d)"
+    assert_eq 0 "${EXIT_CODE}" "call sflqCreateFlqPool6 failed. (expected status code %d, returned %d)"
 
     qry="select count(start_address) from flq_pool6 where start_address = '3001::'\
          and end_address = '3001::10'"
@@ -1179,11 +1179,11 @@ mysql_upgrade_33_to_34_test() {
     count="${OUTPUT}"
     assert_eq 17 "${count}" "free_lease6 content wrong. (expected count %d, actual %d)"
 
-    # Verify pickFreeLease6.
-    qry="select pickFreeLease6('3001::', '3001::10')"
+    # Verify sflqPickFreeLease6.
+    qry="select sflqPickFreeLease6('3001::', '3001::10')"
     run_command \
         mysql_execute "${qry}"
-    assert_eq 0 "${EXIT_CODE}" "select from pickFreeLease6 failed. (expected status code %d, returned %d)"
+    assert_eq 0 "${EXIT_CODE}" "select from sflqPickFreeLease6 failed. (expected status code %d, returned %d)"
     assert_str_eq '3001::1' "${OUTPUT}"
 }
 
@@ -4071,9 +4071,9 @@ mysql_migrate_dhcpX_options_client_classes() {
     test_finish 0
 }
 
-# Verifies basic SFLQ for V4 
-mysql_SFLQ4() {
-    test_start "mysql.mysql_SFLQ4"
+# Verifies SFLQ sflqPickFreeLease4 function
+mysql_sflqPickFreeLease4() {
+    test_start "mysql.mysql_sflqPickFreeLease4"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4085,37 +4085,37 @@ mysql_SFLQ4() {
 
     # We need to create an older database with lease data so we can
 
-    sql="call createSharedFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2'), 1, false)"
-    run_statement "createSharedFlqPool4" "$sql"  
+    sql="call sflqCreateFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2'), 1, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"  
 
-    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "pickFreeLease4.1" "$sql"  "127.0.0.0"; 
-    run_statement "pickFreeLease4.2" "$sql"  "127.0.0.1"; 
-    run_statement "pickFreeLease4.3" "$sql"  "127.0.0.2"; 
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "sflqPickFreeLease4.1" "$sql"  "127.0.0.0"; 
+    run_statement "sflqPickFreeLease4.2" "$sql"  "127.0.0.1"; 
+    run_statement "sflqPickFreeLease4.3" "$sql"  "127.0.0.2"; 
 
     sql="insert into lease4 (address, subnet_id) values (inet_aton('127.0.0.1'), 1)";
     run_statement "insert 127.0.0.1" "$sql"  ""; 
 
-    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "pickFreeLease4.4" "$sql"  "127.0.0.0"; 
-    run_statement "pickFreeLease4.5" "$sql"  "127.0.0.2"; 
-    run_statement "pickFreeLease4.6" "$sql"  "127.0.0.0"; 
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "sflqPickFreeLease4.4" "$sql"  "127.0.0.0"; 
+    run_statement "sflqPickFreeLease4.5" "$sql"  "127.0.0.2"; 
+    run_statement "sflqPickFreeLease4.6" "$sql"  "127.0.0.0"; 
 
     sql="update lease4 set state = 2 where address = (inet_aton('127.0.0.1'));"
     run_statement "update 127.0.0.1" "$sql"  ""; 
 
-    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "pickFreeLease4.7" "$sql"  "127.0.0.1"; 
-    run_statement "pickFreeLease4.8" "$sql"  "127.0.0.2"; 
-    run_statement "pickFreeLease4.9" "$sql"  "127.0.0.0"; 
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "sflqPickFreeLease4.7" "$sql"  "127.0.0.1"; 
+    run_statement "sflqPickFreeLease4.8" "$sql"  "127.0.0.2"; 
+    run_statement "sflqPickFreeLease4.9" "$sql"  "127.0.0.0"; 
 
     sql="delete from lease4"
     run_statement "delete 127.0.0.1" "$sql"  ""; 
 
-    sql="select inet_ntoa(pickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "pickFreeLease4.10" "$sql"  "127.0.0.1"; 
-    run_statement "pickFreeLease4.11" "$sql"  "127.0.0.2"; 
-    run_statement "pickFreeLease4.12" "$sql"  "127.0.0.0"; 
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
+    run_statement "sflqPickFreeLease4.10" "$sql"  "127.0.0.1"; 
+    run_statement "sflqPickFreeLease4.11" "$sql"  "127.0.0.2"; 
+    run_statement "sflqPickFreeLease4.12" "$sql"  "127.0.0.0"; 
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4123,9 +4123,9 @@ mysql_SFLQ4() {
     test_finish 0
 }
 
-# Verifies basic SFLQ for V6 
-mysql_SFLQ6() {
-    test_start "mysql.mysql_SFLQ6"
+# Verifies SFLQ sflqPickFreeLease6 function
+mysql_sflqPickFreeLease6() {
+    test_start "mysql.mysql_sflqPickFreeLease6"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4137,37 +4137,37 @@ mysql_SFLQ6() {
 
     # We need to create an older database with lease data so we can
 
-    sql="call createSharedFlqPool6('3001::', '3001::02', 1, 128, 1, false)"
-    run_statement "createSharedFlqPool6" "$sql"  
+    sql="call sflqCreateFlqPool6('3001::', '3001::02', 1, 128, 1, false)"
+    run_statement "sflqCreateFlqPool6" "$sql"  
 
-    sql="select pickFreeLease6('3001::', '3001::02')"
-    run_statement "pickFreeLease6.1" "$sql"  "3001::1"; 
-    run_statement "pickFreeLease6.2" "$sql"  "3001::2"; 
-    run_statement "pickFreeLease6.3" "$sql"  "3001::"; 
+    sql="select sflqPickFreeLease6('3001::', '3001::02')"
+    run_statement "sflqPickFreeLease6.1" "$sql"  "3001::1"; 
+    run_statement "sflqPickFreeLease6.2" "$sql"  "3001::2"; 
+    run_statement "sflqPickFreeLease6.3" "$sql"  "3001::"; 
 
     sql="insert into lease6 (address, lease_type, subnet_id) values (inet6_aton('3001::1'), 1, 1)";
     run_statement "insert 3001::1" "$sql"  ""; 
 
-    sql="select pickFreeLease6('3001::', '3001::02')"
-    run_statement "pickFreeLease6.4" "$sql"  "3001::2"; 
-    run_statement "pickFreeLease6.5" "$sql"  "3001::"; 
-    run_statement "pickFreeLease6.6" "$sql"  "3001::2"; 
+    sql="select sflqPickFreeLease6('3001::', '3001::02')"
+    run_statement "sflqPickFreeLease6.4" "$sql"  "3001::2"; 
+    run_statement "sflqPickFreeLease6.5" "$sql"  "3001::"; 
+    run_statement "sflqPickFreeLease6.6" "$sql"  "3001::2"; 
 
     sql="update lease6 set state = 2 where address = (inet6_aton('3001::1'));"
     run_statement "update 3001::1" "$sql"  ""; 
 
-    sql="select pickFreeLease6('3001::', '3001::02')"
-    run_statement "pickFreeLease6.7" "$sql"  "3001::"; 
-    run_statement "pickFreeLease6.8" "$sql"  "3001::1"; 
-    run_statement "pickFreeLease6.9" "$sql"  "3001::2"; 
+    sql="select sflqPickFreeLease6('3001::', '3001::02')"
+    run_statement "sflqPickFreeLease6.7" "$sql"  "3001::"; 
+    run_statement "sflqPickFreeLease6.8" "$sql"  "3001::1"; 
+    run_statement "sflqPickFreeLease6.9" "$sql"  "3001::2"; 
 
     sql="delete from lease6"
     run_statement "delete 3001::1" "$sql"  ""; 
 
-    sql="select pickFreeLease6('3001::', '3001::02')"
-    run_statement "pickFreeLease6.10" "$sql"  "3001::"; 
-    run_statement "pickFreeLease6.11" "$sql"  "3001::1"; 
-    run_statement "pickFreeLease6.12" "$sql"  "3001::2"; 
+    sql="select sflqPickFreeLease6('3001::', '3001::02')"
+    run_statement "sflqPickFreeLease6.10" "$sql"  "3001::"; 
+    run_statement "sflqPickFreeLease6.11" "$sql"  "3001::1"; 
+    run_statement "sflqPickFreeLease6.12" "$sql"  "3001::2"; 
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4218,5 +4218,5 @@ mysql_migrate_opt_record_type
 mysql_remove_control_socket_parameters_test
 mysql_migrate_client_class_test
 mysql_migrate_dhcpX_options_client_classes
-mysql_SFLQ4
-mysql_SFLQ6
+mysql_sflqPickFreeLease4
+mysql_sflqPickFreeLease6

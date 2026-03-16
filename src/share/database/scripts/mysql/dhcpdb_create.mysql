@@ -6665,12 +6665,12 @@ END $$
 DELIMITER ;
 
 -- Populate flq_pool4 and free_lease4 based on an address range.
-DROP PROCEDURE IF EXISTS createSharedFlqPool4;
+DROP PROCEDURE IF EXISTS sflqCreateFlqPool4;
 DELIMITER $$
-CREATE PROCEDURE createSharedFlqPool4(IN p_start_address INT UNSIGNED,
-                                      IN p_end_address INT UNSIGNED,
-                                      IN p_subnet_id INT UNSIGNED,
-                                      IN p_recreate TINYINT)
+CREATE PROCEDURE sflqCreateFlqPool4(IN p_start_address INT UNSIGNED,
+                                    IN p_end_address INT UNSIGNED,
+                                    IN p_subnet_id INT UNSIGNED,
+                                    IN p_recreate TINYINT)
 BEGIN
     DECLARE loop_limit INT UNSIGNED;
     DECLARE next_start_address INT UNSIGNED;
@@ -6718,7 +6718,8 @@ BEGIN
             )
             SELECT avail FROM addresses
                 LEFT JOIN lease4 on avail = lease4.address
-                WHERE lease4.address IS NULL OR lease4.state = 2;
+                WHERE (lease4.address IS NULL OR lease4.state = 2
+                       OR (expire <= now() AND valid_lifetime != 0xFFFFFFFF));
 
         SET next_start_address = next_start_address + loop_limit;
     END WHILE;
@@ -6732,10 +6733,10 @@ END $$
 DELIMITER ;
 
 -- Select a free address from an address range.
-DROP FUNCTION IF EXISTS pickFreeLease4;
+DROP FUNCTION IF EXISTS sflqPickFreeLease4;
 DELIMITER $$
-CREATE FUNCTION pickFreeLease4(alloc_start_address INT UNSIGNED,
-                               alloc_end_address INT UNSIGNED)
+CREATE FUNCTION sflqPickFreeLease4(alloc_start_address INT UNSIGNED,
+                                   alloc_end_address INT UNSIGNED)
 RETURNS INT UNSIGNED
 DETERMINISTIC
 BEGIN
@@ -6796,14 +6797,14 @@ DELIMITER ;
 
 -- Populate flq_pool6 and free_lease6 based on an address
 -- range and delegated len. Use 128 for NA addresses.
-DROP PROCEDURE IF EXISTS createSharedFlqPool6;
+DROP PROCEDURE IF EXISTS sflqCreateFlqPool6;
 DELIMITER $$
-CREATE PROCEDURE createSharedFlqPool6(IN p_start_address VARCHAR(45),
-                                      IN p_end_address VARCHAR(45),
-                                      IN p_lease_type TINYINT UNSIGNED,
-                                      IN p_delegated_len TINYINT UNSIGNED,
-                                      IN p_subnet_id INT UNSIGNED,
-                                      IN p_recreate TINYINT)
+CREATE PROCEDURE sflqCreateFlqPool6(IN p_start_address VARCHAR(45),
+                                    IN p_end_address VARCHAR(45),
+                                    IN p_lease_type TINYINT UNSIGNED,
+                                    IN p_delegated_len TINYINT UNSIGNED,
+                                    IN p_subnet_id INT UNSIGNED,
+                                    IN p_recreate TINYINT)
 BEGIN
     DECLARE bin_next_address BINARY(16);
     DECLARE bin_end_address BINARY(16);
@@ -6841,7 +6842,8 @@ BEGIN
     WHILE bin_next_address <= bin_end_address
     DO
         SELECT address INTO free_address FROM lease6
-            WHERE address = INET6_NTOA(bin_next_address) AND lease6.state != 2;
+            WHERE (address = INET6_NTOA(bin_next_address) AND lease6.state != 2
+                   AND (expire > now() OR valid_lifetime != 0xFFFFFFFF));
 
         IF (free_address IS NULL)
         THEN
@@ -6861,10 +6863,10 @@ END $$
 DELIMITER ;
 
 -- Find a free lease with an address range.
-DROP FUNCTION IF EXISTS pickFreeLease6;
+DROP FUNCTION IF EXISTS sflqPickFreeLease6;
 DELIMITER $$
-CREATE FUNCTION pickFreeLease6(alloc_start_address VARCHAR(45),
-                               alloc_end_address VARCHAR(45))
+CREATE FUNCTION sflqPickFreeLease6(alloc_start_address VARCHAR(45),
+                                   alloc_end_address VARCHAR(45))
 RETURNS VARCHAR(45)
 DETERMINISTIC
 BEGIN

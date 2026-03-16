@@ -6869,10 +6869,10 @@ CREATE TABLE IF NOT EXISTS free_lease6 (
 CREATE UNIQUE INDEX free_lease6_bin_address ON free_lease6 (bin_address);
 
 -- Populate flq_pool4 and free_lease4 based on an address range.
-CREATE OR REPLACE PROCEDURE createSharedFlqPool4(p_start_address INET,
-                                                 p_end_address INET,
-                                                 p_subnet_id BIGINT,
-                                                 p_recreate BOOLEAN)
+CREATE OR REPLACE PROCEDURE sflqCreateFlqPool4(p_start_address INET,
+                                               p_end_address INET,
+                                               p_subnet_id BIGINT,
+                                               p_recreate BOOLEAN)
 LANGUAGE plpgsql AS $$
 DECLARE
     zero_inet INET := '0.0.0.0.'::INET;
@@ -6900,7 +6900,8 @@ BEGIN
         SELECT zero_inet + avail, avail FROM generate_series((p_start_address - zero_inet),
                                           (p_end_address - zero_inet), 1) AS avail
             LEFT JOIN lease4 on avail = lease4.address
-            WHERE lease4.address IS NULL OR lease4.state = 2
+            WHERE (lease4.address IS NULL OR lease4.state = 2
+                   OR (expire <= now() AND valid_lifetime != x'FFFFFFFF'::bigint))
             ON CONFLICT DO NOTHING;
 
     -- Update the modification time in the flq_pool row.
@@ -6912,8 +6913,8 @@ END;
 $$;
 
 -- Select a free address from an address range.
-CREATE OR REPLACE FUNCTION pickFreeLease4(alloc_start_address INET,
-                                          alloc_end_address INET)
+CREATE OR REPLACE FUNCTION sflqPickFreeLease4(alloc_start_address INET,
+                                              alloc_end_address INET)
 RETURNS INET
 AS $$
 DECLARE
@@ -7180,12 +7181,12 @@ $$ LANGUAGE plpgsql;
 
 -- Populate flq_pool6 and free_lease6 based on an address
 -- range and delegated len. Use 128 for NA addresses.
-CREATE OR REPLACE PROCEDURE createSharedFlqPool6(p_start_address INET,
-                                                 p_end_address INET,
-                                                 p_lease_type SMALLINT,
-                                                 p_delegated_len SMALLiNT,
-                                                 p_subnet_id BIGINT,
-                                                 p_recreate BOOLEAN)
+CREATE OR REPLACE PROCEDURE sflqCreateFlqPool6(p_start_address INET,
+                                               p_end_address INET,
+                                               p_lease_type SMALLINT,
+                                               p_delegated_len SMALLiNT,
+                                               p_subnet_id BIGINT,
+                                               p_recreate BOOLEAN)
 LANGUAGE plpgsql AS $$
 DECLARE
     zero_inet INET := '::'::INET;
@@ -7224,7 +7225,8 @@ BEGIN
     WHILE next_address <= p_end_address
     LOOP
         SELECT address INTO free_address FROM lease6
-            WHERE address = next_address AND lease6.state != 2;
+            WHERE (address = next_address AND lease6.state != 2
+                   AND (expire > now() OR valid_lifetime = x'FFFFFFFF'::bigint));
 
         IF (free_address IS NULL)
         THEN
@@ -7246,8 +7248,8 @@ END;
 $$;
 
 -- Find a free lease with an address range.
-CREATE OR REPLACE FUNCTION pickFreeLease6(alloc_start_address INET,
-                                          alloc_end_address INET)
+CREATE OR REPLACE FUNCTION sflqPickFreeLease6(alloc_start_address INET,
+                                              alloc_end_address INET)
 RETURNS INET
 AS $$
 DECLARE
