@@ -496,7 +496,8 @@ kea_verbose=no
   assert_str_eq \
 'DHCPv4 server: inactive
 DHCPv6 server: inactive
-DHCP DDNS: inactive
+DHCP DDNS: inactive' \
+    "$(printf '%s\n' "${OUTPUT}" | head -n 4)"
 
   if "${have_netconf}"; then
     assert_str_eq 'Netconf agent: inactive' \
