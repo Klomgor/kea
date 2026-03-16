@@ -89,7 +89,6 @@ namespace yang {
 /// - kea-dhcp4-server
 /// - kea-dhcp6-server
 /// - kea-dhcp-ddns
-/// - kea-ctrl-agent
 class TranslatorLogger : virtual public Translator {
 public:
     /// @brief Constructor.

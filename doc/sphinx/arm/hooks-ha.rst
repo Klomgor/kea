@@ -20,7 +20,7 @@ server.
 
 High Availability (HA) of the DHCP service is provided by running multiple
 cooperating server instances. If any of these instances becomes unavailable for
-any reason (DHCP software crash, Control Agent software crash, power outage,
+any reason (DHCP software crash, power outage,
 hardware failure), a surviving server instance can continue providing reliable
 service to clients. Many DHCP server implementations include the "DHCP Failover"
 protocol, whose most significant features are communication between the servers,
@@ -196,7 +196,7 @@ described in :ref:`tls`.
 The HTTPS configuration parameters are:
 
 -  ``trust-anchor`` - specifies the name of a file or directory where the
-   certification authority certificate of a Control Agent can be found.
+   certification authority certificate of a Kea end entity can be found.
 
 -  ``cert-file`` - specifies the name of the file containing the end-entity
    certificate to use.
@@ -214,13 +214,10 @@ peer when it is enabled at the global level.
 
 As the High Availability hook library is an HTTPS client, there is no
 ``cert-required`` parameter in this hook configuration.
-This parameter can be set in the Control Agent to require and verify a client
+This parameter can be set at the server side to require and verify a client
 certificate in client-server communication. It does not affect communication
 between HA peers at the client side; see below for information on the server
 side.
-
-Before Kea 2.1.7 using HTTPS in the HA setup required use of the Control Agent
-on all peers. (See :ref:`tls` for Control Agent TLS configuration).
 
 Since Kea 2.1.7 the HTTPS server side is supported:
 
@@ -234,8 +231,7 @@ Kea 2.1.7 added a new security feature with the ``restrict-commands`` HA config
 parameter: when set to ``true``, commands which are not used by the hook are
 rejected. The default is ``true`` since Kea 3.0.0.
 
-The following is an example of an HA server pair and Control Agent configuration
-for ``hot-standby`` with TLS.
+The following is an example of an HA server pair for ``hot-standby`` with TLS.
 
 Server 1:
 
@@ -280,7 +276,17 @@ Server 1:
            "pools": [{
                "pool": "192.0.3.100 - 192.0.3.250"
                }]
-       }]
+       }],
+
+       "control-sockets": [{
+           "socket-type": "https",
+           "socket-address": "192.168.56.33",
+           "socket-port": 8000,
+           "trust-anchor": "/var/lib/kea/CA.pem",
+           "cert-file": "/var/lib/kea/server1_cert.pem",
+           "key-file": "/var/lib/kea/server1_key.pem",
+           "cert-required": true
+        }]
      }
    }
 
@@ -327,49 +333,20 @@ Server 2:
            "pools": [{
                "pool": "192.0.3.100 - 192.0.3.250"
                }]
+       }],
+
+       "control-sockets":[{
+           "socket-type": "https",
+           "socket-address": "192.168.56.66",
+           "socket-port": 8000,
+           "trust-anchor": "/var/lib/kea/CA.pem",
+           "cert-file": "/var/lib/kea/server2_cert.pem",
+           "key-file": "/var/lib/kea/server2_key.pem",
+           "cert-required": true
        }]
+
      }
    }
-
-Control Agent on Server 1:
-::
-
-    {
-        "Control-agent": {
-            "http-host": "192.168.56.33",
-            "http-port": 8000,
-            "control-sockets": {
-                "dhcp4": {
-                    "socket-type": "unix",
-                    "socket-name": "/var/run/kea/control_socket"
-                }
-            },
-            "trust-anchor": "/var/lib/kea/CA.pem",
-            "cert-file": "/var/lib/kea/server1_cert.pem",
-            "key-file": "/var/lib/kea/server1_key.pem",
-            "cert-required": true
-        }
-    }
-
-Control Agent on Server 2:
-::
-
-    {
-        "Control-agent": {
-            "http-host": "192.168.56.66",
-            "http-port": 8000,
-            "control-sockets": {
-                "dhcp4": {
-                    "socket-type": "unix",
-                    "socket-name": "/var/run/kea/control_socket"
-                }
-            },
-            "trust-anchor": "/var/lib/kea/CA.pem",
-            "cert-file": "/var/lib/kea/server2_cert.pem",
-            "key-file": "/var/lib/kea/server2_key.pem",
-            "cert-required": true
-        }
-    }
 
 .. _ha-server-states:
 
@@ -899,9 +876,6 @@ This configuration must contain at least one primary and one secondary server.
 It may also contain an unlimited number of backup servers. In this example,
 there is one backup server which receives lease updates from the active servers.
 
-Since Kea version 1.9.0, basic HTTP authentication is available
-to protect the Kea control agent against local attackers.
-
 These are the parameters specified for each of the peers within this
 list:
 
@@ -947,7 +921,7 @@ the servers is in the ``partner-down`` state, the other can serve leases from
 both pools; it selects the pool which is appropriate for the received query. In
 other words, if the query would normally be processed by ``server2`` but this
 server is not available, ``server1`` allocates the lease from the pool of
-"192.0.3.200 - 192.0.3.250". The Kea control agent in front of ``server3``
+"192.0.3.200 - 192.0.3.250". The `server3`` HTTP control socket
 requires basic HTTP authentication, and authorizes the user ID "foo" with the
 password "1234".
 
@@ -1401,10 +1375,8 @@ single page of leases from 60 seconds to 90 seconds:
 
 It is important to note that extending this ``sync-timeout`` value may sometimes
 be insufficient to prevent issues with timeouts during lease-database
-synchronization. The control commands travel via the Control Agent, which also
-monitors incoming (with a synchronizing server) and outgoing (with a DHCP server)
-connections for timeouts. The DHCP server also monitors the connection from the
-Control Agent for timeouts. Those timeouts cannot currently be modified via
+synchronization.  The DHCP server also monitors the connection from the
+peer for timeouts. Those timeouts cannot currently be modified via
 configuration; extending these timeouts is only possible by modifying them in
 the Kea code and recompiling the server. The relevant constants are located in
 the Kea source at: ``src/lib/config/timeouts.h``.
@@ -1568,52 +1540,6 @@ never transitions out of these states anyway.
    ``waiting`` state until the state machine of the primary server is resumed
    and that server transitions to the ``ready`` state.
 
-.. _ha-ctrl-agent-config:
-
-Control Agent Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The :ref:`kea-ctrl-agent` describes in detail the Kea daemon, which provides a
-RESTful interface to control the Kea servers. The same functionality is used by
-the High Availability hook library to establish communication between the HA
-peers. Therefore, the HA library requires that the Control Agent (CA) be started
-for each DHCP instance within the HA setup. If the Control Agent is not started,
-the peers cannot communicate with a particular DHCP server (even if the DHCP
-server itself is online) and may eventually consider this server to be offline.
-
-The following is an example configuration for the CA running on the same
-machine as the primary server. This configuration is valid for both the
-``load-balancing`` and the ``hot-standby`` cases presented in previous sections.
-
-::
-
-   {
-   "Control-agent": {
-       "http-host": "192.168.56.33",
-
-        // If enabling HA and multi-threading, the 8000 port is used by the HA
-        // hook library http listener. When using HA hook library with
-        // multi-threading to function, make sure the port used by dedicated
-        // listener is different (e.g. 8001) than the one used by CA. Note
-        // the commands should still be sent via CA. The dedicated listener
-        // is specifically for HA updates only.
-       "http-port": 8000,
-
-       "control-sockets": {
-           "dhcp4": {
-               "socket-type": "unix",
-               "socket-name": "kea-dhcp4-ctrl.sock"
-           },
-           "dhcp6": {
-               "socket-type": "unix",
-               "socket-name": "kea-dhcp6-ctrl.sock"
-           }
-       }
-   }
-   }
-
-Since Kea 1.9.0, basic HTTP authentication is supported.
-
 .. _ha-mt-config:
 
 Multi-Threaded Configuration (HA+MT)
@@ -1623,9 +1549,10 @@ It is possible to configure HA to use direct
 multi-threaded communication between peers. We refer to this mode as HA+MT.
 With HA+MT enabled, each peer runs its own dedicated, internal HTTP listener
 (i.e. server) which receives and responds to commands directly, thus eliminating
-the need for an agent to carry out the HA protocol between peers. In addition, both
+the sequentialization of commands including for the HA protocol between peers. In addition, both
 the listener and client components use multi-threading to support multiple
-concurrent connections between peers. By eliminating the agent and executing
+concurrent connections between peers. By eliminating the overloading of
+the control channel and executing
 multiple command exchanges in parallel, HA throughput between peers
 improves considerably over earlier versions of Kea in most situations.
 
@@ -1634,16 +1561,16 @@ HA+MT operation:
 
 -  ``enable-multi-threading`` - enables or disables multi-threading HA peer
    communication (HA+MT). Kea core multi-threading must be enabled for HA+MT to
-   operate. When ``false``, the server relies on :iscman:`kea-ctrl-agent` for
+   operate. When ``false``, the server relies on a HTTP control socket for
    communication with its peer, and uses single-threaded HTTP client processing.
    The default is ``true``.
 
 -  ``http-dedicated-listener`` - enables or disables the creation of a dedicated,
    internal HTTP listener through which the server receives HA messages from its
-   peers. The internal listener replaces the role of :iscman:`kea-ctrl-agent` traffic,
+   peers. The internal listener replaces the role of control socket traffic,
    allowing peers to send their HA commands directly to each other. The listener
    listens on the peer's ``url``. When ``false``, the server
-   relies on :iscman:`kea-ctrl-agent`. This parameter has been provided largely for
+   relies on HTTP control socket. This parameter has been provided largely for
    flexibility and testing; running HA+MT without dedicated listeners enabled
    will substantially limit HA throughput. The default is ``true``.
 
@@ -2024,8 +1951,7 @@ believes that its partner is offline; thus, it is serving all DHCP requests sent
 to the servers. To ensure that the partner is indeed offline, the administrator
 should send the :isccmd:`ha-heartbeat` command to the second server. If sending the
 command fails, e.g. due to an inability to establish a TCP connection to the
-Control Agent, or if the Control Agent reports issues with communication with
-the DHCP server, it is very likely that the server is not running.
+DHCP server,  it is very likely that the server is not running.
 
 The ``date-time`` parameter conveys the server's notion of time.
 

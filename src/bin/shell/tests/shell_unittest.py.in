@@ -14,12 +14,12 @@ import unittest
 import sys
 from base64 import b64encode
 
-from kea_conn import CARequest
+from kea_conn import RARequest
 
 
-class CARequestUnitTest(unittest.TestCase):
+class RARequestUnitTest(unittest.TestCase):
     """
-    This class is dedicated to testing CARequest class. That class
+    This class is dedicated to testing RARequest class. That class
     is responsible for generation of the body and headers.
     """
 
@@ -28,58 +28,22 @@ class CARequestUnitTest(unittest.TestCase):
         This method is called before each test. Currently it does nothing.
         """
 
-    def test_body_with_service(self):
-        """
-        This test verifies if the CARequest object generates the request
-        content properly when there is one target service.
-        """
-        request = CARequest()
-        request.command = "foo"
-        request.service = ["service1"]
-        request.generate_body()
-        self.assertEqual(request.content,
-                         '{ "command": "foo", "service": ["service1"] }')
-
-    def test_body_with_multiple_service(self):
-        """
-        This test verifies if the CARequest object generates the request
-        content properly when there are two target service.
-        """
-        request = CARequest()
-        request.command = "foo"
-        request.service = ["service1", "service2/2"]
-        request.generate_body()
-        self.assertEqual(request.content,
-                         '{ "command": "foo", "service": ["service1","service2/2"] }')
-
-    def test_body_with_malformed_service(self):
-        """
-        This test verifies if the CARequest object generates the request
-        content properly when there are two target service, one is empty
-        """
-        request = CARequest()
-        request.command = "foo"
-        request.service = ["service1", ""]
-        request.generate_body()
-        self.assertEqual(request.content,
-                         '{ "command": "foo", "service": ["service1"] }')
-
     def test_body_without_args(self):
         """
-        This test verifies if the CARequest object generates the request
+        This test verifies if the RARequest object generates the request
         content properly when there are no arguments.
         """
-        request = CARequest()
+        request = RARequest()
         request.command = "foo"
         request.generate_body()
         self.assertEqual(request.content, '{ "command": "foo" }')
 
     def test_body_with_args(self):
         """
-        This test verifies if the CARequest object generates the request
+        This test verifies if the RARequest object generates the request
         content properly when there are arguments.
         """
-        request = CARequest()
+        request = RARequest()
         request.command = "foo"
         request.args = '"bar": "baz"'
         request.generate_body()
@@ -107,7 +71,7 @@ class CARequestUnitTest(unittest.TestCase):
         This test checks if the headers are generated properly. Note that since
         the content is not specified, it is 0. Therefore Content-Length is 0.
         """
-        request = CARequest()
+        request = RARequest()
         request.generate_headers()
 
         self.assertTrue(self.check_header(request.headers,
@@ -123,7 +87,7 @@ class CARequestUnitTest(unittest.TestCase):
         this test there is specific content of non-zero length, and
         its size should be reflected in the header.
         """
-        request = CARequest()
+        request = RARequest()
         request.content = '{ "command": "foo" }'
         request.generate_headers()
 
@@ -135,7 +99,7 @@ class CARequestUnitTest(unittest.TestCase):
         This test checks if the version reported in HTTP headers is
         generated properly.
         """
-        request = CARequest()
+        request = RARequest()
         request.version = "1.2.3"
         request.generate_headers()
         self.assertTrue(self.check_header(request.headers, 'User-Agent',
@@ -179,7 +143,7 @@ class CARequestUnitTest(unittest.TestCase):
         This test checks if the basic HTTP authentication header is
         generated properly.
         """
-        request = CARequest()
+        request = RARequest()
         request.auth = "Zm9vOmJhcg=="
         request.generate_headers()
 

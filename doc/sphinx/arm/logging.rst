@@ -137,34 +137,6 @@ libraries), or hook libraries (open source or subscriber).
    +----------------------------------+---------------------------------------+--------------------------------+
    | Logger Name                      | Software Package                      | Description                    |
    +==================================+=======================================+================================+
-   | ``kea-ctrl-agent``               | core                                  | The root logger for the Control|
-   |                                  |                                       | Agent exposing the RESTful     |
-   |                                  |                                       | control API. All components    |
-   |                                  |                                       | used by the Control Agent      |
-   |                                  |                                       | inherit the settings from this |
-   |                                  |                                       | logger.                        |
-   +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.auth``          | core                                  | A logger which covers access   |
-   |                                  |                                       | control details, such as the   |
-   |                                  |                                       | result of basic HTTP           |
-   |                                  |                                       | authentication.                |
-   +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.ctrl-agent``    | core                                  | Used to log results of         |
-   |                                  |                                       | configuration checks,          |
-   |                                  |                                       | information about services     |
-   |                                  |                                       | starting or failing to start,  |
-   |                                  |                                       | command reception, and         |
-   |                                  |                                       | forwarding.                    |
-   +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.http``          | core                                  | A logger which outputs log     |
-   |                                  |                                       | messages related to receiving, |
-   |                                  |                                       | parsing, and sending HTTP      |
-   |                                  |                                       | messages.                      |
-   +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.rbac-hooks``    | :ischooklib:`libdhcp_rbac.so`         | Used to log messages related to|
-   |                                  | subscriber hook library               | the operation of the RBAC hook |
-   |                                  |                                       | library.                       |
-   +----------------------------------+---------------------------------------+--------------------------------+
    | ``kea-dhcp4``                    | core                                  | The root logger for the DHCPv4 |
    |                                  |                                       | server. All components used by |
    |                                  |                                       | the DHCPv4 server inherit the  |
@@ -184,9 +156,9 @@ libraries), or hook libraries (open source or subscriber).
    |                                  |                                       | processing messages from       |
    |                                  |                                       | clients.                       |
    +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.auth``,         | core                                  | Used to log malformed HTTP     |
-   | ``kea-dhcp4.auth``,              |                                       | packets when using basic       |
-   | ``kea-dhcp6.auth``               |                                       | authentication.                |
+   | ``kea-dhcp4.auth``,              | core                                  | Used to log malformed HTTP     |
+   | ``kea-dhcp6.auth``               |                                       | packets when using basic       |
+   |                                  |                                       | authentication.                |
    +----------------------------------+---------------------------------------+--------------------------------+
    | ``kea-dhcp4.bad-packets``,       | core                                  | Used by the DHCP servers for   |
    | ``kea-dhcp6.bad-packets``        |                                       | logging inbound client packets |
@@ -203,10 +175,10 @@ libraries), or hook libraries (open source or subscriber).
    |                                  |                                       | operation of the BOOTP hook    |
    |                                  |                                       | library.                       |
    +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.callouts``,     | core                                  | Used to log messages pertaining|
-   | ``kea-dhcp4.callouts``,          |                                       | to the callouts registration   |
-   | ``kea-dhcp6.callouts``,          |                                       | and execution for a particular |
-   | ``kea-dhcp-ddns.callouts``       |                                       | hook point.                    |
+   | ``kea-dhcp4.callouts``,          | core                                  | Used to log messages pertaining|
+   | ``kea-dhcp6.callouts``,          |                                       | to the callouts registration   |
+   | ``kea-dhcp-ddns.callouts``       |                                       | and execution for a particular |
+   |                                  |                                       | hook point.                    |
    +----------------------------------+---------------------------------------+--------------------------------+
    | ``kea-dhcp4.cb-cmds-hooks``,     | :ischooklib:`libdhcp_cb_cmds.so`      | Used to log messages related to|
    | ``kea-dhcp6.cb-cmds-hooks``      | subscriber hook library               | the operation of the Config    |
@@ -258,10 +230,10 @@ libraries), or hook libraries (open source or subscriber).
    | ``kea-dhcp6.ha-hooks``           | open-source hook library              | the operation of the High      |
    |                                  |                                       | Availability hook library.     |
    +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.hooks``,        | core                                  | Used to log messages related to|
-   | ``kea-dhcp4.hooks``,             |                                       | the management of hook         |
-   | ``kea-dhcp6.hooks``,             |                                       | libraries, e.g. registration   |
-   | ``kea-dhcp-ddns.hooks``          |                                       | and deregistration of the      |
+   | ``kea-dhcp4.hooks``,             | core                                  | Used to log messages related to|
+   | ``kea-dhcp6.hooks``,             |                                       | the management of hook         |
+   | ``kea-dhcp-ddns.hooks``          |                                       | libraries, e.g. registration   |
+   |                                  |                                       | and deregistration of the      |
    |                                  |                                       | libraries, and to the          |
    |                                  |                                       | initialization of the callouts |
    |                                  |                                       | execution for various hook     |
@@ -418,8 +390,8 @@ libraries), or hook libraries (open source or subscriber).
    |                                  |                                       | are configurations for more    |
    |                                  |                                       | specialized loggers.           |
    +----------------------------------+---------------------------------------+--------------------------------+
-   | ``kea-ctrl-agent.dctl``,         | core                                  | Used to log basic information  |
-   | ``kea-dhcp-ddns.dctl``           |                                       | about the process, received    |
+   | ``kea-dhcp-ddns.dctl``           | core                                  | Used to log basic information  |
+   |                                  |                                       | about the process, received    |
    |                                  |                                       | signals, and triggered         |
    |                                  |                                       | reconfigurations.              |
    +----------------------------------+---------------------------------------+--------------------------------+

@@ -23,7 +23,7 @@ Description
 
 ``keactrl`` is a shell script which controls the startup, shutdown, and
 reconfiguration of the Kea servers (``kea-dhcp4``, ``kea-dhcp6``,
-``kea-dhcp-ddns``, ``kea-ctrl-agent``, and ``kea-netconf``). It also
+``kea-dhcp-ddns``, and ``kea-netconf``). It also
 provides a way to check the current status of the servers and
 determine the configuration files in use.
 
@@ -76,9 +76,6 @@ Options
    ``dhcp_ddns``
       DHCP DDNS server (``kea-dhcp-ddns``).
 
-   ``ctrl_agent``
-      Control Agent (``kea-ctrl-agent``).
-
    ``netconf``
       NETCONF agent (``kea-netconf``).
 
@@ -126,5 +123,5 @@ See Also
 ~~~~~~~~
 
 :manpage:`kea-dhcp4(8)`, :manpage:`kea-dhcp6(8)`, :manpage:`kea-dhcp-ddns(8)`,
-:manpage:`kea-ctrl-agent(8)`, :manpage:`kea-admin(8)`, :manpage:`kea-netconf(8)`,
+:manpage:`kea-admin(8)`, :manpage:`kea-netconf(8)`,
 :manpage:`perfdhcp(8)`, :manpage:`kea-lfc(8)`, Kea Administrator Reference Manual.

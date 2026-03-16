@@ -221,12 +221,17 @@ desired.
 It is highly recommended to read the ``openssl.cnf`` manual page,
 normally called ``config.5ssl`` and displayed using ``man config``.
 
-.. _secure-control-agent:
+.. _secure-control-channel:
 
-Secure Kea Control Agent
-========================
+Secure Kea Control Channel
+==========================
 
-The Kea Control Agent natively supports secure
+.. note::
+
+   This section was about the now obsolete Kea Control Agent but applies
+   to Kea control HTTPS control sockets supported by Kea servers.
+
+The control sockets of Kea servers  natively supports secure
 HTTP connections using TLS. This allows protection against users from
 the node where the agent runs, something that a reverse proxy cannot
 provide. More about TLS/HTTPS support in Kea can be found in :ref:`tls`.
@@ -278,8 +283,8 @@ Component-Based Design
 ----------------------
 
 The Kea architecture is modular, with separate daemons for separate tasks.
-A Kea deployment may include DHCPv4, DHCPv6, and Dynamic DNS daemons; a Control Agent
-daemon run on each application server; the :iscman:`kea-lfc` utility for doing periodic lease
+A Kea deployment may include DHCPv4, DHCPv6, and Dynamic DNS daemons;
+the :iscman:`kea-lfc` utility for doing periodic lease
 file cleanup; MySQL and or PostgreSQL databases, run either locally on the application
 servers or accessed over the internal network; a Netconf daemon to perform config and stats
 monitoring of Kea servers; and a Stork monitoring system.
@@ -316,9 +321,6 @@ The DHCPv4 and DHCPv6 protocols assume the server opens privileged UDP port 67
 capabilities mechanism on Linux systems, Kea can run from an unprivileged account. See
 :ref:`non-root` for details on how to run Kea without root access.
 
-The Control Agent (CA) can accept incoming HTTP or HTTPS connections. The default port is 8000, which
-does not require privileged access.
-
 Securing Kea Administrative Access
 ----------------------------------
 
@@ -340,8 +342,8 @@ file-access control on POSIX systems (owner, group, others, read/write).
     running, log an unrecoverable error.  For ease of use in simply omit the
     path component from ``socket-name``.
 
-Since Kea version 2.7.2 DHCP servers support HTTP/HTTPS control channels so the Control Agent (CA)
-is no longer needed.
+Since Kea version 2.7.2 DHCP servers support HTTP/HTTPS control channels,
+since Kea version 3.1.7 the Control Agent has been removed.
 
 Since Kea-2.7.6 Kea supports multiple HTTP/HTTPS connections. Both IPv4 and IPv6 addresses can be used.
 Security can be enhanced if configuring HTTPS connections for all daemons.
@@ -445,8 +447,7 @@ the following table:
    sercurity restrictions have been disabled.  Do not use this mode of operation without
    careful consideration and taking any necessary precautions. Failure to do so may expose
    deployments to security vulnerabilities.  This command line option is supported by
-   all of the daemons: ``kea-dhcp4``, ``kea-dhcp6``, ``kea-dhcp-ddns``, and
-  ``kea-ctrl-agent``.
+   all of the daemons: ``kea-dhcp4``, ``kea-dhcp6``, and ``kea-dhcp-ddns``.
 
 Cryptography Components
 -----------------------
@@ -458,7 +459,7 @@ deployments, Botan remains a fully supported alternative.
 
 The primary use cases for the cryptographic libraries are:
 
-- TLS support for the Control Agent (CA), introduced in Kea 1.9.6.
+- TLS support for HTTPS control channels, introduced in Kea 1.9.6.
 - TSIG signatures when sending DNS updates.
 - calculating DHCID records when sending DNS updates.
 - random number generation (but not for usage requiring a crypto grade generator).
@@ -517,19 +518,17 @@ If raw sockets are not required, disabling this access can improve security.
 Remote Administrative Access
 ----------------------------
 
-Kea's Control Agent (CA) exposes a RESTful API over HTTP or HTTPS (HTTP over TLS). The CA is an
-optional feature that is disabled by default, but it is very popular. When enabled, it listens on the
+DHCP and DDNS servers exposes a RESTful API over HTTP or HTTPS (HTTP over TLS).
+These control channels are ptional features that are disabled by default, but it is very popular. When enabled, it listens on the
 loopback address (127.0.0.1 or ::1) by default, unless configured otherwise. See :ref:`tls`
 for information about protecting the TLS traffic. Limiting the incoming connections with a firewall, such as
 iptables, is generally a good idea.
 
-Note that in High Availability (HA) deployments, DHCP partners connect to each other using a CA
-connection.
+Note that in High Availability (HA) deployments, a multi-threaded dedicated
+listener can be configured to serve the HA protocol using the RESTful API
+with peers.
 
-Since Kea version 2.7.2 DHCP and DDNS servers support HTTP/HTTPS control channels so the Control Agent (CA)
-is no longer needed.
-
-Since Kea-2.7.6 Kea supports multiple HTTP/HTTPS connections. Both IPv4 and IPv6 addresses can be used.
+Kea also supports multiple HTTP/HTTPS connections. Both IPv4 and IPv6 addresses can be used.
 Security can be enhanced if configuring HTTPS connections for all daemons.
 
 Authentication for Kea's RESTful API
@@ -547,7 +546,7 @@ using basic HTTP authentication.
 
 Kea 1.9.2 introduced a new ``auth`` hook point. With this new hook point, it is possible to develop an external
 hook library to extend the access controls, integrate with another authentication authority, or add role-based
-access control to the Control Agent. This hookpoint was renamed as ``http_auth`` and is also supported by the DHCP
+access control to control channels. This hookpoint was renamed as ``http_auth`` and is also supported by the DHCP
 and DDNS servers since Kea version 2.7.2.
 
 .. note:
@@ -575,7 +574,7 @@ Kea Runtime Security Policy Checking
 ====================================
 
 Runtime security policy checking was initially added to Kea daemons :iscman:`kea-dhcp4`,
-:iscman:`kea-dhcp6`, :iscman:`kea-dhcp-ddns`, :iscman:`kea-ctrl-agent`. in Kea 2.7.9
+:iscman:`kea-dhcp6`, :iscman:`kea-dhcp-ddns`. in Kea 2.7.9
 release.  In Kea 3.0 additional checks were added. By default, when a daemon detects
 a security policy violation it emits an error log and exits. The following checks are
 performed:

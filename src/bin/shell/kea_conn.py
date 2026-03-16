@@ -9,19 +9,18 @@ This file contains classes used for communication with Kea over HTTP/HTTPS.
 """
 
 
-class CARequest:
+class RARequest:
     """
     This class defines the HTTP request to be sent.
     The supported parameters listed are:
-     - path (specifies the path on the server, CA uses only /)
+     - path (specifies the path on the server, Kea uses only /)
      - scheme - http or https
-     - http_host - hostname of the CA
-     - http_port - TCP port of the CA
+     - http_host - hostname of the server
+     - http_port - TCP port of the server
      - ca - False or CA file or path
      - cert - False or cert file
      - key - False or private key file
      - command - specifies the command to send (e.g. list-commands)
-     - service - specifies service that is target for the command (e.g. dhcp4)
      - timeout - timeout (in ms)
      - auth - basic HTTP authentication credential
      - args - extra arguments my be added here
@@ -36,7 +35,6 @@ class CARequest:
     cert = False
     key = False
     command = ''
-    service = None
     timeout = 0
     auth = None
     args = ''
@@ -52,10 +50,6 @@ class CARequest:
         this stores the output in self.content
         """
         self.content = '{ "command": "' + self.command + '"'
-        if self.service is not None:
-            self.service = [x for x in self.service if x]
-            if len(self.service) > 0:
-                self.content += ', "service": ["' + '","'.join(self.service) + '"]'
         if len(self.args) > 1:
             self.content += ', "arguments": { ' + self.args + ' }'
         self.content += ' }'
@@ -74,7 +68,7 @@ class CARequest:
         self.headers['Content-Length'] = "%d" % (len(self.content))
 
 
-class CAResponse:
+class RAResponse:
     """
     This class represents the HTTP response
     """

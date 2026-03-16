@@ -227,7 +227,6 @@ sysrepoctl -u <module-name>
 Tests use these modules which you can find in src/share/yang/modules in addition
 to keatest-module:
  - ietf-dhcpv6-server
- - kea-ctrl-agent
  - kea-dhcp-ddns
  - kea-dhcp4-server
  - kea-dhcp6-server

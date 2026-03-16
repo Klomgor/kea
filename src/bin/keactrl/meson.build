@@ -50,12 +50,6 @@ configure_file(
     install_dir: kea_configfiles_destdir,
 )
 configure_file(
-    input: 'kea-ctrl-agent.conf.pre',
-    output: 'kea-ctrl-agent.conf',
-    configuration: kea_conf_data,
-    install_dir: kea_configfiles_destdir,
-)
-configure_file(
     input: 'kea-netconf.conf.pre',
     output: 'kea-netconf.conf',
     configuration: kea_conf_data,

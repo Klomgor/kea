@@ -65,7 +65,6 @@ public:
     static const isc::data::SimpleDefaults DHCP4_DEFAULTS;
     static const isc::data::SimpleDefaults DHCP6_DEFAULTS;
     static const isc::data::SimpleDefaults D2_DEFAULTS;
-    static const isc::data::SimpleDefaults CA_DEFAULTS;
     static const isc::data::ParamsList INHERIT_TO_SERVERS;
 };  // NetconfSimpleParser
 

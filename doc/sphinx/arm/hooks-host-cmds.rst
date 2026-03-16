@@ -11,8 +11,7 @@ and deleting host reservations in a safe way without restarting the
 server. In particular, it validates the parameters, so an attempt to
 insert incorrect data - such as adding a host with a conflicting identifier in the
 same subnet - is rejected. Those commands are exposed via the command
-channel (JSON over UNIX sockets) and the Control Agent (JSON over a RESTful
-interface).
+channel (JSON over UNIX or HTTP/HTTPS sockets).
 
 .. note::
 
@@ -71,8 +70,7 @@ Requirements <https://gitlab.isc.org/isc-projects/kea/-/wikis/Designs/commands>`
 document.
 
 All host commands use JSON syntax. They can be issued either using the
-control channel (see :ref:`ctrl-channel`) or via the Control Agent (see
-:ref:`kea-ctrl-agent`).
+control channel (see :ref:`ctrl-channel`).
 
 The library can be loaded similarly to other hook libraries. It
 does not take any parameters, and it supports both the DHCPv4 and DHCPv6

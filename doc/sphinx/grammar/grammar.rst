@@ -28,11 +28,6 @@ BNF Grammar for DHCPv6
 
 .. include:: grammar-dhcp6-parser.rst
 
-BNF Grammar for Control Agent
------------------------------
-
-.. include:: grammar-ca-parser.rst
-
 BNF Grammar for DHCP-DDNS
 -------------------------
 

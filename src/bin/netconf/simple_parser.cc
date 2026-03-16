@@ -65,11 +65,6 @@ const SimpleDefaults NetconfSimpleParser::D2_DEFAULTS = {
     { "model", Element::string, "kea-dhcp-ddns" }
 };
 
-/// @brief Supplies defaults for ca managed server
-const SimpleDefaults NetconfSimpleParser::CA_DEFAULTS = {
-    { "model", Element::string, "kea-ctrl-agent" }
-};
-
 /// @brief List of parameters that can be inherited to managed-servers scope.
 ///
 /// Some parameters may be defined on both global (directly in Netconf) and
@@ -139,8 +134,6 @@ NetconfSimpleParser::setServerDefaults(const std::string name,
         cnt += setDefaults(server, DHCP6_DEFAULTS);
     } else if (name == "d2") {
         cnt += setDefaults(server, D2_DEFAULTS);
-    } else if (name == "ca") {
-        cnt += setDefaults(server, CA_DEFAULTS);
     }
 
     ConstElementPtr ctrl_sock = server->get("control-socket");

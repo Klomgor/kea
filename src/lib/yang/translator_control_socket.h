@@ -41,22 +41,6 @@ namespace yang {
 ///     "user-context": { "foo": 1 }
 /// }
 /// @endcode
-/// @code
-///  /kea-ctrl-agent:config (container)
-///  /kea-ctrl-agent:config/control-sockets (container)
-///  /kea-ctrl-agent:config/control-sockets/
-///     control-sockets[server-type='dhcp4'] (list instance)
-///  /kea-ctrl-agent:config/control-sockets/control-sockets[server-type='dhcp4']/
-///     server-type = dhcp4
-///  /kea-ctrl-agent:config/control-sockets/control-sockets[server-type='dhcp4']/
-///     control-socket (container)
-///  /kea-ctrl-agent:config/control-sockets/control-sockets[server-type='dhcp4']/
-///     control-socket/socket-name = kea.sock
-///  /kea-ctrl-agent:config/control-sockets/control-sockets[server-type='dhcp4']/
-///     control-socket/socket-type = unix
-///  /kea-ctrl-agent:config/control-sockets/control-sockets[server-type='dhcp4']/
-///     control-socket/user-context = { \"foo\": 1 }
-/// @endcode
 
 /// @brief A translator class for converting a control socket between
 /// YANG and JSON.
@@ -65,7 +49,6 @@ namespace yang {
 /// - kea-dhcp4-server
 /// - kea-dhcp6-server
 /// - kea-dhcp-ddns
-/// - kea-ctrl-agent
 class TranslatorControlSocket : virtual public Translator {
 public:
     /// @brief Constructor.

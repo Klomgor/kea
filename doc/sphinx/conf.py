@@ -120,7 +120,6 @@ exclude_patterns = [
     'arm/ext-netconf.rst',
     'arm/ext-gss-tsig.rst',
     'arm/ext-radius.rst',
-    'grammar/grammar-ca-parser.rst',
     'grammar/grammar-d2-parser.rst',
     'grammar/grammar-dhcp4-parser.rst',
     'grammar/grammar-dhcp6-parser.rst',
@@ -230,13 +229,12 @@ man_pages = [
     (master_doc, 'kea-arm', 'Kea Administrator Reference Manual Documentation', [author], 1),
     ('man/kea-admin.8', 'kea-admin', 'Shell script for managing Kea databases', author, 8),
     ('man/keactrl.8', 'keactrl', 'Shell script for managing Kea', author, 8),
-    ('man/kea-ctrl-agent.8', 'kea-ctrl-agent', 'Control Agent process in Kea', author, 8),
     ('man/kea-dhcp4.8', 'kea-dhcp4', 'DHCPv4 server in Kea', author, 8),
     ('man/kea-dhcp6.8', 'kea-dhcp6', 'DHCPv6 server in Kea', author, 8),
     ('man/kea-dhcp-ddns.8', 'kea-dhcp-ddns', 'DHCP-DDNS process in Kea', author, 8),
     ('man/kea-lfc.8', 'kea-lfc', 'Lease File Cleanup process in Kea', author, 8),
     ('man/kea-netconf.8', 'kea-netconf', 'NETCONF agent for configuring Kea', author, 8),
-    ('man/kea-shell.8', 'kea-shell', 'Text client for Control Agent process', author, 8),
+    ('man/kea-shell.8', 'kea-shell', 'Text client for control process', author, 8),
     ('man/perfdhcp.8', 'perfdhcp', 'DHCP benchmarking tool', author, 8),
 ]
 

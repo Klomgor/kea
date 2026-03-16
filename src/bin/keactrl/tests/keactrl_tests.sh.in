@@ -42,9 +42,6 @@ DHCP6_CFG_FILE="@abs_top_builddir@/src/bin/keactrl/tests/${DHCP6_CFG_FILE_NAME}.
 # Names for D2
 D2_CFG_FILE_NAME="d2_test_config.conf"
 D2_CFG_FILE="@abs_top_builddir@/src/bin/keactrl/tests/${D2_CFG_FILE_NAME}.json"
-# Names for CA
-CA_CFG_FILE_NAME="ca_test_config.conf"
-CA_CFG_FILE="@abs_top_builddir@/src/bin/keactrl/tests/${CA_CFG_FILE_NAME}.json"
 # Names for Netconf
 NC_CFG_FILE_NAME="nc_test_config.conf"
 NC_CFG_FILE="@abs_top_builddir@/src/bin/keactrl/tests/${NC_CFG_FILE_NAME}.json"
@@ -52,7 +49,6 @@ NC_CFG_FILE="@abs_top_builddir@/src/bin/keactrl/tests/${NC_CFG_FILE_NAME}.json"
 CFG_FILES="kea_dhcp4_config_file=${DHCP4_CFG_FILE}\n\
 kea_dhcp6_config_file=${DHCP6_CFG_FILE}\n\
 kea_dhcp_ddns_config_file=${D2_CFG_FILE}\n\
-kea_ctrl_agent_config_file=${CA_CFG_FILE}\n\
 kea_netconf_config_file=${NC_CFG_FILE}"
 KEACTRL_BUILD_DIR="@abs_top_builddir@"
 # A name of the keactrl config file
@@ -68,7 +64,6 @@ wildcard_name="kea-"
 kea4_name="${wildcard_name}dhcp4"
 kea6_name="${wildcard_name}dhcp6"
 d2_name="${wildcard_name}dhcp-ddns"
-agent_name="${wildcard_name}ctrl-agent"
 netconf_name="${wildcard_name}netconf"
 
 # DHCPv4 configuration
@@ -169,25 +164,6 @@ dhcp_ddns_config="{
     }
 }"
 
-# Control-agent configuration
-control_agent_config="{
-    \"Control-agent\": {
-        \"http-host\": \"127.0.0.1\",
-        \"http-port\": 18080,
-        \"loggers\": [
-        {
-            \"name\": \"kea-ctrl-agent\",
-            \"output-options\": [
-                {
-                    \"output\": \"$LOG_FILE\"
-                }
-            ],
-            \"severity\": \"INFO\"
-        }
-        ]
-    }
-}"
-
 # Netconf configuration
 netconf_config="{
     \"Netconf\": {
@@ -209,7 +185,6 @@ netconf_config="{
 keactrl_fixed_config="dhcp4_srv=${KEACTRL_BUILD_DIR}/src/bin/dhcp4/kea-dhcp4\n\
 dhcp6_srv=${KEACTRL_BUILD_DIR}/src/bin/dhcp6/kea-dhcp6\n\
 dhcp_ddns_srv=${KEACTRL_BUILD_DIR}/src/bin/d2/kea-dhcp-ddns\n\
-ctrl_agent_srv=${KEACTRL_BUILD_DIR}/src/bin/agent/kea-ctrl-agent\n\
 netconf_srv=${KEACTRL_BUILD_DIR}/src/bin/netconf/kea-netconf\n"
 
 # This test checks that DHCPv4, DHCPv6, D2, CA and Netconf server can
@@ -218,7 +193,7 @@ start_all_servers_no_verbose_test() {
     # Create configuration file for keactrl. This configuration enables
     # DHCPv4, DHCPv6, D2, CA and netconf.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
-dhcp_ddns=yes\nctrl_agent=yes\nnetconf=yes\n\
+dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=no\n${keactrl_fixed_config}"
 
     test_start "keactrl.start_all_servers_no_verbose_test"
@@ -227,7 +202,6 @@ kea_verbose=no\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -272,11 +246,6 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${d2_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    wait_for_message 20 "CTRL_AGENT_HTTP_SERVICE_STARTED" 1
-    assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
-        "Timeout waiting for ${agent_name} to start. \
-Expected wait_for_message return %d, returned %d."
-
     if ${have_netconf}; then
         wait_for_message 20 "NETCONF_STARTED" 1
         assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -314,10 +283,6 @@ Expected wait_for_message return %d, returned %d."
     get_pid ${d2_name} ${D2_CFG_FILE_NAME}
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
-
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
 
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -374,7 +339,7 @@ start_all_servers_verbose_test() {
     # Create configuration file for keactrl. This configuration enables
     # all servers.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
-dhcp_ddns=yes\nctrl_agent=yes\nnetconf=yes\n\
+dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=yes\n${keactrl_fixed_config}"
 
     test_start "keactrl.start_all_servers_verbose_test"
@@ -383,7 +348,6 @@ kea_verbose=yes\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -417,11 +381,6 @@ Expected wait_for_message return %d, returned %d."
     wait_for_message 20 "DHCP_DDNS_STARTED" 1
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
         "Timeout waiting for ${d2_name} to start. \
-Expected wait_for_message return %d, returned %d."
-
-    wait_for_message 20 "CTRL_AGENT_HTTP_SERVICE_STARTED" 1
-    assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
-        "Timeout waiting for ${agent_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
     if ${have_netconf}; then
@@ -467,10 +426,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
         assert_eq 1 "${_GET_PIDS_NUM}" \
@@ -503,7 +458,7 @@ Expected wait_for_message return %d, returned %d."
     fi
     wait_for_message 10 "DCTL_SHUTDOWN" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
-        "Timeout waiting for ${d2_name} and ${agent_name} to shutdown. \
+        "Timeout waiting for ${d2_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
@@ -525,11 +480,9 @@ keactrl_status_test() {
   create_dhcp4_config "${dhcp4_config}"
   create_dhcp6_config "${dhcp6_config}"
   create_d2_config "${dhcp_ddns_config}"
-  create_ca_config "${control_agent_config}"
   create_nc_config "${netconf_config}"
   create_keactrl_config "${CFG_FILES}
 ${keactrl_fixed_config}
-ctrl_agent=no
 dhcp_ddns=no
 dhcp4=yes
 dhcp6=yes
@@ -544,8 +497,6 @@ kea_verbose=no
 'DHCPv4 server: inactive
 DHCPv6 server: inactive
 DHCP DDNS: inactive
-Control Agent: inactive' \
-    "$(printf '%s\n' "${OUTPUT}" | head -n 4)"
 
   if "${have_netconf}"; then
     assert_str_eq 'Netconf agent: inactive' \
@@ -593,7 +544,7 @@ start_v4_server_test() {
     # Create configuration file for keactrl. This configuration enables
     # DHCPv4 server but disables other servers.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=no\n\
-dhcp_ddns=no\nctrl_agent=no\nnetconf=no\n\
+dhcp_ddns=no\nnetconf=no\n\
 kea_verbose=no\n${keactrl_fixed_config}"
 
     test_start "keactrl.start_v4_server_test"
@@ -602,7 +553,6 @@ kea_verbose=no\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -641,11 +591,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 0 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure that CA is not running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 0 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure that Netconf agent is not running.
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -664,8 +609,6 @@ Expected wait_for_message return %d, returned %d."
     assert_string_contains "DHCPv6 server: inactive" "${OUTPUT}" \
         "Expected keactrl status command return %s"
     assert_string_contains "DHCP DDNS: inactive" "${OUTPUT}" \
-        "Expected keactrl status command return %s"
-    assert_string_contains "Control Agent: inactive" "${OUTPUT}" \
         "Expected keactrl status command return %s"
     if ${have_netconf}; then
         assert_string_contains "Netconf agent: inactive" "${OUTPUT}" \
@@ -703,7 +646,7 @@ start_v6_server_test() {
     # Create configuration file for keactrl. This configuration enables
     # DHCPv6 server but disables other servers..
     keactrl_config="${CFG_FILES}\ndhcp4=no\ndhcp6=yes\n\
-dhcp_ddns=no\nctrl_agent=no\nnetconf=no\n\
+dhcp_ddns=no\nnetconf=no\n\
 kea_verbose=no\n${keactrl_fixed_config}"
 
     test_start "keactrl.start_v6_server_test"
@@ -712,7 +655,6 @@ kea_verbose=no\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -751,11 +693,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 0 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure that CA is not running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 0 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure that Netconf agent is not running.
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -773,8 +710,6 @@ Expected wait_for_message return %d, returned %d."
     assert_string_contains "DHCPv6 server: active" "${OUTPUT}" \
         "Expected keactrl status command return %s"
     assert_string_contains "DHCP DDNS: inactive" "${OUTPUT}" \
-        "Expected keactrl status command return %s"
-    assert_string_contains "Control Agent: inactive" "${OUTPUT}" \
         "Expected keactrl status command return %s"
     if ${have_netconf}; then
         assert_string_contains "Netconf agent: inactive" "${OUTPUT}" \
@@ -813,7 +748,7 @@ late_start_v4_server_test() {
     # Create configuration file for keactrl. This configuration enables
     # DHCPv6 server but disables other servers.
     keactrl_config="${CFG_FILES}\ndhcp4=no\ndhcp6=yes\n\
-dhcp_ddns=no\nctrl_agent=no\nnetconf=no\n\
+dhcp_ddns=no\nnetconf=no\n\
 kea_verbose=no\n${keactrl_fixed_config}"
 
     test_start "keactrl.late_start_v4_server_test"
@@ -822,7 +757,6 @@ kea_verbose=no\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -861,11 +795,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 0 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure that CA is not running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 0 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure that Netconf agent is not running.
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -886,7 +815,7 @@ Expected wait_for_message to return %d, returned %d."
 
     # Update keactrl config to enable other servers.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
-dhcp_ddns=yes\nctrl_agent=yes\nnetconf=yes\n\
+dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=yes\n${keactrl_fixed_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -929,11 +858,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure that CA is running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure that Netconf agent is running.
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -961,7 +885,7 @@ Expected wait_for_message to return %d, returned %d."
     # There should be two completed configurations of D2 and two
     # configurations of CA.
     wait_for_message 10 "DCTL_CONFIG_COMPLETE" 4
-    assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${d2_name} or ${agent_name} \
+    assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${d2_name} \
 to reconfigure. Expected wait_for_message to return %d, returned %d."
 
     # Use keactrl stop to shutdown the servers.
@@ -990,7 +914,7 @@ Expected wait_for_message return %d, returned %d."
     fi
     wait_for_message 10 "DCTL_SHUTDOWN" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
-        "Timeout waiting for ${d2_name} and ${agent_name} to shutdown. \
+        "Timeout waiting for ${d2_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
@@ -1013,7 +937,7 @@ late_start_v6_server_test() {
     # Create configuration file for keactrl. This configuration enables
     # DHCPv4 server but disables DHCPv6 server.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=no\n\
-dhcp_ddns=no\nctrl_agent=no\nnetconf=no\n\
+dhcp_ddns=no\nnetconf=no\n\
 kea_verbose=yes\n${keactrl_fixed_config}"
 
     test_start "keactrl.late_start_v6_server_test"
@@ -1022,7 +946,6 @@ kea_verbose=yes\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -1061,11 +984,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 0 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure that CA is not running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 0 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure that Netconf agent is not running.
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -1086,7 +1004,7 @@ Expected wait_for_message to return %d, returned %d."
 
     # Update keactrl config to enable other servers.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
-dhcp_ddns=yes\nctrl_agent=yes\nnetconf=yes\n\
+dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=no\n${keactrl_fixed_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -1129,11 +1047,6 @@ Expected wait_for_message return %d, returned %d."
     get_pid ${d2_name} ${D2_CFG_FILE_NAME}
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
-
-    # Make sure that CA is running.
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
 
     # Make sure that Netconf agent is running.
     if ${have_netconf}; then
@@ -1207,7 +1120,7 @@ stop_selected_server_test() {
     # Create configuration file for keactrl. This configuration enables
     # all servers.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
-dhcp_ddns=yes\nctrl_agent=yes\nnetconf=yes\n\
+dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=no\n${keactrl_fixed_config}"
 
     test_start "keactrl.stop_selected_server_test"
@@ -1216,7 +1129,6 @@ kea_verbose=no\n${keactrl_fixed_config}"
     create_dhcp4_config "${dhcp4_config}"
     create_dhcp6_config "${dhcp6_config}"
     create_d2_config "${dhcp_ddns_config}"
-    create_ca_config "${control_agent_config}"
     create_nc_config "${netconf_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -1283,10 +1195,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
         assert_eq 1 "${_GET_PIDS_NUM}" \
@@ -1325,11 +1233,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure CA is still running
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure Netconf agent is still running
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
@@ -1364,11 +1267,6 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_GET_PIDS_NUM}" \
         "Expected %d ${d2_name} process running, found %d processes running"
 
-    # Make sure CA is still running
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Use keactrl stop to shutdown D2 server.
     printf 'Stopping DHCP DDNS server: %s stop -s dhcp_ddns -c %s\n' "${keactrl}" "${KEACTRL_CFG_FILE}"
     run_command \
@@ -1391,39 +1289,12 @@ Expected wait_for_message return %d, returned %d."
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
         "Expected wait_for_server_down return %d, returned %d"
 
-    # Make sure CA is still running
-    get_pid ${agent_name} ${CA_CFG_FILE_NAME}
-    assert_eq 1 "${_GET_PIDS_NUM}" \
-        "Expected %d ${agent_name} process running, found %d processes running"
-
     # Make sure Netconf agent is still running
     if ${have_netconf}; then
         get_pid ${netconf_name} ${NC_CFG_FILE_NAME}
         assert_eq 1 "${_GET_PIDS_NUM}" \
             "Expected %d ${netconf_name} process running, found %d processes running"
     fi
-
-    # Use keactrl stop to shutdown CA.
-    printf 'Stopping Control Agent: %s stop -s ctrl_agent -c %s\n' "${keactrl}" "${KEACTRL_CFG_FILE}"
-    run_command \
-        "${keactrl}" stop -s ctrl_agent -c ${KEACTRL_CFG_FILE}
-    assert_eq 0 "${EXIT_CODE}" "Expected keactrl to return %d, returned value was %d."
-
-    # Wait up to 10s for the CA to stop.
-    wait_for_message 10 "DCTL_SHUTDOWN" 2
-    assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
-        "Timeout waiting for ${agent_name} to shutdown. \
-Expected wait_for_message return %d, returned %d."
-
-    # Make sure that the CA is down.
-    if ${have_netconf}; then
-        expected=6
-    else
-        expected=5
-    fi
-    wait_for_server_down ${expected} ${agent_name}
-    assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
-        "Expected wait_for_server_down return %d, returned %d"
 
     # Make sure Netconf agent is still running
     if ${have_netconf}; then
@@ -1478,8 +1349,6 @@ status_no_config_test() {
         "Expected keactrl status command return %s"
     assert_string_contains "DHCP DDNS: inactive" "${OUTPUT}" \
         "Expected keactrl status command return %s"
-    assert_string_contains "Control Agent: inactive" "${OUTPUT}" \
-        "Expected keactrl status command return %s"
     if ${have_netconf}; then
         assert_string_contains "Netconf agent: inactive" "${OUTPUT}" \
             "Expected keactrl status command return %s"
@@ -1498,7 +1367,7 @@ version_command_test() {
     # Create configuration file for keactrl.
     # Note that += is NOT in POSIX shell so PLEASE do NOT use it.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\ndhcp_ddns=yes\n"
-    keactrl_config="${keactrl_config}ctrl_agent=yes\nnetconf=yes\n"
+    keactrl_config="${keactrl_config}netconf=yes\n"
     keactrl_config="${keactrl_config}kea_verbose=no\n${keactrl_fixed_config}"
     create_keactrl_config "${keactrl_config}"
 
@@ -1509,7 +1378,6 @@ version_command_test() {
     exp="${exp}kea-dhcp4: @PACKAGE_VERSION@\n"
     exp="${exp}kea-dhcp6: @PACKAGE_VERSION@\n"
     exp="${exp}kea-dhcp-ddns: @PACKAGE_VERSION@\n"
-    exp="${exp}kea-ctrl-agent: @PACKAGE_VERSION@"
     if ${have_netconf}; then
         exp="${exp}\nkea-netconf: @PACKAGE_VERSION@"
     fi

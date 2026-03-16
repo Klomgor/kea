@@ -493,9 +493,7 @@ libraries, discussed in the following sections.
 
 The following table provides a list of hook libraries currently available
 from ISC. It is important to pay attention to which libraries may be
-loaded by which Kea processes. It is a common mistake to configure the
-:iscman:`kea-ctrl-agent` process to load libraries that should, in fact, be
-loaded by the :iscman:`kea-dhcp4` or :iscman:`kea-dhcp6` processes. If a library
+loaded by which Kea processes. If a library
 from ISC does not work as expected, please make sure that it has been
 loaded by the correct process per the table below.
 
@@ -603,8 +601,7 @@ loaded by the correct process per the table below.
    |                                                           |              | parameters, so an attempt to insert incorrect data, e.g. add |
    |                                                           |              | a host with conflicting identifier in the same subnet, is    |
    |                                                           |              | rejected. Those commands are exposed via the command channel |
-   |                                                           |              | (JSON over UNIX sockets) and the Control Agent (JSON over    |
-   |                                                           |              | RESTful interface).                                          |
+   |                                                           |              | (JSON over UNIX or HTTP/HTTPS sockets),                      |
    +-----------------------------------------------------------+--------------+--------------------------------------------------------------+
    | :ref:`Lease Commands <hooks-lease-cmds>`                  | Kea open     | This hook library offers a number of commands used to        |
    |                                                           | source       | manage leases. Kea can store lease information in various    |
@@ -652,10 +649,9 @@ loaded by the correct process per the table below.
    |                                                           |              | The accounting mechanism allows a RADIUS server to keep      |
    |                                                           |              | track of device activity over time.                          |
    +-----------------------------------------------------------+--------------+--------------------------------------------------------------+
-   | :ref:`RBAC <hooks-rbac>`                                  | ISC support  | This hook library adds support to the Kea Control Agent      |
-   |                                                           | customers    | (kea-ctrl-agent) and Kea servers (kea-dhcp4, kea-dhcp6 and   |
-   |                                                           |              | kea-dhcp-ddns) for Role-Based Access Control filtering of    |
-   |                                                           |              | commands.                                                    |
+   | :ref:`RBAC <hooks-rbac>`                                  | ISC support  | This hook library adds support to Kea servers (kea-dhcp4,    |
+   |                                                           | customers    | kea-dhcp6 and kea-dhcp-ddns) for Role-Based Access Control   |
+   |                                                           |              | filtering of commands.                                       |
    +-----------------------------------------------------------+--------------+--------------------------------------------------------------+
    | :ref:`Run Script <hooks-run-script>`                      | Kea open     | This hook library adds support to run external               |
    |                                                           | source       | scripts for specific packet-processing hook points. There    |

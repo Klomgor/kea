@@ -167,6 +167,6 @@ See Also
 ~~~~~~~~
 
 :manpage:`kea-dhcp4(8)`, :manpage:`kea-dhcp6(8)`,
-:manpage:`kea-dhcp-ddns(8)`, :manpage:`kea-ctrl-agent(8)`,
+:manpage:`kea-dhcp-ddns(8)`,
 :manpage:`keactrl(8)`, :manpage:`perfdhcp(8)`, :manpage:`kea-netconf(8)`,
 Kea Administrator Reference Manual.

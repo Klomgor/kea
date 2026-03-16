@@ -18,7 +18,6 @@ Manual Pages
 
    man/kea-dhcp4.8
    man/kea-dhcp6.8
-   man/kea-ctrl-agent.8
    man/keactrl.8
    man/kea-admin.8
    man/kea-dhcp-ddns.8

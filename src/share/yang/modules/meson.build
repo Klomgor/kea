@@ -14,7 +14,6 @@ yangmodules_list = [
     'ietf-inet-types@2013-07-15.yang',
     'ietf-interfaces@2018-02-20.yang',
     'ietf-yang-types@2013-07-15.yang',
-    'kea-ctrl-agent@2025-06-25.yang',
     'kea-dhcp-ddns@2025-06-25.yang',
     'kea-dhcp-types@2025-06-25.yang',
     'kea-dhcp4-server@2025-06-25.yang',

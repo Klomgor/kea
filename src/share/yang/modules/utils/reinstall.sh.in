@@ -151,7 +151,6 @@ install_yang_modules() {
   install_kea_module 'kea-types'
   install_kea_module 'kea-dhcp-types'
   install_kea_module 'kea-dhcp-ddns'
-  install_kea_module 'kea-ctrl-agent'
   install_kea_module 'kea-dhcp4-server'
   install_kea_module 'kea-dhcp6-server'
 }
@@ -161,7 +160,6 @@ install_yang_modules() {
 uninstall_yang_modules() {
   uninstall_module 'kea-dhcp6-server'
   uninstall_module 'kea-dhcp4-server'
-  uninstall_module 'kea-ctrl-agent'
   uninstall_module 'kea-dhcp-ddns'
   uninstall_module 'kea-dhcp-types'
   uninstall_module 'kea-types'

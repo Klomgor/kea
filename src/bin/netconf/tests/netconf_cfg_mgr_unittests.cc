@@ -86,11 +86,6 @@ TEST(NetconfCfgMgr, contextServer) {
                                      "socket3",
                                      Url("http://127.0.0.1:8000/")));
     CfgServerPtr server3(new CfgServer("model3", socket3));
-    CfgControlSocketPtr
-        socket4(new CfgControlSocket(CfgControlSocket::Type::UNIX,
-                                     "socket4",
-                                     Url("http://127.0.0.1:8000/")));
-    CfgServerPtr server4(new CfgServer("model4", socket4));
 
     // Ok, now set the server for D2
     EXPECT_NO_THROW_LOG(ctx.getCfgServersMap()->insert(make_pair("d2", server1)));
@@ -112,12 +107,8 @@ TEST(NetconfCfgMgr, contextServer) {
 
     // Finally, set all servers.
     EXPECT_NO_THROW_LOG(ctx.getCfgServersMap()->insert(make_pair("dhcp4", server3)));
-    EXPECT_NO_THROW_LOG(ctx.getCfgServersMap()->insert(make_pair("ca", server4)));
-    EXPECT_EQ(4, ctx.getCfgServersMap()->size());
     ASSERT_NO_THROW_LOG(ctx.getCfgServersMap()->at("dhcp4"));
-    ASSERT_NO_THROW_LOG(ctx.getCfgServersMap()->at("ca"));
     EXPECT_EQ(server3, ctx.getCfgServersMap()->at("dhcp4"));
-    EXPECT_EQ(server4, ctx.getCfgServersMap()->at("ca"));
 }
 
 // Tests if the context can store and retrieve hook libs information.
@@ -218,7 +209,7 @@ const char* NETCONF_CONFIGS[] = {
     "    }\n"
     "}",
 
-    // Configuration 3: all 4 servers
+    // Configuration 3: all 3 servers
     "{\n"
     "    \"boot-update\": false,\n"
     "    \"managed-servers\": {\n"
@@ -237,11 +228,6 @@ const char* NETCONF_CONFIGS[] = {
     "            \"subscribe-changes\": false,\n"
     "            \"control-socket\": {\n"
     "                \"socket-name\": \"/tmp/socket-d2\"\n"
-    "            }\n"
-    "        },\n"
-    "        \"ca\": {\n"
-    "            \"control-socket\": {\n"
-    "                \"socket-name\": \"/tmp/socket-ca\"\n"
     "            }\n"
     "        }\n"
     "    }\n"
@@ -612,19 +598,6 @@ TEST_F(NetconfParserTest, configParse4Servers) {
     EXPECT_EQ("/tmp/socket-d2", socket->getName());
     EXPECT_EQ("http://127.0.0.1:8000/", socket->getUrl().toText());
 
-    ASSERT_NO_THROW_LOG(ctx->getCfgServersMap()->at("ca"));
-    server = ctx->getCfgServersMap()->at("ca");
-    ASSERT_TRUE(server);
-    EXPECT_EQ(KEA_CTRL_AGENT, server->getModel());
-    EXPECT_FALSE(server->getBootUpdate());
-    EXPECT_TRUE(server->getSubscribeChanges());
-    EXPECT_TRUE(server->getValidateChanges());
-    socket = server->getCfgControlSocket();
-    ASSERT_TRUE(socket);
-    EXPECT_EQ(CfgControlSocket::Type::STDOUT, socket->getType());
-    EXPECT_EQ("/tmp/socket-ca", socket->getName());
-    EXPECT_EQ("http://127.0.0.1:8000/", socket->getUrl().toText());
-
     // Check unparsing.
     string expected =  "{\n"
         "    \"Netconf\": {\n"
@@ -660,17 +633,6 @@ TEST_F(NetconfParserTest, configParse4Servers) {
         "                \"control-socket\": {\n"
         "                    \"socket-type\": \"stdout\",\n"
         "                    \"socket-name\": \"/tmp/socket-d2\",\n"
-        "                    \"socket-url\": \"http://127.0.0.1:8000/\"\n"
-        "                }\n"
-        "            },\n"
-        "            \"ca\": {\n"
-        "                \"model\": \"kea-ctrl-agent\",\n"
-        "                \"boot-update\": false,\n"
-        "                \"subscribe-changes\": true,\n"
-        "                \"validate-changes\": true,\n"
-        "                \"control-socket\": {\n"
-        "                    \"socket-type\": \"stdout\",\n"
-        "                    \"socket-name\": \"/tmp/socket-ca\",\n"
         "                    \"socket-url\": \"http://127.0.0.1:8000/\"\n"
         "                }\n"
         "            }\n"

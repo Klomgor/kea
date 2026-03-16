@@ -25,7 +25,7 @@ from base64 import b64encode
 sys.path.append('@PKGPYTHONDIR@')
 
 import kea_connector3 as kea_connector
-from kea_conn import CARequest  # CAResponse
+from kea_conn import RARequest  # RAResponse
 
 
 VERSION = "@PACKAGE_VERSION@"
@@ -50,10 +50,10 @@ def shell_body():
                                      'client that uses REST interface to '
                                      'connect to Kea servers over HTTP/HTTPS.')
     parser.add_argument('--host', type=str, default='127.0.0.1',
-                        help='hostname of the CA to connect to '
+                        help='hostname of the server to connect to '
                         '(default:; 127.0.0.1)')
     parser.add_argument('--port', type=int, default=8000,
-                        help='TCP port of the CA to connect to '
+                        help='TCP port of the server to connect to '
                         '(default: 8000)')
     parser.add_argument('--path', type=str, default='',
                         help='Path of the URL to connect to '
@@ -69,10 +69,9 @@ def shell_body():
                         '(default: "")')
     parser.add_argument('--timeout', type=int, default='10',
                         help='Timeout (in seconds) when attempting to '
-                        'connect to CA (default: 10)')
+                        'connect to the server (default: 10)')
     parser.add_argument('--service', nargs="?", action="append",
-                        help='target specified service. If not specified,'
-                        'the destination itself will receive command.')
+                        help='obsolete parameter.')
     parser.add_argument('--auth-user', type=str, default='',
                         help='Basic HTTP authentication user')
     parser.add_argument('--auth-password', type=str, default='',
@@ -101,9 +100,8 @@ def shell_body():
 
     # Ok, now it's time to put the parameters parsed into the structure to be
     # used by the connection.
-    params = CARequest()
+    params = RARequest()
     params.command = cmd_args.command
-    params.service = cmd_args.service
     params.http_host = cmd_args.host
     params.http_port = cmd_args.port
     params.path += cmd_args.path

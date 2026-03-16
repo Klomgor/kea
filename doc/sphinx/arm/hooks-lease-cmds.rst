@@ -114,8 +114,7 @@ This library provides the following commands:
 -  :isccmd:`lease6-write` - writes the IPv6 memfile lease database into a file.
 
 All commands use JSON syntax and can be issued either using the control
-channel (see :ref:`ctrl-channel`) or Control Agent (see
-:ref:`kea-ctrl-agent`).
+channel (see :ref:`ctrl-channel`).
 
 The library can be loaded in the same way as other hook libraries, and
 it does not take any parameters. It supports both the DHCPv4 and DHCPv6

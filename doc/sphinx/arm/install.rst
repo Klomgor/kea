@@ -46,8 +46,6 @@ can be installed individually, with any of the following packages:
 
 - ``isc-kea-dhcp-ddns`` — Kea DHCP DDNS server
 
-- ``isc-kea-ctrl-agent`` — Kea Control Agent for remote configuration
-
 - ``isc-kea-admin`` — Kea database administration tools
 
 - ``isc-kea-hooks`` — Kea open source DHCP hooks
@@ -60,7 +58,7 @@ fill out our contact form at https://www.isc.org/contact.
 
 Once installed, the services can be managed through the distribution's
 service manager. The services are named: :iscman:`kea-dhcp4`, :iscman:`kea-dhcp6`,
-:iscman:`kea-dhcp-ddns`, and :iscman:`kea-ctrl-agent`.
+:iscman:`kea-dhcp-ddns`.
 
 .. note::
    The real service names on Debian and Ubuntu use slightly different
@@ -68,8 +66,7 @@ service manager. The services are named: :iscman:`kea-dhcp4`, :iscman:`kea-dhcp6
    systemd service alias is used to allow users to refer to them with shorter
    names. Calling ``systemctl enable`` on these services requires
    the real service names, which are: ``isc-kea-dhcp4-server``,
-   ``isc-kea-dhcp6-server``, ``isc-kea-dhcp-ddns-server``, and
-   ``isc-kea-ctrl-agent``.
+   ``isc-kea-dhcp6-server``, ``isc-kea-dhcp-ddns-server``.
 
 Caveats When Upgrading Kea Packages
 -----------------------------------

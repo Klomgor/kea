@@ -21,18 +21,6 @@ test(
     env: pythonpath,
     suite: 'python-tests',
 )
-ca_basic_auth_tests = configure_file(
-    input: 'ca_basic_auth_tests.sh.in',
-    output: 'ca_basic_auth_tests.sh',
-    configuration: shell_tests_conf_data,
-)
-test(
-    'ca_basic_auth_tests.sh',
-    ca_basic_auth_tests,
-    is_parallel: false,
-    priority: -1,
-    suite: 'shell-tests',
-)
 d2_basic_auth_tests = configure_file(
     input: 'd2_basic_auth_tests.sh.in',
     output: 'd2_basic_auth_tests.sh',
@@ -69,18 +57,6 @@ test(
     priority: -1,
     suite: 'shell-tests',
 )
-shell_ca_process_tests = configure_file(
-    input: 'shell_ca_process_tests.sh.in',
-    output: 'shell_ca_process_tests.sh',
-    configuration: shell_tests_conf_data,
-)
-test(
-    'shell_ca_process_tests.sh',
-    shell_ca_process_tests,
-    is_parallel: false,
-    priority: -1,
-    suite: 'shell-tests',
-)
 shell_d2_process_tests = configure_file(
     input: 'shell_d2_process_tests.sh.in',
     output: 'shell_d2_process_tests.sh',
@@ -113,18 +89,6 @@ shell_dhcp6_process_tests = configure_file(
 test(
     'shell_dhcp6_process_tests.sh',
     shell_dhcp6_process_tests,
-    is_parallel: false,
-    priority: -1,
-    suite: 'shell-tests',
-)
-tls_ca_process_tests = configure_file(
-    input: 'tls_ca_process_tests.sh.in',
-    output: 'tls_ca_process_tests.sh',
-    configuration: shell_tests_conf_data,
-)
-test(
-    'tls_ca_process_tests.sh',
-    tls_ca_process_tests,
     is_parallel: false,
     priority: -1,
     suite: 'shell-tests',

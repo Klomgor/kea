@@ -27,10 +27,6 @@ static const std::string KEA_DHCP6_SERVER = "kea-dhcp6-server";
 /// by ISC in the near future.
 static const std::string KEA_DHCP_DDNS = "kea-dhcp-ddns";
 
-/// This model is currently in prototype phase. It will be developed
-/// by ISC in the near future.
-static const std::string KEA_CTRL_AGENT = "kea-ctrl-agent";
-
 }  // namespace yang
 }  // namespace isc
 

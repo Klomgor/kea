@@ -12,7 +12,7 @@ import urllib.request
 import ssl
 import os
 
-from kea_conn import CAResponse  # CARequest
+from kea_conn import RAResponse  # RARequest
 
 
 def send_to_kea(params):
@@ -48,8 +48,8 @@ def send_to_kea(params):
     #        Allowing use of file:/ or custom schemes is often unexpected.
     # Reason for nosec: url is checked to be http further above.
     with urllib.request.urlopen(req, context=ssl_ctx) as resp:  # nosec B310
-        # Now get the response details, put it in CAResponse and return it
-        result = CAResponse(resp.getcode(), resp.reason,
+        # Now get the response details, put it in RAResponse and return it
+        result = RAResponse(resp.getcode(), resp.reason,
                             resp.read().decode("utf-8"))
 
         return result

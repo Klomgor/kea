@@ -309,9 +309,9 @@ Quick Start Guide for DHCPv4 and DHCPv6 Services
 
 1.  Edit the Kea configuration files, which by default are installed in
     the ``"[kea-install-dir]/etc/kea/"`` directory. These are:
-    ``kea-dhcp4.conf``, ``kea-dhcp6.conf``, ``kea-dhcp-ddns.conf`` and
-    ``kea-ctrl-agent.conf``, ``keactrl.conf`` for the DHCPv4 server, DHCPv6 server,
-    D2, Control Agent, and keactrl script, respectively.
+    ``kea-dhcp4.conf``, ``kea-dhcp6.conf``, ``kea-dhcp-ddns.conf``, and
+    ``keactrl.conf`` for the DHCPv4 server, DHCPv6 server,
+    D2, and keactrl script, respectively.
 
 2.  To start the DHCPv4 server in the background, run the
     following command (as root):
@@ -341,9 +341,8 @@ Quick Start Guide for DHCPv4 and DHCPv6 Services
     A server status of "inactive" may indicate a configuration error.
     Please check the log file (by default named
     ``"[kea-install-dir]/var/log/kea/kea-dhcp4.log"``,
-    ``"[kea-install-dir]/var/log/kea/kea-dhcp6.log"``,
-    ``"[kea-install-dir]/var/log/kea/kea-ddns.log"``, or
-    ``"[kea-install-dir]/var/log/kea/kea-ctrl-agent.log"``) for the details of
+    ``"[kea-install-dir]/var/log/kea/kea-dhcp6.log"``, or
+    ``"[kea-install-dir]/var/log/kea/kea-ddns.log"``) for the details of
     any errors.
 
 4.  If the server has started successfully, test that it is

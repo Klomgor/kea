@@ -33,7 +33,6 @@ for m in keatest-module*.yang \
          kea-dhcp-types*.yang \
          kea-dhcp4-server*.yang \
          kea-dhcp6-server*.yang \
-         kea-ctrl-agent*.yang \
          kea-dhcp-ddns*.yang
 do
     if test "${m}" = "${test}"

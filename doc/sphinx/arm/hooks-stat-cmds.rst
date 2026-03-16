@@ -38,8 +38,7 @@ The Statistics Commands library is part of the open source code and is
 available to every Kea user.
 
 All commands use JSON syntax and can be issued directly to the servers
-via either the control channel (see :ref:`ctrl-channel`) or the
-Control Agent (see :ref:`kea-ctrl-agent`).
+via the control channel (see :ref:`ctrl-channel`).
 
 This library is loaded in the same way as other libraries and currently has no
 parameters:

@@ -45,9 +45,6 @@ The following software is included with Kea:
    backend. While it can be run standalone, it is normally run as and
    when required by the Kea DHCP servers.
 
--  :iscman:`kea-ctrl-agent` — The Kea Control Agent (CA) is a daemon that exposes
-   a RESTful control interface for managing Kea servers.
-
 -  :iscman:`kea-netconf` - kea-netconf is an agent that provides a
    YANG/NETCONF interface for configuring Kea.
 

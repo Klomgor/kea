@@ -17,7 +17,7 @@
         "{",
         "    \"result\": <integer>,",
         "    \"arguments\": {",
-        "        <Dhcp4, Dhcp6, or Control-agent object>: <JSON configuration here> ",
+        "        <Dhcp4, Dhcp6, or DhcpDdns object>: <JSON configuration here> ",
         "    }",
         "}"
     ],
@@ -29,7 +29,6 @@
     "support": [
         "kea-dhcp4",
         "kea-dhcp6",
-        "kea-dhcp-ddns",
-        "kea-ctrl-agent"
+        "kea-dhcp-ddns"
     ]
 }

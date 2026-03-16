@@ -249,14 +249,11 @@ The installation should look similar to the following:
     [INF] File "kea-dhcp-ddns@2022-07-27.yang" was installed.
     [INF] No datastore changes to apply.
     [INF] Connection 27 created.
-    [INF] Module "kea-ctrl-agent" was installed.
-    [INF] File "kea-ctrl-agent@2019-08-12.yang" was installed.
-    [INF] No datastore changes to apply.
-    [INF] Connection 29 created.
+    [INF] Connection 28 created.
     [INF] Module "kea-dhcp4-server" was installed.
     [INF] File "kea-dhcp4-server@2022-11-30.yang" was installed.
     [INF] No datastore changes to apply.
-    [INF] Connection 31 created.
+    [INF] Connection 30 created.
     [INF] Module "kea-dhcp6-server" was installed.
     [INF] File "kea-dhcp6-server@2022-11-30.yang" was installed.
     [INF] No datastore changes to apply.
@@ -288,7 +285,6 @@ currently installed YANG modules. It should be similar to this:
     ietf-yang-metadata         | 2016-08-05 | i     |           |               |            |
     ietf-yang-schema-mount     | 2019-01-14 | I     | user:user | 644           |            |
     ietf-yang-types            | 2013-07-15 | I     | user:user | 444           |            |
-    kea-ctrl-agent             | 2019-08-12 | I     | user:user | 600           |            |
     kea-dhcp-ddns              | 2022-07-27 | I     | user:user | 600           |            |
     kea-dhcp-types             | 2022-11-30 | I     | user:user | 600           |            |
     kea-dhcp4-server           | 2022-11-30 | I     | user:user | 600           |            |
@@ -321,8 +317,7 @@ Supported YANG Models
 The currently supported models are ``kea-dhcp4-server`` and
 ``kea-dhcp6-server``. There is partial support for
 ``ietf-dhcpv6-server``, but the primary focus of testing has been on Kea DHCP
-servers. Other models (:iscman:`kea-dhcp-ddns` and :iscman:`kea-ctrl-agent`)
-are currently not supported.
+servers. Other models (e.g. :iscman:`kea-dhcp-ddns`) are currently not supported.
 
 .. _using-netconf:
 
@@ -448,9 +443,8 @@ application phase to fail without a sensible report to Sysrepo.
 
 The managed Kea servers and agents are described in the
 ``managed-servers`` section. Each sub-section begins with the service
-name: ``dhcp4``, ``dhcp6``, ``d2`` (the DHCP-DDNS server does not
-support the control-channel feature yet), and ``ca`` (the control
-agent).
+name: ``dhcp4``, ``dhcp6``, and ``d2``.
+
 
 Each managed server entry may contain:
 
@@ -471,7 +465,7 @@ A control socket is specified by:
    debugging mode where everything is printed on stdout, and it can also be
    used to redirect commands easily. ``unix`` is the standard direct
    server control channel, which uses UNIX sockets; ``http`` uses
-   a control agent, which accepts HTTP connections.
+   a control channel, which accepts HTTP connections.
 
 -  ``socket-name`` - the local socket name for the ``unix`` socket type
    (default empty string).
@@ -525,8 +519,7 @@ Kea sources.
            // "stdout" which outputs the configuration on the standard output,
            // "unix" which uses the local control channel supported by the
            // "dhcp4" and "dhcp6" servers ("d2" support is not yet available),
-           // and "http" which uses the Control Agent "ca" to manage itself or
-           // to forward commands to "dhcp4" or "dhcp6".
+           // and "http" which uses HTTP/HTTPS control channels.
            "managed-servers":
            {
                // This is how kea-netconf can communicate with the DHCPv4 server.
@@ -563,10 +556,11 @@ Kea sources.
                    }
                },
 
-               // Of course the Control Agent (CA) supports HTTP.
-               "ca":
+               // 
+               "dhcp4-http":
                {
-                   "model": "kea-ctrl-agent",
+                   "comment": "DHCPv4 server using HTTP",
+                   "model": "kea-dhcp4-server",
                    "control-socket":
                    {
                        "socket-type": "http",
