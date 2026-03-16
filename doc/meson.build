@@ -2,10 +2,6 @@ subdir('sphinx')
 subdir('devel')
 
 examples = [
-    'examples/agent/comments.json',
-    'examples/agent/https.json',
-    'examples/agent/rbac.json',
-    'examples/agent/simple.json',
     'examples/ddns/all-keys.json',
     'examples/ddns/all-keys-netconf.json',
     'examples/ddns/comments.json',

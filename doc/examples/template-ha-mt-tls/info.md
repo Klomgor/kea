@@ -8,24 +8,20 @@ multi-threading. These templates make the following assumptions:
 - The machines running Kea with multi-threading have at least four CPU cores.
 - The connection to the peer is secured using TLS.
 
-The logical setup consists of two hosts, each running a Kea DHCPv4 server and a Control Agent (CA).
-In the multi-threading setup, the CA is not required, as the server is using its
-own dedicated HTTP listener to communicate with the peer. However, the CA can still
-be used to handle user commands.
+The logical setup consists of two hosts, each running a Kea DHCPv4 server.
+In the multi-threading setup, control sockets are not required, as the server is using its
+own dedicated HTTP listener to communicate with the peer. However, HTTPS control
+sockets can still be used to handle user commands.
 
 .. code-block:: none
 
    +-host-1-+       +-host-2-+
    |        |       |        |
-   |   CA   |       |   CA   |    ===== - HTTPS connection
-   |   #    |       |   #    |
-   |   #    |       |   #    |    ##### - UNIX socket
-   |   #    |       |   #    |
-   | DHCPv4 ========= DHCPv4 |
+   | DHCPv4 ========= DHCPv4 |    ===== - HTTPS connection
    |        |       |        |
    +--------+       +--------+
 
-The CAs on host-1 and host-2 both listen on port 8001, and the server's dedicated HTTP
+The servers on host-1 and host-2 both listen on port 8001, and the server's dedicated HTTP
 listener uses port 8000. The DHCP servers communicate with each other via the dedicated HTTP
 listener, which forwards only the lease-update commands to the peer server.
 
@@ -53,26 +49,24 @@ The whole subnet is split into dynamic pools:
 
 To deploy this setup, follow the steps provided in the power user home setup with the following distinctions:
 
-1. Install the CA only if the administrator is planning to manage Kea using the RESTful API.
-   Otherwise, the CA is not required for the High Availability Kea server with multi-threading.
-
-2. Alter the following to match the local setup:
+1. Alter the following to match the local setup:
 
    - The paths to ``trust-anchor``, ``cert-file``, and ``key-file`` must be set to the
      respective values corresponding to the deployment machine.
 
-   - The addressing must be updated, if using something other than 192.168.1.0/24. Make sure the CA port
-     configuration (``http-host`` and ``http-port`` in ``kea-ca.conf``) is different from the DHCPv4 server
-     configuration (``url`` in ``hook-libraries/parameters/high-availability/peers`` in ``kea-dhcp4.conf``).
-     The CA is used to handle only management commands, as the HA module sends lease updates using
-     the dedicated HTTP listener to the peer.
+   - The addressing must be updated, if using something other than 192.168.1.0/24.
+     Make sure the control socket address and port
+     configuration (``socket-address`` and ``socket-port``) is different from the HA
+     configuration (``url`` in ``hook-libraries/parameters/high-availability/peers``).
+     The HTTP control socket is used to handle only management commands,
+     as the HA module sends lease updates using the dedicated HTTP listener to the peer.
 
-3. Verify the communication between the HA peers by checking the Kea logs.
+2. Verify the communication between the HA peers by checking the Kea logs.
 
-4. Verify that communication between the hosts works in the opposite direction as well
+3. Verify that communication between the hosts works in the opposite direction as well
    (host-2 can connect to host-1), by repeating step 3 from host-2 using host-1's IP address and port.
 
-5. Install the CA and DHCPv4 on host-2, as in steps 1 and 2. The config file for the
+4. Install  DHCPv4 on host-2, as in steps 1 and 2. The config file for the
    standby server is very similar to the one on the primary server, other than the definition of
    the ``this-server-name`` field (and possibly the interface names).
 

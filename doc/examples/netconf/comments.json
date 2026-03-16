@@ -29,7 +29,7 @@
         "loggers": [
             {
                 "comment": "A logger",
-                "name": "kea-ctrl-agent"
+                "name": "kea-netconf-agent"
             }
         ]
     }

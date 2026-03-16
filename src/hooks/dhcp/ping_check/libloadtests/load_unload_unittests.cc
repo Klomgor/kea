@@ -81,7 +81,6 @@ TEST_F(PingCheckLibLoadTest, invalidDaemonLoad) {
     invalidDaemonTest("kea-dhcp6", AF_INET, valid_params_);
     invalidDaemonTest("kea-dhcp6", AF_INET6, valid_params_);
 
-    invalidDaemonTest("kea-ctrl-agent", AF_INET, valid_params_);
     invalidDaemonTest("kea-dhcp-ddns", AF_INET, valid_params_);
     invalidDaemonTest("bogus", AF_INET, valid_params_);
 }

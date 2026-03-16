@@ -556,7 +556,6 @@ Kea sources.
                    }
                },
 
-               // 
                "dhcp4-http":
                {
                    "comment": "DHCPv4 server using HTTP",

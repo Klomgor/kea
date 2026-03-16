@@ -707,7 +707,6 @@ TEST_F(LimitsLibLoadTest, invalidDaemonLoad) {
     // V6 is invalid when family is AF_INET
     invalidDaemonTest("kea-dhcp6", AF_INET);
 
-    invalidDaemonTest("kea-ctrl-agent", AF_INET);
     invalidDaemonTest("kea-dhcp-ddns", AF_INET);
     invalidDaemonTest("bogus", AF_INET);
 }

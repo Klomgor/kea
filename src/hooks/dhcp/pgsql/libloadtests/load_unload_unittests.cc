@@ -52,7 +52,6 @@ TEST_F(PgSqlLibLoadTest, validLoad6) {
 
 // Simple test that checks the library cannot by loaded by invalid daemons.
 TEST_F(PgSqlLibLoadTest, invalidDaemonLoad) {
-    invalidDaemonTest("kea-ctrl-agent");
     invalidDaemonTest("kea-dhcp-ddns");
     invalidDaemonTest("bogus");
 }

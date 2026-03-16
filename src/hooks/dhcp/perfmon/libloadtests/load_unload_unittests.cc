@@ -104,7 +104,6 @@ TEST_F(PerfMonLibLoadTest, validLoad6) {
 
 // Simple test that checks the library cannot by loaded by invalid daemons.
 TEST_F(PerfMonLibLoadTest, invalidDaemonLoad) {
-    invalidDaemonTest("kea-ctrl-agent");
     invalidDaemonTest("kea-dhcp-ddns");
     invalidDaemonTest("bogus");
 }

@@ -52,7 +52,6 @@ TEST_F(ClassCmdsLibLoadTest, validLoad6) {
 
 // Simple V6 test that checks the library cannot by loaded by invalid daemons.
 TEST_F(ClassCmdsLibLoadTest, invalidDaemonLoad) {
-    invalidDaemonTest("kea-ctrl-agent");
     invalidDaemonTest("kea-dhcp-ddns");
     invalidDaemonTest("bogus");
 }

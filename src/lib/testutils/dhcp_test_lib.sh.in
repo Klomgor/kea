@@ -42,7 +42,7 @@ KEA_DHCP6_UNLOAD_MARKER_FILE="@abs_top_builddir@/src/bin/dhcp6/tests/unload_mark
 KEA_DHCP6_SRV_CONFIG_MARKER_FILE="@abs_top_builddir@/src/bin/dhcp6/tests/srv_config_marker_file.txt"
 
 # A list of Kea processes, mainly used by the cleanup functions.
-KEA_PROCS="kea-dhcp4 kea-dhcp6 kea-dhcp-ddns kea-ctrl-agent"
+KEA_PROCS="kea-dhcp4 kea-dhcp6 kea-dhcp-ddns"
 
 ### Colors ###
 
@@ -361,25 +361,6 @@ configuration"
     printf '%b' "${cfg}" > "${D2_CFG_FILE}"
 }
 
-# Stores the CA configuration specified as a parameter in the
-# configuration file which name has been set in the ${CA_CFG_FILE}
-# variable.
-create_ca_config() {
-    local cfg="${1-}"  # Configuration string.
-    if [ -z "${CA_CFG_FILE+x}" ]; then
-        test_lib_error "create_ca_config requires CA_CFG_FILE \
-variable be set"
-        clean_exit 1
-
-    elif [ -z "${cfg}" ]; then
-        test_lib_error "create_ca_config requires argument holding a \
-configuration"
-        clean_exit 1
-    fi
-    printf 'Creating Ca configuration file: %s.\n' "${CA_CFG_FILE}"
-    printf '%b' "${cfg}" > "${CA_CFG_FILE}"
-}
-
 # Stores the NC configuration specified as a parameter in the
 # configuration file which name has been set in the ${NC_CFG_FILE}
 # variable.
@@ -651,7 +632,6 @@ cleanup() {
 
     # Remove temporary files.
     remove_if_exists \
-        "${CA_CFG_FILE-}" \
         "${CFG_FILE-}" \
         "${D2_CFG_FILE-}" \
         "${DHCP4_CFG_FILE-}" \
@@ -1114,7 +1094,7 @@ password_redact_test() {
     test_start "${test_name}"
     # Create correct configuration file.
     create_config "${config}"
-    # Instruct Control Agent to log to the specific file.
+    # Instruct server to log to the specific file.
     set_logger
     # Check it
     printf "Running command %s.\n" "\"${bin_path}/${bin} -X -d -t ${CFG_FILE}\""

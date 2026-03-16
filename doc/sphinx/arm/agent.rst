@@ -33,3 +33,8 @@ All other parameters, ``http-headers``, TLS parameters, basic HTTP
 authentication setup, ..., can go directly in the control socket entry
 of the Kea server configuration with the same syntax and meaning.
 
+.. note::
+
+   Beware you can't have two servers sharing the same address and port,
+   and some systems do not raise an error when such conflict happens.
+   This applies also to HA listeners.

@@ -66,7 +66,6 @@ TEST_F(DdnsTuningLibLoadTest, invalidDaemonLoad) {
     // V6 is invalid when family is AF_INET.
     invalidDaemonTest("kea-dhcp6", AF_INET, valid_params_);
 
-    invalidDaemonTest("kea-ctrl-agent", AF_INET, valid_params_);
     invalidDaemonTest("kea-dhcp-ddns", AF_INET, valid_params_);
     invalidDaemonTest("bogus", AF_INET, valid_params_);
 }

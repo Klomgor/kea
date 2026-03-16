@@ -2486,7 +2486,7 @@ def _build_rpm(system, revision, features, env, check_times, dry_run,
             dry_run=dry_run)
     execute(f'cp *.tar.xz {rpm_root_path}/SOURCES', cwd='kea-src', check_times=check_times, dry_run=dry_run)
 
-    services_list = ['kea-dhcp4.service', 'kea-dhcp6.service', 'kea-dhcp-ddns.service', 'kea-ctrl-agent.service']
+    services_list = ['kea-dhcp4.service', 'kea-dhcp6.service', 'kea-dhcp-ddns.service']
 
     # centos/rhel 7 does not support some fields in systemd unit files so they need to be commented out
     if system == 'centos' and revision == '7':
@@ -2565,7 +2565,7 @@ def _build_deb(system, revision, features, env, check_times, dry_run,
     replace_in_file('kea-src/debian/rules', '{ISC_VERSION}', pkg_isc_version)
 
     services_list = ['isc-kea-dhcp4.isc-kea-dhcp4-server.service', 'isc-kea-dhcp6.isc-kea-dhcp6-server.service',
-                     'isc-kea-dhcp-ddns.isc-kea-dhcp-ddns-server.service', 'isc-kea-ctrl-agent.service']
+                     'isc-kea-dhcp-ddns.isc-kea-dhcp-ddns-server.service']
 
     # debian 9 does not support some fields in systemd unit files so they need to be commented out
     if system == 'debian' and revision == '9':
@@ -2648,7 +2648,7 @@ def _build_alpine_apk(features, check_times, dry_run, pkg_version, pkg_isc_versi
         execute('sudo touch /etc/kea/kea-api-password')
 
         # check if kea services can be started
-        for svc in ['kea-dhcp4', 'kea-dhcp6', 'kea-ctrl-agent', 'kea-dhcp-ddns']:
+        for svc in ['kea-dhcp4', 'kea-dhcp6', 'kea-dhcp-ddns']:
             execute(f'sudo rc-service {svc} start')
             if svc == 'kea-dhcp-ddns':
                 svc = 'kea-ddns'

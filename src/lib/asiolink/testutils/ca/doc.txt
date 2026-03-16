@@ -96,13 +96,13 @@ Procedure to build CA, server and client files:
 8 - use c_rehash or openssl rehash to create hashes
  openssl rehash .
 
-Setup the control agent: kea-ctrl-agent.json sample.
+Setup the HTTPS control sockets of Kea servers.
 
 Using curl.
 Note the localhost is important: using 127.0.0.1 instead can make the
 subjectAltName check to fail. curl is also picky about http vs https.
 
-to send a command (e.g. list-commands) directly to the control agent
+to send a command (e.g. list-commands) directly to the Kea server
 listening at port 8000:
 
 curl -D - -X POST -H Content-Type:application/json \
@@ -121,7 +121,7 @@ curl -D - -X POST -H Content-Type:application/json \
  --cacert kea-ca.crt --cert kea-client.p12:keatest --cert-type P12 \
  -d '{ "command": "list-commands" }' https://localhost:8443
 
-To the control agent:
+To the server:
 echo | kea-shell
 
 With server authentication only:

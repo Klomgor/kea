@@ -14,25 +14,18 @@ appropriate for a small office. These templates make the following assumptions:
 - IPv6 is not used.
 - DNS updates will not be performed by Kea.
 
-The logical setup consists of two hosts, each running a Kea DHCPv4 server and a Control Agent (CA).
-The server connects with the CA using UNIX sockets. Each DHCPv4+CA acts as one partner of the HA
-pair.
+The logical setup consists of two hosts, each running a Kea DHCPv4 server.
+Each server acts as one partner of the HA pair.
 
 .. code-block:: none
 
    +-host-1-+       +-host-2-+
    |        |       |        |
-   |   CA <===\   /===> CA   |    ===== - HTTP connection
-   |   #    |  \ /  |   #    |
-   |   #    |   X   |   #    |    ##### - UNIX socket
-   |   #    |  / \      #    |
-   | DHCPv4 ==/   \== DHCPv4 |
+   | DHCPv4 ========= DHCPv4 |    ===== - HTTP connection
    |        |       |        |
    +--------+       +--------+
 
-The CAs on host-1 and host-2 both listen on port 8000. The DHCP servers communicate
-with each other via the CAs, which forward control commands to the DHCP servers over the UNIX domain
-sockets.
+The servers on host-1 and host-2 both listen on port 8000.
 
 Deployment Considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,9 +53,9 @@ The whole subnet is split into dynamic and static pools:
 
 To deploy this setup, perform the following steps:
 
-1. Install the CA and the DHCPv4 server on host-1, and copy the configuration files to their typical locations.
-   They are usually in ``/etc/kea`` on Linux and ``/usr/local/etc/kea`` on FreeBSD, and the files are typically called
-   ``kea-ctrl-agent.conf`` and ``kea-dhcp4.conf``. Please consult the startup scripts for any specific system.
+1. Install the DHCPv4 server on host-1, and copy the configuration file to their typical locations.
+   It is usually in ``/etc/kea`` on Linux and ``/usr/local/etc/kea`` on FreeBSD, and the file is typically called
+   ``kea-dhcp4.conf``. Please consult the startup scripts for any specific system.
 
 2. Alter the following to match the local setup:
 
@@ -70,16 +63,13 @@ To deploy this setup, perform the following steps:
 
    - The interface name that is used to access the subnet (``interface`` in ``subnet4``).
 
-   - The addressing, if using something other than 192.168.1.0/24. Make sure the CA port
-     configuration (``http-host`` and ``http-port`` in ``kea-ca.conf``) matches the DHCPv4 server
-     configuration (``url`` in ``hook-libraries/parameters/high-availability/peers`` in ``kea-dhcp4.conf``).
+   - The addressing, if using something other than 192.168.1.0/24. Make sure the control address and port
+     configuration (``socket-address`` and ``socket-port``) matches the HA
+     configuration (``url`` in ``hook-libraries/parameters/high-availability/peers``).
 
    - The router option, to match the actual network.
 
    - The DNS option, to match the actual network.
-
-   - The path to the hook libraries. This is a very OS-specific parameter; the library names are
-     generally the same everywhere, but the path varies. See :ref:`hooks-libraries-introduction` for details.
 
 3. If using a firewall, make sure host-1 can reach host-2. An easy way to ensure that is to
    try to retrieve host-2's config from host-1:
@@ -91,7 +81,7 @@ To deploy this setup, perform the following steps:
 4. Verify that communication between the hosts works in the opposite direction as well
    (host-2 can connect to host-1), by repeating step 3 from host-2 using host-1's IP address and port.
 
-5. Install the CA and the DHCPv4 server on host-2, as in steps 1 and 2. The config file for the
+5. Install the DHCPv4 server on host-2, as in steps 1 and 2. The config file for the
    standby server is very similar to the one on the primary server, other than the definition of
    the ``this-server-name`` field (and possibly the interface names).
 

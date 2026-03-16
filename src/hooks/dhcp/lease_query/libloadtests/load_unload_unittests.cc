@@ -100,8 +100,6 @@ TEST_F(LeaseQueryLibLoadTest, invalidDaemonLoad) {
     invalidDaemonTest("kea-dhcp6", AF_INET, validConfigParams6());
     invalidDaemonTest("kea-dhcp4", AF_INET, validConfigParams6());
 
-    invalidDaemonTest("kea-ctrl-agent", AF_INET, validConfigParams4());
-    invalidDaemonTest("kea-ctrl-agent", AF_INET6, validConfigParams6());
     invalidDaemonTest("kea-dhcp-ddns", AF_INET, validConfigParams4());
     invalidDaemonTest("kea-dhcp-ddns", AF_INET6, validConfigParams6());
     invalidDaemonTest("bogus", AF_INET, validConfigParams4());

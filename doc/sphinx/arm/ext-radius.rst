@@ -29,7 +29,7 @@ Blast-RADIUS.
 The solutions provided by Kea release 3.1.6 are:
 
 1. To support RADIUS/TLS which provides a built-in cryptographic
-protection of communication between RADIUS clients and servers. 
+protection of communication between RADIUS clients and servers.
 This is known as the long-term solution.
 
 2. To support the short-term solution by adding a Message-Authenticator
