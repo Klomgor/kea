@@ -557,7 +557,7 @@ TEST_F(NetconfParserTest, configParse4Servers) {
     NetconfConfigPtr ctx = cfg_mgr_.getNetconfConfig();
     ASSERT_TRUE(ctx);
     ASSERT_TRUE(ctx->getCfgServersMap());
-    EXPECT_EQ(4, ctx->getCfgServersMap()->size());
+    EXPECT_EQ(3, ctx->getCfgServersMap()->size());
 
     ASSERT_NO_THROW_LOG(ctx->getCfgServersMap()->at("dhcp4"));
     CfgServerPtr server = ctx->getCfgServersMap()->at("dhcp4");

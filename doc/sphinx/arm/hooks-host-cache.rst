@@ -54,8 +54,8 @@ any other hook library; for example, this configuration could be used:
 
 Once loaded, the Host Cache hook library provides a number of new
 commands which can be used either over the control channel (see
-:ref:`ctrl-channel-client`) or the RESTful API (see
-:ref:`agent-overview`). An example RESTful API client is described in
+:ref:`ctrl-channel-client`).
+An example RESTful API client is described in
 :ref:`shell-overview`. The following sections describe the commands
 available.
 

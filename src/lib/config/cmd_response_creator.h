@@ -36,7 +36,7 @@ public:
     ///
     /// @param emulate_agent_response if true, responses for normal
     /// command outcomes are guaranteed to be wrapped in an Element::list.
-    /// This emulates how kea-ctrl-agent forms responses.  Defaults to true.
+    /// This allows backward compatibility.  Defaults to true.
     CmdResponseCreator(bool emulate_agent_response = true)
     : emulate_agent_response_(emulate_agent_response) {};
 
@@ -117,8 +117,8 @@ private:
     createDynamicHttpResponse(http::HttpRequestPtr request);
 
     /// @brief Determines whether or not responses are enclosed in an Element::list.
-    /// Currently kea-ctrl-agent wraps all responses in a list, as it may have
-    /// response from more than one server.  If this is true, we'll ensure
+    /// For backward compatibility we need to wrap all responses in a list
+    /// of one element. If this is true, we'll ensure
     /// responses (other than error responses) are in a list.
     bool emulate_agent_response_;
 };

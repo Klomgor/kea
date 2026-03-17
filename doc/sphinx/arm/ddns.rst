@@ -407,9 +407,9 @@ are not specified, HTTP is used. The TLS/HTTPS support in Kea is
 described in :ref:`tls`.
 
 Basic HTTP authentication protects
-against unauthorized uses of the control agent by local users. For
-protection against remote attackers, HTTPS and reverse proxy of
-:ref:`agent-secure-connection` provide stronger security.
+against unauthorized uses of the server by local users. For
+protection against remote attackers, HTTPS and reverse proxy
+provide stronger security.
 
 The authentication is described in the ``authentication`` block
 with the mandatory ``type`` parameter, which selects the authentication.

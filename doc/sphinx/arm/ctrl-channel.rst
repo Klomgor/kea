@@ -30,23 +30,9 @@ machine.
 
 Network administrators usually prefer using some form of a RESTful API
 to control the servers, rather than using UNIX domain sockets directly.
-Therefore, Kea includes a component called the Control Agent (CA), which
-exposes a RESTful API to the controlling clients and can forward
-commands to the respective Kea services over the UNIX domain sockets.
-The CA configuration is described in
-:ref:`agent-configuration`.
-
-The HTTP requests received by the CA contain the control commands
-encapsulated within HTTP requests. Simply speaking, the CA is
-responsible for stripping the HTTP layer from the received commands and
-forwarding the commands in a JSON format over the UNIX domain sockets to
-the respective services. Because the CA receives commands for all
-services, it requires additional "forwarding" information to be included
-in the client's messages. This forwarding information is carried within
-the ``service`` parameter of the received command. If the ``service``
-parameter is not included, or if the parameter is a blank list, the CA
-assumes that the control command is targeted at the CA itself and
-attempts to respond.
+Kea version 3 extends servers by HTTP/HTTPS sockets. For details on
+how to configure these sockets, see :ref:`dhcp4-http-ctrl-channel`,
+:ref:`dhcp6-http-ctrl-channel` and :ref:`d2-http-ctrl-channel`.
 
 Control connections over both HTTP and UNIX domain sockets are guarded
 with timeouts. The timeout value is set to 10 seconds and is not
@@ -70,7 +56,6 @@ send JSON commands structured as follows:
 
    {
        "command": "foo",
-       "service": [ "dhcp4" ],
        "arguments": {
            "param1": "value1",
            "param2": "value2",
@@ -78,7 +63,7 @@ send JSON commands structured as follows:
        }
    }
 
-The same command sent over the RESTful interface to the CA has the
+The same command sent over the RESTful interface to the server has the
 following structure:
 
 ::
@@ -88,7 +73,6 @@ following structure:
        Content-Length: 147\r\n\r\n
        {
            "command": "foo",
-           "service": [ "dhcp4" ],
            "arguments": {
                "param1": "value1",
                "param2": "value2",
@@ -100,42 +84,6 @@ The ``command`` parameter contains the name of the command to execute and it
 is mandatory.
 The ``arguments`` map contains the parameters required to carry out the
 given command. The exact content and format of the map are command-specific.
-
-The ``service`` list contains the servers at which the control command is
-targeted. In the example above, the control command is targeted at the
-DHCPv4 server. In most cases, the CA simply forwards this command to
-the DHCPv4 server for processing via a UNIX domain socket. Sometimes,
-the command including a service value may also be processed by the CA,
-if the CA is running a hook library which handles such a command for
-the given server. As an example, the hook library loaded by the CA may
-perform some operations on the database, such as adding host
-reservations, modifying leases, etc. An advantage of performing
-DHCPv4-specific administrative operations in the CA, rather than
-forwarding it to the DHCPv4 server, is the ability to perform these
-operations without disrupting the DHCPv4 service, since the DHCPv4
-server does not have to stop processing DHCP messages to apply changes to
-the database. Nevertheless, these situations are rather rare; in
-most cases, when the ``service`` parameter contains a name of the
-service, the commands are simply forwarded by the CA. The forwarded
-command includes the ``service`` parameter, but this parameter is ignored
-by the receiving server. This parameter is only meaningful to the CA.
-
-If the command received by the CA does not include a ``service``
-parameter or this list is empty, the CA simply processes this message on
-its own. For example, a :isccmd:`config-get` command which includes no service
-parameter returns the Control Agent's own configuration. The :isccmd:`config-get`
-command with a service value "dhcp4" is forwarded to the DHCPv4 server and
-returns the DHCPv4 server's configuration.
-
-The following list shows the mapping of the values carried within the
-``service`` parameter to the servers to which the commands are
-forwarded:
-
--  ``dhcp4`` - the command is forwarded to the :iscman:`kea-dhcp4` server.
-
--  ``dhcp6`` - the command is forwarded to the :iscman:`kea-dhcp6` server.
-
--  ``d2`` - the command is forwarded to the :iscman:`kea-dhcp-ddns` server.
 
 The server processing the incoming command sends a response of the
 form:
@@ -197,8 +145,6 @@ depends on the specific command.
 
    {
        "command": "foo",
-       // service is a list
-       "service": [ "dhcp4" ],
        # command arguments are here.
        "arguments": {
            "param1": "value1",
@@ -230,17 +176,16 @@ depends on the specific command.
 
 adds a HSTS header declaring that HTTPS (vs HTTP) must be used for one year.
 
-.. _ctrl-channel-control-agent-command-response-format:
+.. _http-ctrl-channel-command-response-format:
 
-Control Agent Command Response Format
-=====================================
+HTTP Command Response Format
+============================
 
-When sending commands via the Control Agent, it is possible to specify
-multiple services at which the command is targeted. CA forwards this
-command to each service individually. Thus, the CA response to the
-controlling client is always wrapped in an array (JSON list) of
-individual responses.  For example, the response for a command sent
-to one service would be structured as follows:
+For backward compatibility with the obsolete Control Agent responses
+received by HTTP are always wrapped in an array (JSON list) of one
+element.
+
+For example, the response for a command sent would be structured as follows:
 
 ::
 
@@ -256,35 +201,7 @@ to one service would be structured as follows:
         }
     ]
 
-
-If the command is sent to more than one service, the array would
-contain responses from each service, in the order they were requested:
-
-::
-
-    [
-        {
-            "result": 0, // 0|1|2|3|4
-            "text": "textual description",
-            "arguments": {
-                "argument1": "value1",
-                "argument2": "value2",
-                ...
-            }
-        },
-        {
-            "result": 0, // 0|1|2|3|4
-            "text": "textual description",
-            "arguments": {
-                "argument1": "value1",
-                "argument2": "value2",
-                ...
-            }
-        },
-        ...
-    ]
-
-An exception to this are authentication or authorization errors which cause CA
+An exception to this are authentication or authorization errors which cause server
 to reject the command entirely.  The response to such an error is formatted
 as a single entry (JSON map) as follows:
 
@@ -325,7 +242,7 @@ where ``/path/to/the/kea/socket`` is the path specified in the
 ``Dhcp4/control-socket/socket-name`` parameter in the Kea configuration
 file. Text passed to ``socat`` is sent to Kea and the responses received
 from Kea are printed to standard output. This approach communicates with
-the specific server directly and bypasses the Control Agent.
+the specific server directly.
 
 It is also easy to open a UNIX socket programmatically. An example of a
 simple client written in C is available in the Kea Developer's Guide, in
@@ -337,10 +254,10 @@ To use Kea's RESTful API with ``curl``, use the following:
 
 .. code-block:: console
 
-   $ curl -X POST -H "Content-Type: application/json" -d '{ "command": "config-get", "service": [ "dhcp4" ] }' http://ca.example.org:8000/
+   $ curl -X POST -H "Content-Type: application/json" -d '{ "command": "config-get" }' http://kea.example.org:8000/
 
-This assumes that the Control Agent is running on host
-``ca.example.org`` and is running the RESTful service on port 8000.
+This assumes that the server is running on host
+``kea.example.org`` and is running the RESTful service on port 8000.
 
 .. _commands-common:
 
@@ -845,13 +762,13 @@ The :isccmd:`status-get` command returns the server's runtime information:
 The ``high-availability`` information is returned only when the command is
 sent to the DHCP servers in an HA setup. This parameter is
 never returned when the :isccmd:`status-get` command is sent to the
-Control Agent or DDNS daemon.
+DDNS daemon.
 
 The ``thread-pool-size``, ``packet-queue-size`` and
 ``packet-queue-statistics`` parameters are returned only when the
 command is sent to DHCP servers with multi-threading enabled. These
 three parameters and ``multi-threading-enabled`` are never returned when
-the :isccmd:`status-get` command is sent to the Control Agent or DDNS daemon.
+the :isccmd:`status-get` command is sent to the DDNS daemon.
 
 To learn more about the HA status information returned by the
 :isccmd:`status-get` command, please refer to the :ref:`command-ha-status-get`
@@ -1023,44 +940,14 @@ The D2 server supports only a subset of the DHCPv4/DHCPv6 server commands:
 
 -  :isccmd:`version-get`
 
-.. _agent-commands:
-
-Commands Supported by the Control Agent
-=======================================
-
-The following commands, listed in :ref:`commands-common`, are also supported by the
-Control Agent; when the ``service`` parameter is blank, the
-commands are handled by the CA and they relate to the CA process itself:
-
--  :isccmd:`build-report`
-
--  :isccmd:`config-get`
-
--  :isccmd:`config-hash-get`
-
--  :isccmd:`config-reload`
-
--  :isccmd:`config-set`
-
--  :isccmd:`config-test`
-
--  :isccmd:`config-write`
-
--  :isccmd:`list-commands`
-
--  :isccmd:`shutdown`
-
--  :isccmd:`status-get`
-
--  :isccmd:`version-get`
-
 .. _ctrl-channel-migration:
 
 Migration from the Control Agent
 ================================
 
 Since Kea version 2.7.2 DHCP servers support HTTP/HTTPS control channels
-so the Control Agent (CA) is no longer needed.
+so the Control Agent (CA) is no longer needed, and since Kea version
+3.1.7 it is removed.
 
 The DHCPv4, DHCPv6, and D2 servers extend the ``control-socket`` entry
 to ``control-sockets`` list. To migrate a CA configuration add an element
