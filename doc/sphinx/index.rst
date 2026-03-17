@@ -31,7 +31,6 @@ Other useful Kea information can be found in our
    arm/security
    arm/config
    arm/keactrl
-   arm/agent
    arm/dhcp4-srv
    arm/dhcp6-srv
    arm/database-connectivity

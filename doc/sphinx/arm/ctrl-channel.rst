@@ -970,9 +970,12 @@ to this list with:
 -  ``authentication`` (unchanged)
 
 User context is supported too. Please look at respective HTTP control socket
-sections for defaults and other details (beware that two servers must use
-different address / port pairs): :ref:`dhcp4-http-ctrl-channel`,
-:ref:`dhcp6-http-ctrl-channel` and :ref:`d2-http-ctrl-channel`
+sections for defaults and other details:
+DHCP4 :ref:`dhcp4-http-ctrl-channel`,
+DHCP6 :ref:`dhcp6-http-ctrl-channel` and DHCP-DDNS :ref:`d2-http-ctrl-channel`.
+
+Beware that two servers must use different address / port pairs. This applies
+the HA listeners too.
 
 For compatibility the JSON result of these HTTP/HTTPS control sockets is
 still encapsulated into a list.
