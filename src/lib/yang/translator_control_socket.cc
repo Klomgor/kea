@@ -30,8 +30,6 @@ TranslatorControlSocket::getControlSockets(DataNode const& data_node) {
             (model_ == KEA_DHCP6_SERVER) ||
             (model_ == KEA_DHCP_DDNS)) {
             return (getControlSocketsKea(data_node));
-        } else if (model_ == KEA_CTRL_AGENT) {
-            return (getControlSocketKea(data_node));
         }
     } catch (Error const& ex) {
         isc_throw(NetconfError,
@@ -46,8 +44,7 @@ TranslatorControlSocket::getControlSocket(DataNode const& data_node) {
     try {
         if ((model_ == KEA_DHCP4_SERVER) ||
             (model_ == KEA_DHCP6_SERVER) ||
-            (model_ == KEA_DHCP_DDNS) ||
-            (model_ == KEA_CTRL_AGENT)) {
+            (model_ == KEA_DHCP_DDNS)) {
             return (getControlSocketKea(data_node));
         }
     } catch (Error const& ex) {
@@ -68,38 +65,36 @@ TranslatorControlSocket::getControlSocketKea(DataNode const& data_node) {
     ElementPtr result(Element::createMap());
     checkAndGetLeaf(result, data_node, "socket-name");
     checkAndGetLeaf(result, data_node, "socket-type");
-    if (model_ != KEA_CTRL_AGENT) {
-        checkAndGetLeaf(result, data_node, "socket-address");
-        checkAndGetLeaf(result, data_node, "socket-port");
-        checkAndGetLeaf(result, data_node, "trust-anchor");
-        checkAndGetLeaf(result, data_node, "cert-file");
-        checkAndGetLeaf(result, data_node, "key-file");
-        checkAndGetLeaf(result, data_node, "cert-required");
-        checkAndGet(result, data_node, "authentication",
-                    [&](DataNode const& node) -> ElementPtr const {
-                        // If it exists, add to the existing compatibility map created in getServerKeaDhcpCommon.
-                        ConstElementPtr const_authentication(result->get("authentication"));
-                        ElementPtr authentication;
-                        if (const_authentication) {
-                            authentication = copy(const_authentication);
-                        } else {
-                            authentication = Element::createMap();
-                        }
+    checkAndGetLeaf(result, data_node, "socket-address");
+    checkAndGetLeaf(result, data_node, "socket-port");
+    checkAndGetLeaf(result, data_node, "trust-anchor");
+    checkAndGetLeaf(result, data_node, "cert-file");
+    checkAndGetLeaf(result, data_node, "key-file");
+    checkAndGetLeaf(result, data_node, "cert-required");
+    checkAndGet(result, data_node, "authentication",
+                [&](DataNode const& node) -> ElementPtr const {
+                    // If it exists, add to the existing compatibility map created in getServerKeaDhcpCommon.
+                    ConstElementPtr const_authentication(result->get("authentication"));
+                    ElementPtr authentication;
+                    if (const_authentication) {
+                        authentication = copy(const_authentication);
+                    } else {
+                        authentication = Element::createMap();
+                    }
 
-                        checkAndGetDivergingLeaf(authentication, node, "type", "auth-type");
-                        checkAndGetLeaf(authentication, node, "realm");
-                        checkAndGetLeaf(authentication, node, "directory");
-                        checkAndGetAndJsonifyLeaf(authentication, node, "user-context");
-                        ConstElementPtr clients = getControlSocketAuthenticationClients(node);
-                        if (clients) {
-                            authentication->set("clients", clients);
-                        }
-                        return (authentication);
-                    });
-        ConstElementPtr headers = getControlSocketHttpHeaders(data_node);
-        if (headers && !headers->empty()) {
-            result->set("http-headers", headers);
-        }
+                    checkAndGetDivergingLeaf(authentication, node, "type", "auth-type");
+                    checkAndGetLeaf(authentication, node, "realm");
+                    checkAndGetLeaf(authentication, node, "directory");
+                    checkAndGetAndJsonifyLeaf(authentication, node, "user-context");
+                    ConstElementPtr clients = getControlSocketAuthenticationClients(node);
+                    if (clients) {
+                        authentication->set("clients", clients);
+                    }
+                    return (authentication);
+                });
+    ConstElementPtr headers = getControlSocketHttpHeaders(data_node);
+    if (headers && !headers->empty()) {
+        result->set("http-headers", headers);
     }
     checkAndGetAndJsonifyLeaf(result, data_node, "user-context");
     return (result->empty() ? ElementPtr() : result);
@@ -166,8 +161,6 @@ TranslatorControlSocket::setControlSockets(string const& xpath,
             (model_ == KEA_DHCP6_SERVER) ||
             (model_ == KEA_DHCP_DDNS)) {
             setControlSocketsKea(xpath, elem);
-        } else if (model_ == KEA_CTRL_AGENT) {
-            setControlSocketKea(xpath, elem, /* has_mandatory_key = */ true);
         } else {
           isc_throw(NotImplemented,
                     "setControlSocket not implemented for the model: "
@@ -186,8 +179,7 @@ TranslatorControlSocket::setControlSocket(string const& xpath,
     try {
         if ((model_ == KEA_DHCP4_SERVER) ||
             (model_ == KEA_DHCP6_SERVER) ||
-            (model_ == KEA_DHCP_DDNS) ||
-            (model_ == KEA_CTRL_AGENT)) {
+            (model_ == KEA_DHCP_DDNS)) {
             setControlSocketKea(xpath, elem, /* has_mandatory_key = */ false);
         } else {
           isc_throw(NotImplemented,
@@ -237,26 +229,24 @@ TranslatorControlSocket::setControlSocketKea(string const& xpath,
     }
 
     checkAndSetLeaf(elem, xpath, "socket-name", LeafBaseType::String);
-    if (model_ != KEA_CTRL_AGENT) {
-        checkAndSetLeaf(elem, xpath, "socket-address", LeafBaseType::String);
-        checkAndSetLeaf(elem, xpath, "socket-port", LeafBaseType::Uint16);
-        checkAndSetLeaf(elem, xpath, "trust-anchor", LeafBaseType::String);
-        checkAndSetLeaf(elem, xpath, "cert-file", LeafBaseType::String);
-        checkAndSetLeaf(elem, xpath, "key-file", LeafBaseType::String);
-        checkAndSetLeaf(elem, xpath, "cert-required", LeafBaseType::Bool);
-        ConstElementPtr authentication = elem->get("authentication");
-        if (authentication && !authentication->empty()) {
-            setMandatoryDivergingLeaf(authentication, xpath +"/authentication" , "type", "auth-type", LeafBaseType::String);
-            checkAndSetLeaf(authentication, xpath + "/authentication", "realm", LeafBaseType::String);
-            checkAndSetLeaf(authentication, xpath + "/authentication", "directory", LeafBaseType::String);
-            checkAndSetUserContext(authentication, xpath + "/authentication");
-            ConstElementPtr clients = authentication->get("clients");
-            setControlSocketAuthenticationClients(xpath + "/authentication/clients", clients);
-        }
-        ConstElementPtr http_headers = elem->get("http-headers");
-        if (http_headers && !http_headers->empty()) {
-            setControlSocketHttpHeaders(xpath + "/http-headers", http_headers);
-        }
+    checkAndSetLeaf(elem, xpath, "socket-address", LeafBaseType::String);
+    checkAndSetLeaf(elem, xpath, "socket-port", LeafBaseType::Uint16);
+    checkAndSetLeaf(elem, xpath, "trust-anchor", LeafBaseType::String);
+    checkAndSetLeaf(elem, xpath, "cert-file", LeafBaseType::String);
+    checkAndSetLeaf(elem, xpath, "key-file", LeafBaseType::String);
+    checkAndSetLeaf(elem, xpath, "cert-required", LeafBaseType::Bool);
+    ConstElementPtr authentication = elem->get("authentication");
+    if (authentication && !authentication->empty()) {
+        setMandatoryDivergingLeaf(authentication, xpath +"/authentication" , "type", "auth-type", LeafBaseType::String);
+        checkAndSetLeaf(authentication, xpath + "/authentication", "realm", LeafBaseType::String);
+        checkAndSetLeaf(authentication, xpath + "/authentication", "directory", LeafBaseType::String);
+        checkAndSetUserContext(authentication, xpath + "/authentication");
+        ConstElementPtr clients = authentication->get("clients");
+        setControlSocketAuthenticationClients(xpath + "/authentication/clients", clients);
+    }
+    ConstElementPtr http_headers = elem->get("http-headers");
+    if (http_headers && !http_headers->empty()) {
+        setControlSocketHttpHeaders(xpath + "/http-headers", http_headers);
     }
     checkAndSetUserContext(elem, xpath);
 }
