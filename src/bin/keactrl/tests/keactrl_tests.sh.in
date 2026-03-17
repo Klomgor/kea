@@ -187,11 +187,11 @@ dhcp6_srv=${KEACTRL_BUILD_DIR}/src/bin/dhcp6/kea-dhcp6\n\
 dhcp_ddns_srv=${KEACTRL_BUILD_DIR}/src/bin/d2/kea-dhcp-ddns\n\
 netconf_srv=${KEACTRL_BUILD_DIR}/src/bin/netconf/kea-netconf\n"
 
-# This test checks that DHCPv4, DHCPv6, D2, CA and Netconf server can
+# This test checks that DHCPv4, DHCPv6, D2 and Netconf server can
 # be started and shut down.
 start_all_servers_no_verbose_test() {
     # Create configuration file for keactrl. This configuration enables
-    # DHCPv4, DHCPv6, D2, CA and netconf.
+    # DHCPv4, DHCPv6, D2 and netconf.
     keactrl_config="${CFG_FILES}\ndhcp4=yes\ndhcp6=yes\n\
 dhcp_ddns=yes\nnetconf=yes\n\
 kea_verbose=no\n${keactrl_fixed_config}"
@@ -230,11 +230,11 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait for D2, CA and Netconf to configure.
+    # Wait for D2 and Netconf to configure.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 20 "DCTL_CONFIG_COMPLETE" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -309,11 +309,11 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 10s for the D2, CA and Netconf to stop.
+    # Wait up to 10s for the D2 and Netconf to stop.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 10 "DCTL_SHUTDOWN" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -322,9 +322,9 @@ Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
     if ${have_netconf}; then
-        expected=6
-    else
         expected=5
+    else
+        expected=4
     fi
     wait_for_server_down ${expected} ${wildcard_name}
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
@@ -373,7 +373,7 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    wait_for_message 20 "DCTL_CONFIG_COMPLETE" 2
+    wait_for_message 20 "DCTL_CONFIG_COMPLETE" 1
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
         "Timeout waiting for CPL daemons to start. \
 Expected wait_for_message return %d, returned %d."
@@ -401,9 +401,9 @@ Expected wait_for_message return %d, returned %d."
         "Expected get_log_messages for DHCP4_START_INFO return %d, returned %d."
 
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     get_log_messages "DCTL_STANDALONE" ${expected}
     assert_eq "${expected}" "${_GET_LOG_MESSAGES}" \
@@ -450,11 +450,11 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 10s for the D2, CA and Netconf to stop.
+    # Wait up to 10s for the D2 and Netconf to stop.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 10 "DCTL_SHUTDOWN" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -463,9 +463,9 @@ Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
     if ${have_netconf}; then
-        expected=6
-    else
         expected=5
+    else
+        expected=4
     fi
     wait_for_server_down ${expected} ${wildcard_name}
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
@@ -497,11 +497,11 @@ kea_verbose=no
 'DHCPv4 server: inactive
 DHCPv6 server: inactive
 DHCP DDNS: inactive' \
-    "$(printf '%s\n' "${OUTPUT}" | head -n 4)"
+    "$(printf '%s\n' "${OUTPUT}" | head -n 3)"
 
   if "${have_netconf}"; then
     assert_str_eq 'Netconf agent: inactive' \
-      "$(printf '%s\n' "${OUTPUT}" | head -n 5 | tail -n 1)"
+      "$(printf '%s\n' "${OUTPUT}" | head -n 4 | tail -n 1)"
   fi
 }
 
@@ -833,11 +833,11 @@ kea_verbose=yes\n${keactrl_fixed_config}"
         "Timeout waiting for ${kea4_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 20s for the D2, CA and Netconf to configure.
+    # Wait up to 20s for the D2 and Netconf to configure.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 20 "DCTL_CONFIG_COMPLETE" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -883,9 +883,8 @@ Expected wait_for_message to return %d, returned %d."
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${kea4_name} to reconfigure. \
 Expected wait_for_message to return %d, returned %d."
 
-    # There should be two completed configurations of D2 and two
-    # configurations of CA.
-    wait_for_message 10 "DCTL_CONFIG_COMPLETE" 4
+    # There should be two completed configurations of D2.
+    wait_for_message 10 "DCTL_CONFIG_COMPLETE" 2
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${d2_name} \
 to reconfigure. Expected wait_for_message to return %d, returned %d."
 
@@ -907,11 +906,11 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 10s for the D2, CA and Netconf to stop.
+    # Wait up to 10s for the D2 and Netconf to stop.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 10 "DCTL_SHUTDOWN" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -920,9 +919,9 @@ Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
     if ${have_netconf}; then
-        expected=6
-    else
         expected=5
+    else
+        expected=4
     fi
     wait_for_server_down ${expected} ${wildcard_name}
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
@@ -1022,11 +1021,11 @@ kea_verbose=no\n${keactrl_fixed_config}"
         "Timeout waiting for ${kea4_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 20s for the D2, CA and Netconf to configure.
+    # Wait up to 20s for the D2 and Netconf to configure.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 20 "DCTL_CONFIG_COMPLETE" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -1073,9 +1072,8 @@ Expected wait_for_message to return %d, returned %d."
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${kea6_name} to reconfigure. \
 Expected wait_for_message to return %d, returned %d."
 
-    # There should be two completed configurations of D2 and two
-    # configurations of CA.
-    wait_for_message 10 "DCTL_CONFIG_COMPLETE" 4
+    # There should be two completed configurations of D2.
+    wait_for_message 10 "DCTL_CONFIG_COMPLETE" 2
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" "Timeout waiting for ${d2_name} to reconfigure. \
 Expected wait_for_message to return %d, returned %d."
 
@@ -1097,17 +1095,17 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 10s for the D2, CA and Netconf to stop.
-    wait_for_message 10 "DCTL_SHUTDOWN" 2
+    # Wait up to 10s for the D2 and Netconf to stop.
+    wait_for_message 10 "DCTL_SHUTDOWN" 1
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
         "Timeout waiting for ${d2_name} to shutdown. \
 Expected wait_for_message return %d, returned %d."
 
     # Make sure that all servers are down.
     if ${have_netconf}; then
-        expected=6
-    else
         expected=5
+    else
+        expected=4
     fi
     wait_for_server_down ${expected} ${wildcard_name}
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
@@ -1155,11 +1153,11 @@ Expected wait_for_message return %d, returned %d."
         "Timeout waiting for ${kea4_name} to start. \
 Expected wait_for_message return %d, returned %d."
 
-    # Wait up to 20s for the D2, CA and Netconf to configure.
+    # Wait up to 20s for the D2 and Netconf to configure.
     if ${have_netconf}; then
-        expected=3
-    else
         expected=2
+    else
+        expected=1
     fi
     wait_for_message 20 "DCTL_CONFIG_COMPLETE" ${expected}
     assert_eq 1 "${_WAIT_FOR_MESSAGE}" \
@@ -1216,9 +1214,9 @@ Expected wait_for_message return %d, returned %d."
 
     # Make sure that the DHCPv4 server is down.
     if ${have_netconf}; then
-        expected=6
-    else
         expected=5
+    else
+        expected=4
     fi
     wait_for_server_down ${expected} ${kea4_name}
     assert_eq 1 "${_WAIT_FOR_SERVER_DOWN}" \
