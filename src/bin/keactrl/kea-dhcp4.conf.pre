@@ -47,10 +47,67 @@
     // configuration), config-reload (which tells Kea to reload its
     // configuration from file), statistic-get (to retrieve statistics) and many
     // more. For detailed description, see Sections 8.8, 16 and 15.
-    "control-socket": {
-        "socket-type": "unix",
-        "socket-name": "kea4-ctrl-socket"
-    },
+    "control-sockets": [
+        {
+            "socket-type": "unix",
+            "socket-name": "kea4-ctrl-socket"
+        },
+        {
+            // HTTP control channel.
+            "socket-type": "http",
+
+            "socket-address": "127.0.0.1",
+
+            // If enabling HA and multi-threading, the 8000 port is used
+            // by the HA hook library http listener. When using HA hook
+            // library with multi-threading to function, make sure
+            // the port used by dedicate d listener is different
+            // (e.g. 8001) than the one used here. Note the commands
+            // should still be sent via the control socket. The dedicated
+            // listener is specifically for HA updates only.
+            "socket-port": 8000,
+
+
+            // Allow access only to kea-api user.
+
+            // To make it work, please store your user name in
+            // kea-api-user file.  and store your password in the
+            // kea-api-password file.
+            // Make sure the user and password files have sufficiently
+            // restrictive access permissions, in particular that they
+            // are not world-readable.
+            // The basic HTTP auth offers poor security for
+            // unencrypted channels.  If possible, a better, stronger
+            // HTTPS mechanism should be deployed, in particular when the
+            // client authentication is enabled by setting the
+            // cert-required to true (the default). See trust-anchor,
+            // cert-file, key-file and cert-required below. For more
+            // details read the Kea Secu rity section in the ARM.
+            "authentication": {
+                "type": "basic",
+                "realm": "Kea Control Agent",
+                "directory": "/etc/kea",
+                "clients": [
+                    {
+                        "user-file": "kea-api-user",
+                        "password-file": "kea-api-password"
+                    }
+                ]
+            }
+
+            // Configuration section containing HTTPS parameters:
+            // TLS trust anchor (Certificate Authority). This is a file
+            // name or a directory path.
+            // "trust-anchor": "kea-server-ca",
+            // TLS server certificate file name.
+            // "cert-file": "kea-server-cert",
+            // TLS server private key file name.
+            // "key-file": "kea-server-key",
+            // TLS require client certificates flag. Default is true and means
+            // require client certificates. False means they are optional.
+            // "cert-required": true
+        }
+    ],
 
     // Use Memfile lease database backend to store leases in a CSV file.
     // Depending on how Kea was compiled, it may also support SQL databases
