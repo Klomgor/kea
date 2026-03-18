@@ -1215,7 +1215,7 @@ TEST_F(HttpCtrlChannelDhcpv6Test, configSet) {
     sendHttpCommand(os.str(), response);
 
     // Should fail with a syntax error
-    EXPECT_EQ("[ { \"result\": 1, "
+    EXPECT_EQ("[ { \"result\": 5, "
               "\"text\": \"subnet configuration failed: mandatory 'subnet' "
               "parameter is missing for a subnet being configured "
               "(<string>:21:17)\" } ]",
@@ -1701,7 +1701,7 @@ TEST_F(HttpsCtrlChannelDhcpv6Test, configSet) {
     sendHttpCommand(os.str(), response);
 
     // Should fail with a syntax error
-    EXPECT_EQ("[ { \"result\": 1, "
+    EXPECT_EQ("[ { \"result\": 5, "
               "\"text\": \"subnet configuration failed: mandatory 'subnet' "
               "parameter is missing for a subnet being configured "
               "(<string>:21:17)\" } ]",

@@ -847,6 +847,10 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
         }
     } else if (!check_only) {
         status_code = CONTROL_RESULT_ERROR_RECOVERABLE;
+        if (!IfaceMgr::instance().isTestMode()) {
+            ElementPtr mutable_answer = boost::const_pointer_cast<Element>(answer);
+            mutable_answer->set(CONTROL_RESULT, Element::create(status_code));
+        }
     }
 
     // So far so good, there was no parsing error so let's commit the

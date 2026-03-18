@@ -4219,6 +4219,57 @@ TEST_F(Dhcpv4SrvTest, privateOption) {
     EXPECT_EQ(12345678, opt32->getValue());
 }
 
+// Checks that parser errors are recoverable.
+TEST_F(Dhcpv4SrvTest, recoverableConfigError) {
+
+    string config = "{ \"interfaces-config\": {"
+        "    \"interfaces\": [ \"*\" ] }, "
+        "\"rebind-timer\": 2000, "
+        "\"renew-timer\": 1000, "
+        "\"valid-lifetime\": 4000, "
+        "\"subnet4\": [ "
+        "{   \"pools\": [ { \"pool\": \"192.0.2.1 - 192.0.2.100\" } ], "
+        "    \"id\": 1, "
+        "    \"subnet\": \"192.0.2.0/24\" } ], "
+        "\"client-classes\": [ "
+        "{   \"name\": \"router\", "
+        "    \"test\": \"bogus\" } ] }";
+
+    ConstElementPtr json;
+    ASSERT_NO_THROW(json = parseDHCP4(config));
+    ConstElementPtr status;
+
+    // Configure the server and make sure the config is accepted
+    EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
+    ASSERT_TRUE(status);
+    comment_ = config::parseAnswer(rcode_, status);
+    ASSERT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode_);
+}
+
+// Checks that non parser errors are unrecoverable.
+TEST_F(Dhcpv4SrvTest, unrecoverableConfigError) {
+
+    string config = "{ \"interfaces-config\": {"
+        "    \"interfaces\": [ \"1234567890\" ] }, "
+        "\"rebind-timer\": 2000, "
+        "\"renew-timer\": 1000, "
+        "\"valid-lifetime\": 4000, "
+        "\"subnet4\": [ "
+        "{   \"pools\": [ { \"pool\": \"192.0.2.1 - 192.0.2.100\" } ], "
+        "    \"id\": 1, "
+        "    \"subnet\": \"192.0.2.0/24\" } ] }";
+
+    ConstElementPtr json;
+    ASSERT_NO_THROW(json = parseDHCP4(config));
+    ConstElementPtr status;
+
+    // Configure the server and make sure the config is accepted
+    EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
+    ASSERT_TRUE(status);
+    comment_ = config::parseAnswer(rcode_, status);
+    ASSERT_EQ(CONTROL_RESULT_ERROR, rcode_);
+}
+
 // Checks effect of persistency (aka always-send) flag on the PRL.
 TEST_F(Dhcpv4SrvTest, prlPersistency) {
     IfaceMgrTestConfig test_config(true);

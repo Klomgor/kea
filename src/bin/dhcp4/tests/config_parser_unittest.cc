@@ -613,7 +613,7 @@ public:
         std::string config = createConfigWithOption(param_value, parameter);
         ConstElementPtr json = parseDHCP4(config);
         EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-        checkResult(x, 1);
+        checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
         EXPECT_TRUE(errorContainsPosition(x, "<string>"));
         CfgMgr::instance().clear();
     }
@@ -631,7 +631,7 @@ public:
         std::string config = createConfigWithOption(params);
         ConstElementPtr json = parseDHCP4(config);
         EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-        checkResult(x, 1);
+        checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
         EXPECT_TRUE(errorContainsPosition(x, "<string>"));
         CfgMgr::instance().clear();
     }
@@ -940,7 +940,7 @@ TEST_F(Dhcp4ParserTest, bogusCommand) {
                     parseJSON("{\"bogus\": 5}")));
 
     // returned value must be 1 (configuration parse error)
-    checkResult(x, 1);
+    checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // it should be refused by syntax too
     EXPECT_THROW(parseDHCP4("{\"bogus\": 5}"), Dhcp4ParseError);
@@ -982,7 +982,7 @@ TEST_F(Dhcp4ParserTest, outBoundValidLifetime) {
     string expected = "subnet configuration failed: "
         "the value of min-valid-lifetime (2000) is not "
         "less than (default) valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string too_large =  "{ " + genIfaceConfig() + ","
@@ -997,7 +997,7 @@ TEST_F(Dhcp4ParserTest, outBoundValidLifetime) {
     expected = "subnet configuration failed: "
         "the value of (default) valid-lifetime (2000) is not "
         "less than max-valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string before =  "{ " + genIfaceConfig() + ","
@@ -1013,7 +1013,7 @@ TEST_F(Dhcp4ParserTest, outBoundValidLifetime) {
     expected = "subnet configuration failed: "
         "the value of (default) valid-lifetime (1000) is not "
         "between min-valid-lifetime (2000) and max-valid-lifetime (4000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string after =  "{ " + genIfaceConfig() + ","
@@ -1029,7 +1029,7 @@ TEST_F(Dhcp4ParserTest, outBoundValidLifetime) {
     expected = "subnet configuration failed: "
         "the value of (default) valid-lifetime (5000) is not "
         "between min-valid-lifetime (1000) and max-valid-lifetime (4000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string crossed =  "{ " + genIfaceConfig() + ","
@@ -1045,7 +1045,7 @@ TEST_F(Dhcp4ParserTest, outBoundValidLifetime) {
     expected = "subnet configuration failed: "
         "the value of min-valid-lifetime (2000) is not "
         "less than max-valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 /// Check that valid-lifetime must be between min-valid-lifetime and
@@ -1064,7 +1064,7 @@ TEST_F(Dhcp4ParserTest, outBoundGlobalValidLifetime) {
     string expected =
         "the value of min-valid-lifetime (2000) is not "
         "less than (default) valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string too_large =  "{ " + genIfaceConfig() + ","
@@ -1075,7 +1075,7 @@ TEST_F(Dhcp4ParserTest, outBoundGlobalValidLifetime) {
     expected =
         "the value of (default) valid-lifetime (2000) is not "
         "less than max-valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string before =  "{ " + genIfaceConfig() + ","
@@ -1087,7 +1087,7 @@ TEST_F(Dhcp4ParserTest, outBoundGlobalValidLifetime) {
     expected =
         "the value of (default) valid-lifetime (1000) is not "
         "between min-valid-lifetime (2000) and max-valid-lifetime (4000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string after =  "{ " + genIfaceConfig() + ","
@@ -1099,7 +1099,7 @@ TEST_F(Dhcp4ParserTest, outBoundGlobalValidLifetime) {
     expected =
         "the value of (default) valid-lifetime (5000) is not "
         "between min-valid-lifetime (1000) and max-valid-lifetime (4000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
     resetConfiguration();
 
     string crossed =  "{ " + genIfaceConfig() + ","
@@ -1111,7 +1111,7 @@ TEST_F(Dhcp4ParserTest, outBoundGlobalValidLifetime) {
     expected =
         "the value of min-valid-lifetime (2000) is not "
         "less than max-valid-lifetime (1000)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 /// Check that the renew-timer doesn't have to be specified, in which case
@@ -1336,7 +1336,7 @@ TEST_F(Dhcp4ParserTest, multipleSubnetsOverlappingIDs) {
     ASSERT_NO_THROW(json = parseDHCP4(config));
 
     EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-    checkResult(x, 1);
+    checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(x, "<string>"));
 }
 
@@ -1641,13 +1641,13 @@ TEST_F(Dhcp4ParserTest, nextServerNegative) {
     // check if returned status is always a failure
     ConstElementPtr status;
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json1));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json2));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
@@ -1659,13 +1659,13 @@ TEST_F(Dhcp4ParserTest, nextServerNegative) {
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json4));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json5));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -1820,7 +1820,7 @@ TEST_F(Dhcp4ParserTest, compatibilityUnknown) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     string expected = "unsupported compatibility parameter: ";
     expected += "foo-bar (<string>:1:127)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 // Check that not boolean compatibility flag value raises error.
@@ -1847,7 +1847,7 @@ TEST_F(Dhcp4ParserTest, compatibilityNotBool) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     string expected = "compatibility parameter values must be boolean ";
     expected += "(lenient-option-parsing at <string>:1:142)";
-    checkResult(status, 1, expected);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 // This test checks that the global match-client-id parameter is optional
@@ -2147,7 +2147,7 @@ TEST_F(Dhcp4ParserTest, subnetInterfaceBogus) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
 
     // returned value should be 1 (configuration error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     ConstSubnet4Ptr subnet = CfgMgr::instance().getStagingCfg()->
@@ -2176,7 +2176,7 @@ TEST_F(Dhcp4ParserTest, interfaceGlobal) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
 
     // returned value should be 1 (parse error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     EXPECT_THROW(parseDHCP4(config), Dhcp4ParseError);
@@ -2245,7 +2245,7 @@ TEST_F(Dhcp4ParserTest, badSubnetValues) {
                         << "invalid json, broken test";
         ConstElementPtr status;
         EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, config));
-        checkResult(status, 1);
+        checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
         ASSERT_TRUE(comment_);
         EXPECT_EQ(comment_->stringValue(), scenario.exp_error_msg_);
     }
@@ -2334,7 +2334,7 @@ TEST_F(Dhcp4ParserTest, poolOutOfSubnet) {
 
     // returned value must be 1 (values error)
     // as the pool does not belong to that subnet
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2462,43 +2462,43 @@ TEST_F(Dhcp4ParserTest, badPools) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json1));
 
     // check if returned status is always a failure
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json2));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json3));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json4));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json5));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json6));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json7));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2539,7 +2539,7 @@ TEST_F(Dhcp4ParserTest, unknownInterface) {
     ASSERT_NO_THROW(json = parseDHCP4(config, true));
     ConstElementPtr status;
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2757,7 +2757,7 @@ TEST_F(Dhcp4ParserTest, optionDefDuplicate) {
     ConstElementPtr status;
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     // Specific check for incorrect report using default config pair
@@ -2884,7 +2884,7 @@ TEST_F(Dhcp4ParserTest, optionDefInvalidName) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2909,7 +2909,7 @@ TEST_F(Dhcp4ParserTest, optionDefInvalidType) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2935,7 +2935,7 @@ TEST_F(Dhcp4ParserTest, optionDefInvalidRecordType) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -2986,7 +2986,7 @@ TEST_F(Dhcp4ParserTest, optionDefInvalidEncapsulatedSpace) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -3015,7 +3015,7 @@ TEST_F(Dhcp4ParserTest, optionDefEncapsulatedSpaceAndArray) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -3041,7 +3041,7 @@ TEST_F(Dhcp4ParserTest, optionDefEncapsulateOwnSpace) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -3105,7 +3105,7 @@ TEST_F(Dhcp4ParserTest, optionStandardDefOverride) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     // Expecting parsing error (error code 1).
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     /// There is no definition for unassigned option 170.
@@ -4059,7 +4059,7 @@ TEST_F(Dhcp4ParserTest, DISABLED_Uint32Parser) {
                     parseJSON("{\"renew-timer\": 4294967296}")));
 
     // returned value must be rejected (1 configuration error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     // CASE 4: -1 (UINT_MIN -1 ) should not work
@@ -4067,7 +4067,7 @@ TEST_F(Dhcp4ParserTest, DISABLED_Uint32Parser) {
                     parseJSON("{\"renew-timer\": -1}")));
 
     // returned value must be rejected (1 configuration error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 }
 
@@ -5090,7 +5090,7 @@ TEST_F(Dhcp4ParserTest, invalidD2ClientConfig) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, config));
 
     // check if returned status is failed.
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
 
     // Verify that the D2 configuration can be fetched and is set to disabled.
@@ -5403,7 +5403,7 @@ TEST_F(Dhcp4ParserTest, reservationBogus) {
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-    checkResult(x, 1);
+    checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     EXPECT_THROW(parseDHCP4(config), Dhcp4ParseError);
 
@@ -5433,7 +5433,7 @@ TEST_F(Dhcp4ParserTest, reservationBogus) {
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-    checkResult(x, 1);
+    checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // Case 3: Broken specification of option data.
     config = "{ " + genIfaceConfig() + ","
@@ -5465,7 +5465,7 @@ TEST_F(Dhcp4ParserTest, reservationBogus) {
     CfgMgr::instance().clear();
 
     EXPECT_NO_THROW(x = Dhcpv4SrvTest::configure(*srv_, json));
-    checkResult(x, 1);
+    checkResult(x, CONTROL_RESULT_ERROR_RECOVERABLE);
 }
 
 /// The goal of this test is to verify that Host Reservation flags can be
@@ -5759,7 +5759,7 @@ TEST_F(Dhcp4ParserTest, declineTimerError) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
 
     // returned value should be 1 (error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // Check that the error contains error position.
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
@@ -5834,7 +5834,7 @@ TEST_F(Dhcp4ParserTest, expiredLeasesProcessingError) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
 
     // Returned value should be 0 (error)
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // Check that the error contains error position.
     EXPECT_TRUE(errorContainsPosition(status, "<string>"));
@@ -5964,15 +5964,15 @@ TEST_F(Dhcp4ParserTest, 4o6subnetBogus) {
 
     // Check that the first config is rejected.
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json1));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // Check that the second config is rejected.
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json2));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
 
     // Check that the third config is rejected.
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json3));
-    checkResult(status, 1);
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE);
 }
 
 // Checks if the DHCPv4 is able to parse the configuration with 4o6 network
@@ -6394,7 +6394,7 @@ TEST_F(Dhcp4ParserTest, invalidPoolRange) {
     string expected = "Failed to create pool defined by: "
         "192.0.2.1-19.2.0.200 (<string>:7:26)";
 
-    configure(config, CONTROL_RESULT_ERROR, expected);
+    configure(config, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 // Test verifies the error message for an outside subnet pool range
@@ -6416,7 +6416,7 @@ TEST_F(Dhcp4ParserTest, outsideSubnetPool) {
         "192.0.2.1-192.0.2.100 does not match the prefix of a subnet: "
         "10.0.2.0/24 to which it is being added (<string>:5:14)";
 
-    configure(config, CONTROL_RESULT_ERROR, expected);
+    configure(config, CONTROL_RESULT_ERROR_RECOVERABLE, expected);
 }
 
 // Test verifies that empty shared networks are accepted.
@@ -6468,7 +6468,7 @@ TEST_F(Dhcp4ParserTest, sharedNetworksEmptyName) {
         "\"shared-networks\": [ { \"name\": \"\" } ]\n"
         "} \n";
 
-    configure(config, CONTROL_RESULT_ERROR,
+    configure(config, CONTROL_RESULT_ERROR_RECOVERABLE,
               "Shared-network with subnets  is missing mandatory 'name' parameter");
 }
 
@@ -8178,7 +8178,7 @@ TEST_F(Dhcp4ParserTest, deprecatedRequireClientClassesCheck) {
     ASSERT_NO_THROW(json = parseDHCP4(config));
 
     ASSERT_NO_THROW(status = configureDhcp4Server(*srv_, json));
-    checkResult(status, 1,
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE,
                 "subnet configuration failed: cannot specify both 'require-client-classes'"
                 " and 'evaluate-additional-classes'. Use only the latter.");
 }
@@ -8233,7 +8233,7 @@ TEST_F(Dhcp4ParserTest, deprecatedOnlyIfRequiredCheck) {
     ASSERT_NO_THROW(json = parseDHCP4(config));
 
     ASSERT_NO_THROW(status = configureDhcp4Server(*srv_, json));
-    checkResult(status, 1,
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE,
                 "cannot specify both 'only-if-required' and"
                 " 'only-in-additional-list'. Use only the latter.");
 }
@@ -8316,7 +8316,7 @@ TEST_F(Dhcp4ParserTest, deprecatedClientClassesCheck) {
     ASSERT_NO_THROW(json = parseDHCP4(config));
 
     ASSERT_NO_THROW(status = configureDhcp4Server(*srv_, json));
-    checkResult(status, 1,
+    checkResult(status, CONTROL_RESULT_ERROR_RECOVERABLE,
                 "subnet configuration failed: cannot specify both 'client-class'"
                 " and 'client-classes'. Use only the latter.");
 }
