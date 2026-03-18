@@ -56,7 +56,7 @@ Some of these checks and updates can be made before the actual freeze.
    1. [ ] Check that a previously released schema has not been changed.
    1. [ ] Check that the additions to `dhcpdb_create.*sql`, and nothing more nor less than what was added in this release, is present in a `upgrade_*_to_*.sh.in` script that should also have been added in this release.
 1. [ ] Create a draft of the release notes on the [Kea GitLab wiki](https://gitlab.isc.org/isc-projects/kea/-/wikis/home). It should be created under [the Release-Notes directory](https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes), like this one: <https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes/release-notes-2.3.4>.
-    1. <mark>🟥 Security</mark>: Use the private Kea Gitlab wiki instead: <https://gitlab.isc.org/isc-private/kea/-/wikis/Release-Notes>.
+    1. [ ] <mark>🟥 Security</mark>: Use the private Kea Gitlab wiki instead: <https://gitlab.isc.org/isc-private/kea/-/wikis/Release-Notes>.
 1. [ ] Notify Tomek that the draft is ready to be redacted.
 1. [ ] Check if ReadTheDocs can build Kea documentation. Alternatively, look for failures in emails if you know that the ReadTheDocs webhook is working.
    1. Trigger rebuilding docs on [readthedocs.org](https://readthedocs.org/projects/kea/builds) and wait for the build to complete.
@@ -150,7 +150,7 @@ This is the last moment to freeze the code! :snowflake:
    1. Go to [release-upload-to-cloudsmith](https://jenkins.aws.isc.org/job/kea-dev/job/release-upload-to-cloudsmith/).
    1. Click `Build with Parameters`.
    1. Pick the latest pkg build in the `Packages` field, and the corresponding tarball build in the `Tarball` field. Leave the rest as they are `PrivPubRepos: "both"`, `TarballOrPkg: "packages"`, `TestProdRepos: "testing"` and click `Build`.
-   1. <mark>🟥 Security</mark>: Tick the `CVE` parameter.
+   1. [ ] <mark>🟥 Security</mark>: Tick the `CVE` parameter.
 1. [ ] Run Jenkins job [releases-pkgs-check](https://jenkins.aws.isc.org/job/kea-dev/job/release-pkgs-check/) on the packages uploaded to the testing repos.
 
 ## Releasing Tarballs and Packages (QA)
@@ -190,7 +190,7 @@ Now it's time to publish the code.
     * Example command: `ssh repo.isc.org 'sha256sum /data/shared/sweng/kea/releases/*2.3.4/*.tar.xz'`
 1. [ ] <mark>🟥 Security</mark>: Wait for clearance from Incident Manager to proceed with the private release. Usually on T-5.
 1. [ ] Login to repo.isc.org and upload the final tarball to public ftp using the make-available script.
-    * [ ] <mark>🟥 Security</mark>: Pass the `--private` flag instead of `--public` even for the core tarball. Save the links. Put them in the CVE ticket.
+    * [ ] <mark>🟥 Security</mark>: Pass the `--private` flag instead of `--public` even for the core tarball. Save the links. Put them in the CVE ticket as an internal note.
     * [ ] For the subscriber tarball, run again with the `--private` flag instead of `--public`.
     * Example commands:
       * `make-available --public --symlink=cur/2.3 /data/shared/sweng/kea/releases/2.3.4`
@@ -200,36 +200,33 @@ Now it's time to publish the code.
     * If you made a mistake, contact ASAP someone from the ops team to remove incorrectly uploaded tarballs.
     * [ ] Save the link to the subscriber tarball and put it into the signing ticket as a comment.
 1. Upload final APK, DEB & RPM packages, tarballs and signature files to cloudsmith.io:
-   1. [ ] <mark>🟥 Security</mark>: Copy public packages from `-prv` Cloudsmith repo to public.
-      * You can use script [copy-missing-public-packages-between-cloudsmith-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/copy-missing-public-packages-between-cloudsmith-repos.py) \
-         Example command: `./copy-missing-public-packages-between-cloudsmith-repos.py -v 2.3.4`.
-      * Or you can use the Cloudsmith GUI. Consider using the filter from the script in the previous bullet point.
-    1. [ ] If not a security release, and you uploaded packages to testing repo previously, you can copy them over instantaneously. Run script [copy-packages-between-cloudsmith-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/copy-packages-between-cloudsmith-repos.py) \
+    1. [ ] If you uploaded packages to testing repo previously, you can copy them over instantaneously. Run script [copy-packages-between-cloudsmith-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/copy-packages-between-cloudsmith-repos.py) \
         * Example commands:
             * `./copy-packages-between-cloudsmith-repos.py -v 2.3.4 --from kea-dev-testing --to kea-dev`
-            * `./copy-packages-between-cloudsmith-repos.py -v 2.3.4 --from kea-dev-prv-testing --to kea-dev-prv`
+            * `./copy-packages-between-cloudsmith-repos.py -v 2.3.4 --from kea-dev-prv-testing --to kea-dev-prv --premium`
+        1. [ ] <mark>🟥 Security</mark>: Use only the premium run from the second example, since the core tarballs should also be in the private repo. You could run the command on the core repos too, but it shouldn't do anything.
         1. [ ] Remember to upload tarballs too. Run [release-upload-to-cloudsmith](https://jenkins.aws.isc.org/job/kea-dev/job/release-upload-to-cloudsmith/) with `TarballOrPkg: "tarballs"`. The other parameters should be: `PrivPubRepos: "both"`, `TestProdRepos: "production"`. Click `Build`.
-    1. [ ] Otherwise, start a new upload. Go to [release-upload-to-cloudsmith](https://jenkins.aws.isc.org/job/kea-dev/job/release-upload-to-cloudsmith/).
+            1. [ ] <mark>🟥 Security</mark>: Tick the `CVE` parameter.
+    1. [ ] If you did not upload packages to testing repo previously, start a new upload. Go to [release-upload-to-cloudsmith](https://jenkins.aws.isc.org/job/kea-dev/job/release-upload-to-cloudsmith/).
         1. Click `Build with Parameters`.
         1. Pick your selected pkg build in the `Packages` field, the corresponding tarball build in the `Tarball` field, `PrivPubRepos: "both"`, `TarballOrPkg: "both"`, `TestProdRepos: "production"` and click `Build`.
             - This step also verifies sign files.
-        1. <mark>🟥 Security</mark>: Tick the `CVE` parameter.
+        1. [ ] <mark>🟥 Security</mark>: Tick the `CVE` parameter.
 1. [ ] Run Jenkins job [releases-pkgs-check](https://jenkins.aws.isc.org/job/kea-dev/job/release-pkgs-check/) on the packages uploaded to the production repo.
-1. [ ] Check that Docker images can be uploaded to Cloudsmith. Run Jenkins job [build-upload-docker](https://jenkins.aws.isc.org/job/kea-dev/job/build-upload-docker/).
-    * Make sure the right package job is selected under `Packages`.
-    * Tick `Upload`.
-    * Leave `TestProdRepos` to `testing`.
-    * Leave `versionTag` ticked.
-    * Leave `versionDateTag` ticked.
-    * <mark>Latest 🟩 Stable</mark>: Tick `latestTag`.
-    * Press `Build`.
-1. [ ] Build and upload Docker images to Cloudsmith. Run Jenkins job [build-upload-docker](https://jenkins.aws.isc.org/job/kea-dev/job/build-upload-docker/) with the same actions as above except change `TestProdRepos` to `production`.
 1. [ ] <mark>🟥 Security</mark>: Wait for public disclosure. Confirm with the Incident Manager that the disclosure is done.
 1. [ ] <mark>🟥 Security</mark>: Run make-available again with `--public` instead of `--private` for the core tarball.
 1. [ ] <mark>🟥 Security</mark>: Copy public packages from `-prv` Cloudsmith repo to public.
     * You can use script [copy-missing-public-packages-between-cloudsmith-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/copy-missing-public-packages-between-cloudsmith-repos.py) \
       Example command: `./copy-missing-public-packages-between-cloudsmith-repos.py -v 2.3.4`.
     * Or you can use the Cloudsmith GUI. Consider using the filter from the script in the previous bullet point.
+1. [ ] Build and upload Docker images to Cloudsmith. Run Jenkins job [build-upload-docker](https://jenkins.aws.isc.org/job/kea-dev/job/build-upload-docker/).
+    * Make sure the right package job is selected under `Packages`.
+    * Tick `Upload`.
+    * Leave `TestProdRepos` to `production`.
+    * Leave `versionTag` ticked.
+    * Leave `versionDateTag` ticked.
+    * <mark>Latest 🟩 Stable</mark>: Tick `latestTag`.
+    * Press `Build`.
 1. [ ] <mark>🟥 Security</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-braches.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/kea --target-project isc-projects/kea --branch master`.
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/forge --target-project isc-projects/forge --branch master`.
