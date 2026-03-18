@@ -6919,14 +6919,13 @@ RETURNS INET
 AS $$
 DECLARE
     -- Declarations
-    DECLARE pool_id BIGINT;
-    DECLARE last_address INET;
-    DECLARE free_address INET;
-    DECLARE zero_inet INET;
-
-    DECLARE bin_start_address BIGINT;
-    DECLARE bin_end_address BIGINT;
-    DECLARE bin_last_address BIGINT;
+    pool_id BIGINT;
+    last_address INET;
+    free_address INET;
+    zero_inet INET;
+    bin_start_address BIGINT;
+    bin_end_address BIGINT;
+    bin_last_address BIGINT;
 BEGIN
     zero_inet = '0.0.0.0'::INET;
     free_address = zero_inet;
@@ -7083,9 +7082,9 @@ CREATE OR REPLACE FUNCTION byteaToInet(bin_address bytea)
 RETURNS inet
 AS $$
 DECLARE
-    DECLARE new_prefix varchar(100);
-    DECLARE hex_string varchar(45);
-    DECLARE pos SMALLINT;
+    new_prefix varchar(100);
+    hex_string varchar(45);
+    pos SMALLINT;
 BEGIN
     IF (octet_length(bin_address) != 16)
     THEN
@@ -7115,13 +7114,13 @@ CREATE OR REPLACE FUNCTION incrementV6Prefix(prefix bytea, prefix_len SMALLINT)
 RETURNS bytea
 AS $$
 DECLARE
-    DECLARE new_prefix bytea;
-    DECLARE n_bytes SMALLINT;
-    DECLARE n_bits SMALLINT;
-    DECLARE mask SMALLINT;
-    DECLARE start_idx SMALLINT;
-    DECLARE tmp SMALLINT;
-    DECLARE i SMALLINT;
+    new_prefix bytea;
+    n_bytes SMALLINT;
+    n_bits SMALLINT;
+    mask SMALLINT;
+    start_idx SMALLINT;
+    tmp SMALLINT;
+    i SMALLINT;
 BEGIN
     IF (prefix_len < 1 OR prefix_len > 128)
     THEN
@@ -7254,13 +7253,12 @@ RETURNS INET
 AS $$
 DECLARE
     -- Declarations
-    DECLARE pool_id BIGINT;
-    DECLARE last_address INET;
-    DECLARE free_address INET;
-
-    DECLARE bin_start_address BYTEA;
-    DECLARE bin_end_address BYTEA;
-    DECLARE bin_last_address BYTEA;
+    pool_id BIGINT;
+    last_address INET;
+    free_address INET;
+    bin_start_address BYTEA;
+    bin_end_address BYTEA;
+    bin_last_address BYTEA;
 BEGIN
 
     -- Find the pool, get the id and last addressed picked.
