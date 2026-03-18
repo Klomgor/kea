@@ -6859,11 +6859,10 @@ CREATE INDEX flq_pool6_by_subnet_id ON flq_pool6 (subnet_id);
 
 DROP TABLE IF EXISTS free_lease6;
 CREATE TABLE IF NOT EXISTS free_lease6 (
-    lease_type SMALLINT NOT NULL,
     address INET NOT NULL,
     bin_address BYTEA NOT NULL,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (address, lease_type)
+    PRIMARY KEY (address)
 );
 
 CREATE UNIQUE INDEX free_lease6_bin_address ON free_lease6 (bin_address);
@@ -7229,8 +7228,8 @@ BEGIN
 
         IF (free_address IS NULL)
         THEN
-            INSERT INTO free_lease6(lease_type, address, bin_address)
-                VALUES (p_lease_type, next_address, inetToBytea(next_address))
+            INSERT INTO free_lease6(address, bin_address)
+                VALUES (next_address, inetToBytea(next_address))
                 ON CONFLICT DO NOTHING;
         END IF;
 
