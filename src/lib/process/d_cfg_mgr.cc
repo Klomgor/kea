@@ -114,7 +114,7 @@ DCfgMgrBase::simpleParseConfig(isc::data::ConstElementPtr config_set,
                     if (post_config_cb) {
                         post_config_cb();
                     }
-                } catch (std::exception& ex) {
+                } catch (std::exception&) {
                     fatal = true;
                     throw;
                 } catch (...) {

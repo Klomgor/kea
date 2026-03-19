@@ -885,6 +885,9 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
 
     SrvConfigPtr srv_config;
 
+    // Parsing stage is complete. The current configuration has not been altered.
+    // From this stage on, every error might have irreversible consequences and the
+    // configuration might not be restored to a working state.
     if (status_code == CONTROL_RESULT_SUCCESS) {
         if (check_only) {
             if (extra_checks) {
@@ -907,6 +910,10 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             }
         } else {
 
+            // Usually unit tests create managers before calling configureDhcp6Server and
+            // do not call ControlledDhcpv6Srv::processConfig.
+            // Runtime code path creates the managers after calling configureDhcp6Server
+            // and they need to be reset just after successful configuration parsing.
             if (!IfaceMgr::instance().isTestMode()) {
                 // Destroy lease manager before hooks unload.
                 LeaseMgrFactory::destroy();
