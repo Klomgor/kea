@@ -3051,7 +3051,7 @@ TEST_F(Dhcpv6SrvTest, relaySourcePort) {
     EXPECT_TRUE(adv->getRelayOption(D6O_RELAY_SOURCE_PORT, 0));
 }
 
-// Checks that parser errors are recoverable.
+// Checks that parser errors are non fatal.
 TEST_F(Dhcpv6SrvTest, recoverableConfigError) {
 
     string config = "{ \"interfaces-config\": {"
@@ -3079,7 +3079,7 @@ TEST_F(Dhcpv6SrvTest, recoverableConfigError) {
     ASSERT_EQ(CONTROL_RESULT_ERROR, rcode_);
 }
 
-// Checks that non parser errors are unrecoverable.
+// Checks that most non parser errors are fatal.
 TEST_F(Dhcpv6SrvTest, unrecoverableConfigError) {
 
     string config = "{ \"interfaces-config\": {"
@@ -3097,7 +3097,7 @@ TEST_F(Dhcpv6SrvTest, unrecoverableConfigError) {
     ASSERT_NO_THROW(json = parseDHCP6(config));
     ConstElementPtr status;
 
-    // Configure the server and make sure the config is accepted
+    // Configure the server and make sure the config is not accepted
     EXPECT_NO_THROW(status = configure(*srv_, json));
     ASSERT_TRUE(status);
     comment_ = config::parseAnswer(rcode_, status);

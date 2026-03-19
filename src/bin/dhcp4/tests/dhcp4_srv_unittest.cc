@@ -4219,7 +4219,7 @@ TEST_F(Dhcpv4SrvTest, privateOption) {
     EXPECT_EQ(12345678, opt32->getValue());
 }
 
-// Checks that parser errors are recoverable.
+// Checks that parser errors are non fatal.
 TEST_F(Dhcpv4SrvTest, recoverableConfigError) {
 
     string config = "{ \"interfaces-config\": {"
@@ -4246,7 +4246,7 @@ TEST_F(Dhcpv4SrvTest, recoverableConfigError) {
     ASSERT_EQ(CONTROL_RESULT_ERROR, rcode_);
 }
 
-// Checks that non parser errors are unrecoverable.
+// Checks that most non parser errors are fatal.
 TEST_F(Dhcpv4SrvTest, unrecoverableConfigError) {
 
     string config = "{ \"interfaces-config\": {"
@@ -4263,7 +4263,7 @@ TEST_F(Dhcpv4SrvTest, unrecoverableConfigError) {
     ASSERT_NO_THROW(json = parseDHCP4(config));
     ConstElementPtr status;
 
-    // Configure the server and make sure the config is accepted
+    // Configure the server and make sure the config is not accepted
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     comment_ = config::parseAnswer(rcode_, status);
