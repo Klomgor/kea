@@ -142,7 +142,7 @@ Dhcp6SrvD2Test::configure(const std::string& config, bool exp_result) {
     if (exp_result == SHOULD_PASS) {
         ASSERT_EQ(CONTROL_RESULT_SUCCESS, rcode) << "parse comment: " << comment->stringValue();
     } else {
-        ASSERT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode) << "parse comment: " << comment->stringValue();
+        ASSERT_EQ(CONTROL_RESULT_ERROR, rcode) << "parse comment: " << comment->stringValue();
     }
 
     if (rcode == 0) {

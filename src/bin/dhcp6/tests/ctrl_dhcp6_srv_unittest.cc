@@ -880,7 +880,7 @@ TEST_F(CtrlChannelDhcpv6SrvTest, configSet) {
     sendUnixCommand(os.str(), response);
 
     // Should fail with a syntax error
-    EXPECT_EQ("{ \"result\": 5, "
+    EXPECT_EQ("{ \"result\": 1, "
               "\"text\": \"subnet configuration failed: mandatory 'subnet' "
               "parameter is missing for a subnet being configured (<wire>:20:17)\" }",
               response);

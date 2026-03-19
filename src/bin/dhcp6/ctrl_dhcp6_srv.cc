@@ -429,7 +429,7 @@ ControlledDhcpv6Srv::commandConfigSetHandler(const string&,
         // potential file or syslog configured in the upcoming configuration.
         CfgMgr::instance().getCurrentCfg()->applyLoggingCfg();
 
-        if (rcode != CONTROL_RESULT_ERROR_RECOVERABLE) {
+        if (rcode == CONTROL_RESULT_FATAL_ERROR) {
             // Not initial configuration so someone can believe we reverted
             // to the previous configuration. It is not the case so be clear
             // about this.
@@ -442,6 +442,9 @@ ControlledDhcpv6Srv::commandConfigSetHandler(const string&,
         // Handle events registered by hooks using external IOService objects.
         IOServiceMgr::instance().pollIOServices();
     } catch (const std::exception& ex) {
+        if (rcode == CONTROL_RESULT_FATAL_ERROR) {
+            return (result);
+        }
         std::ostringstream err;
         err << "Error initializing hooks: "
             << ex.what();

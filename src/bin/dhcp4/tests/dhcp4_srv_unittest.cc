@@ -4243,7 +4243,7 @@ TEST_F(Dhcpv4SrvTest, recoverableConfigError) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     comment_ = config::parseAnswer(rcode_, status);
-    ASSERT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode_);
+    ASSERT_EQ(CONTROL_RESULT_ERROR, rcode_);
 }
 
 // Checks that non parser errors are unrecoverable.
@@ -4267,7 +4267,7 @@ TEST_F(Dhcpv4SrvTest, unrecoverableConfigError) {
     EXPECT_NO_THROW(status = Dhcpv4SrvTest::configure(*srv_, json));
     ASSERT_TRUE(status);
     comment_ = config::parseAnswer(rcode_, status);
-    ASSERT_EQ(CONTROL_RESULT_ERROR, rcode_);
+    ASSERT_EQ(CONTROL_RESULT_FATAL_ERROR, rcode_);
 }
 
 // Checks effect of persistency (aka always-send) flag on the PRL.

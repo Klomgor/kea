@@ -138,7 +138,7 @@ Dhcp4SrvD2Test::configure(const std::string& config, bool exp_result) {
     if (exp_result == SHOULD_PASS) {
         ASSERT_EQ(CONTROL_RESULT_SUCCESS, rcode) << "parse comment: " << comment->stringValue();
     } else {
-        ASSERT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode) << "parse comment: " << comment->stringValue();
+        ASSERT_EQ(CONTROL_RESULT_ERROR, rcode) << "parse comment: " << comment->stringValue();
     }
 
     if (rcode == 0) {
@@ -443,7 +443,7 @@ TEST_F(Dhcp4SrvD2Test, badTCP) {
     ASSERT_TRUE(status);
     int rcode;
     ConstElementPtr comment = config::parseAnswer(rcode, status);
-    EXPECT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode);
+    EXPECT_EQ(CONTROL_RESULT_ERROR, rcode);
 }
 
 // Tests invalid config with bad sender family
@@ -483,7 +483,7 @@ TEST_F(Dhcp4SrvD2Test, badFamily) {
     ASSERT_TRUE(status);
     int rcode;
     ConstElementPtr comment = config::parseAnswer(rcode, status);
-    EXPECT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode);
+    EXPECT_EQ(CONTROL_RESULT_ERROR, rcode);
 }
 
 // Tests invalid config with server == sender
@@ -523,7 +523,7 @@ TEST_F(Dhcp4SrvD2Test, senderEqServer) {
     ASSERT_TRUE(status);
     int rcode;
     ConstElementPtr comment = config::parseAnswer(rcode, status);
-    EXPECT_EQ(CONTROL_RESULT_ERROR_RECOVERABLE, rcode);
+    EXPECT_EQ(CONTROL_RESULT_ERROR, rcode);
 }
 
 } // namespace test
