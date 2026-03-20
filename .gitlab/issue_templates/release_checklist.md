@@ -37,6 +37,7 @@ Some of these checks and updates can be made before the actual freeze.
 1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/kea/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) for both Kea and Forge \
    Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/kea`.
    Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/forge`.
+1. [ ] <mark>🟩 Stable</mark>: Make sure that repositories and pipelines were created according to [the stable_release_preparation checklist](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/.gitlab/issue_templates/stable_release_preparation.md).
 1. [ ] Check Jenkins results:
    1. [ ] Check Jenkins jobs for failures: [ut-dist](https://jenkins.aws.isc.org/job/kea-dev/job/ut-dist/), etc...
    1. [ ] Check [Jenkins Tests Report](https://jenkins.aws.isc.org/job/kea-dev/job/jenkins-tests-report/).
@@ -222,7 +223,7 @@ Now it's time to publish the code.
 1. [ ] Build and upload Docker images to Cloudsmith. Run Jenkins job [build-upload-docker](https://jenkins.aws.isc.org/job/kea-dev/job/build-upload-docker/).
     * Make sure the right package job is selected under `Packages`.
     * Tick `Upload`.
-    * Leave `TestProdRepos` to `production`.
+    * Change `TestProdRepos` to `production`.
     * Leave `versionTag` ticked.
     * Leave `versionDateTag` ticked.
     * <mark>Latest 🟩 Stable</mark>: Tick `latestTag`.
