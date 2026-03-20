@@ -1,34 +1,52 @@
-2448.	[func]		razvan
+Kea 3.1.7 (development) released on March 25, 2026
+
+2452.	[build]		andrei
+	The library version numbers have been bumped up for the Kea 3.1.7
+	development release.
+	(Gitlab #4419)
+
+2451.	[func]		razvan
 	The kea servers return a new status ("result" with value 5) for
 	commands which have failed and have partially altered the running
 	configuration. The rollback mechanism was not able to restore
 	the previous configuration.
 	(Gitlab #4389)
 
-2447.	[func]		razvan
+2450.	[bug]		fdupont
+	Kea DHCPv6 servers can now receive packets sent to the
+	All_DHCP_Servers (ff05::1:3) site multicat address as
+	required by the standard.
+	(Gitlab #3574)
+
+2449.	[sec]		razvan
+	Fix a null dereference when configuring the control agent with a
+	control socket that lacks a socket-name entry.
+	(Gitlab #4365)
+
+2448.	[func]		razvan
 	When using raw sockets, Kea now properly handles VLAN
 	interfaces and VLAN tagged packets.
 	(Gitlab #1117, #1738, #3792)
 
 Kea 3.1.6 (development) released on February 25, 2026
 
-2446.	[sec]*		fdupont
+2447.	[sec]*		fdupont
 	Added the 'use-message-authenticator' parameter to the RADIUS
 	hook library. When true (the default when the transport
 	protocol is not TLS) a Message-Authenticator is added to
 	messages sent by Kea, and required in received messages.
 	(Gitlab #4333)
 
-2445.	[doc]		fdupont
+2446.	[doc]		fdupont
 	Added supported RADIUS standards to the RADIUS hook library
 	documentation in the ARM.
 	(Gitlab #4285)
 
-2444.	[func]		fdupont
+2445.	[func]		fdupont
 	Implemented RADIUS/TLS in the RADIUS hook library.
 	(Gitlab #4274)
 
-2443.	[bug]		tmark
+2444.	[bug]		tmark
 	Fixed an issue in kea-dhcp6 that caused the server to
 	not use a reserved host name or recognize a change to
 	the selected subnet for subnet-level reservations
@@ -37,48 +55,58 @@ Kea 3.1.6 (development) released on February 25, 2026
 	EXPIRED-RECLAIMED states.
 	(Gitlab #4262)
 
-2442.	[func]		razvan
+2443.	[func]		razvan
 	Removed "Lease Expires On" information from the kea-dhcp-ddns
 	log messages.
 	(Gitlab #4280)
 
-2441.	[func]		tmark
+2442.	[func]		tmark
 	Template classes template-test expressions may
 	now test for membership in 'KNOWN'/'UNKNOWN'.
 	(Gitlab #4256)
 
-2440.	[build]		razvan
+2441.	[build]		razvan
 	The library version numbers have been bumped up for the Kea 3.1.6
 	development release.
 	(Gitlab #4354)
 
-2439.	[bug]		razvan
+2440.	[bug]		razvan
 	Fixed a bug which was causing kea-dhcp servers to bind on other
 	interfaces while retrying to open sockets on configured
 	interfaces.
 	(Gitlab #3062, #3134)
 
-2438.	[bug]		razvan
+2439.	[bug]		razvan
 	The "config-test" and "config-set" commands can now properly use
 	newly detected interfaces for testing or applying a new
 	configuration.
 	(Gitlab #3370)
 
-2437.	[bug]		razvan
+2438.	[bug]		razvan
 	Removed a log that incorrectly stated that the v6 socket was
 	using raw format.
 	(Gitlab #4199)
 
 Kea 3.1.5 (development) released on January 28, 2026
 
-2436.	[build]		fdupont
+2437.	[build]		razvan
+	The library version numbers have been bumped up for the Kea 3.1.5
+	development release.
+	(Gitlab #4306)
+
+2436.	[sec]		razvan
+	Restrict number of recursive calls when parsing config.
+	CVE:2026-3608
+	(Gitlab #4288)
+
+2435.	[build]		fdupont
 	Fixed Kea build with Boost 1.90: BOOST_STATIC_ASSERT was
 	replaced by C++ static_assert, and deadline_timer by
 	system_timer. This change was included in the 3.1.5 release,
 	but its changelog entry was not.
 	(Gitlab #4264, #4266)
 
-2435.	[build]		andrei
+2434.	[build]		andrei
 	Hammer was extended to prepare additional systems: Alpine 3.23,
 	Fedora 43, FreeBSD 15. "-w sanitizers" can now be passed to
 	install LLVM sanitizer libraries. Valgrind is also installed when
@@ -88,23 +116,18 @@ Kea 3.1.5 (development) released on January 28, 2026
 	included in the 3.1.5 release, but its changelog entry was not.
 	(Gitlab #4245)
 
-2434.	[build]		andrei
+2433.	[build]		andrei
 	Fixed errors about missing includes appearing on BSD clang v19
 	and above when compiling under C++23 standard or higher. This
 	change was included in the 3.1.5 release, but its changelog entry
 	was not.
 	(Gitlab #4246)
 
-2433.	[sec]		fdupont
+2432.	[sec]		fdupont
 	Added to the RADIUS hooks library and security
 	documentation a warning about the Blast-RADIUS
 	vulnerability which affects the RADIUS protocol.
 	(Gitlab #4254)
-
-2432.	[build]		razvan
-	The library version numbers have been bumped up for the Kea 3.1.5
-	development release.
-	(Gitlab #4306)
 
 2431.	[build]		fdupont
 	Set debug to true and optimization to 2 by default
