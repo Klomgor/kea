@@ -1080,7 +1080,9 @@ Memfile_LeaseMgr::Memfile_LeaseMgr(const DatabaseConnection::ParameterMap& param
     // doing testing, but it should not be done in normal server
     // operation.
     if (!persistLeases(V4) && !persistLeases(V6)) {
-        LOG_WARN(dhcpsrv_logger, DHCPSRV_MEMFILE_NO_STORAGE);
+        if (!MultiThreadingMgr::instance().isTestMode()) {
+            LOG_WARN(dhcpsrv_logger, DHCPSRV_MEMFILE_NO_STORAGE);
+        }
     } else {
         if (conversion_needed) {
             auto const& version(getVersion());
@@ -2563,7 +2565,7 @@ Memfile_LeaseMgr::initLeaseFilePath(Universe u) {
     }
     // If persist_val is 'false' we will not store leases to disk, so let's
     // return empty file name.
-    if (persist_val == "false") {
+    if (persist_val == "false" || MultiThreadingMgr::instance().isTestMode()) {
         return ("");
 
     } else if (persist_val != "true") {

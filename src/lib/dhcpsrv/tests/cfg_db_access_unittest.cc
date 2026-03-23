@@ -12,12 +12,14 @@
 #include <dhcpsrv/host_mgr.h>
 #include <dhcpsrv/lease_mgr.h>
 #include <dhcpsrv/lease_mgr_factory.h>
+#include <dhcpsrv/memfile_lease_mgr.h>
 #include <testutils/test_to_element.h>
 #include <gtest/gtest.h>
 
 using namespace isc;
 using namespace isc::dhcp;
 using namespace isc::test;
+using namespace isc::util;
 
 namespace {
 
@@ -124,14 +126,61 @@ TEST(CfgDbAccessTest, pushHostDbAccessString) {
 }
 
 // Tests that lease manager can be created from a specified configuration.
-TEST(CfgDbAccessTest, createLeaseMgr) {
+TEST(CfgDbAccessTest, createLeaseMgrV4) {
     CfgDbAccess cfg;
     ASSERT_NO_THROW(cfg.setLeaseDbAccessString("type=memfile persist=false universe=4"));
     ASSERT_NO_THROW(cfg.createManagers());
 
     ASSERT_NO_THROW({
         LeaseMgr& lease_mgr = LeaseMgrFactory::instance();
-        EXPECT_EQ("memfile",lease_mgr.getType());
+        EXPECT_EQ("memfile", lease_mgr.getType());
+        Memfile_LeaseMgr& mgr = dynamic_cast<Memfile_LeaseMgr&>(lease_mgr);
+        EXPECT_FALSE(mgr.persistLeases(Memfile_LeaseMgr::V4));
+    });
+}
+
+// Tests that lease manager can be created from a specified configuration.
+TEST(CfgDbAccessTest, createLeaseMgrV6) {
+    CfgDbAccess cfg;
+    ASSERT_NO_THROW(cfg.setLeaseDbAccessString("type=memfile persist=false universe=6"));
+    ASSERT_NO_THROW(cfg.createManagers());
+
+    ASSERT_NO_THROW({
+        LeaseMgr& lease_mgr = LeaseMgrFactory::instance();
+        EXPECT_EQ("memfile", lease_mgr.getType());
+        Memfile_LeaseMgr& mgr = dynamic_cast<Memfile_LeaseMgr&>(lease_mgr);
+        EXPECT_FALSE(mgr.persistLeases(Memfile_LeaseMgr::V6));
+    });
+}
+
+// Tests that lease manager can be created from a specified configuration using test mode.
+TEST(CfgDbAccessTest, createLeaseMgrV4TestMode) {
+    MtTestMode mt;
+    CfgDbAccess cfg;
+    ASSERT_NO_THROW(cfg.setLeaseDbAccessString("type=memfile persist=true universe=4"));
+    ASSERT_NO_THROW(cfg.createManagers());
+
+    ASSERT_NO_THROW({
+        LeaseMgr& lease_mgr = LeaseMgrFactory::instance();
+        EXPECT_EQ("memfile", lease_mgr.getType());
+        Memfile_LeaseMgr& mgr = dynamic_cast<Memfile_LeaseMgr&>(lease_mgr);
+        EXPECT_FALSE(mgr.persistLeases(Memfile_LeaseMgr::V4));
+    });
+
+}
+
+// Tests that lease manager can be created from a specified configuration using test mode.
+TEST(CfgDbAccessTest, createLeaseMgrV6TestMode) {
+    MtTestMode mt;
+    CfgDbAccess cfg;
+    ASSERT_NO_THROW(cfg.setLeaseDbAccessString("type=memfile persist=true universe=6"));
+    ASSERT_NO_THROW(cfg.createManagers());
+
+    ASSERT_NO_THROW({
+        LeaseMgr& lease_mgr = LeaseMgrFactory::instance();
+        EXPECT_EQ("memfile", lease_mgr.getType());
+        Memfile_LeaseMgr& mgr = dynamic_cast<Memfile_LeaseMgr&>(lease_mgr);
+        EXPECT_FALSE(mgr.persistLeases(Memfile_LeaseMgr::V6));
     });
 }
 

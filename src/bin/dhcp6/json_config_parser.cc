@@ -1059,7 +1059,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 srv_config = CfgMgr::instance().getStagingCfg();
 
                 CfgDbAccessPtr cfg_db = CfgMgr::instance().getStagingCfg()->getCfgDbAccess();
-                string params = "universe=6 persist=false";
+                string params = "universe=6";
                 if (cfg_db->getExtendedInfoTablesEnabled()) {
                     params += " extended-info-tables=true";
                 }

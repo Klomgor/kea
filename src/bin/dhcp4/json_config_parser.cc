@@ -941,7 +941,7 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                 srv_config = CfgMgr::instance().getStagingCfg();
 
                 CfgDbAccessPtr cfg_db = CfgMgr::instance().getStagingCfg()->getCfgDbAccess();
-                string params = "universe=4 persist=false";
+                string params = "universe=4";
                 cfg_db->setAppendedParameters(params);
                 cfg_db->createManagers();
             } catch (const std::exception& ex) {

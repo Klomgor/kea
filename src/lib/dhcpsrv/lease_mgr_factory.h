@@ -59,8 +59,8 @@ public:
     /// type, e.q. "mysql" or "sqlite3".
     ///
     /// @param dbaccess Database access parameters.  These are in the form of
-    ///        "keyword=value" pairs, separated by spaces. They are backend-
-    ///        -end specific, although must include the "type" keyword which
+    ///        "keyword=value" pairs, separated by spaces. They are
+    ///        backend-specific, although must include the "type" keyword which
     ///        gives the backend in use.
     ///
     /// @throw isc::InvalidParameter dbaccess string does not contain the "type"
@@ -80,8 +80,8 @@ public:
     /// preserving registered callbacks.
     ///
     /// @param dbaccess Database access parameters.  These are in the form of
-    ///        "keyword=value" pairs, separated by spaces. They are backend-
-    ///        -end specific, although must include the "type" keyword which
+    ///        "keyword=value" pairs, separated by spaces. They are
+    ///        backend-specific, although must include the "type" keyword which
     ///        gives the backend in use.
     /// @param preserve_callbacks a boolean flag indicating if all registered
     ///        @c TrackingLeaseMgr callbacks should be copied to the new
