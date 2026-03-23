@@ -387,6 +387,7 @@ CREATE PROCEDURE sflqCreateFlqPool6(IN p_start_address VARCHAR(45),
 BEGIN
     DECLARE bin_next_address BINARY(16);
     DECLARE bin_end_address BINARY(16);
+    DECLARE lease_address VARCHAR(45);
 
     START TRANSACTION;
 
@@ -419,7 +420,7 @@ BEGIN
     -- to increment the address/prefix.
     WHILE bin_next_address <= bin_end_address
     DO
-        SELECT address FROM lease6
+        SELECT address INTO lease_address FROM lease6
             WHERE (address = bin_next_address AND lease6.state != 2
                    AND (expire > now() OR valid_lifetime = 0xFFFFFFFF));
 
