@@ -873,6 +873,10 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
     LOG_DEBUG(dhcp6_logger, DBG_DHCP6_COMMAND, DHCP6_CONFIG_START)
         .arg(server.redactConfig(config_set)->str());
 
+    // Resource managers usually check for @ref MultiThreadingMgr::isTestMode
+    // value and do not open UNIX or TCP/UDP sockets, lock files, nor do they open
+    // or rotate files, as any of these actions could interfere with a running
+    // process on the same machine.
     std::unique_ptr<MtTestMode> mt_test_mode;
     if (check_only) {
         mt_test_mode.reset(new MtTestMode());
@@ -1058,6 +1062,11 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 // Get the staging configuration.
                 srv_config = CfgMgr::instance().getStagingCfg();
 
+                // Create managers like @ref ControlledDhcpv6Srv::processConfig
+                // does. No need to change "persist" value here because
+                // @ref MultiThreadingMgr::isTestMode is used instead.
+                // This will also make log messages consistent with the checked
+                // config values.
                 CfgDbAccessPtr cfg_db = CfgMgr::instance().getStagingCfg()->getCfgDbAccess();
                 string params = "universe=6";
                 if (cfg_db->getExtendedInfoTablesEnabled()) {

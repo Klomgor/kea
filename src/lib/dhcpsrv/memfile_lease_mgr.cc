@@ -1080,6 +1080,8 @@ Memfile_LeaseMgr::Memfile_LeaseMgr(const DatabaseConnection::ParameterMap& param
     // doing testing, but it should not be done in normal server
     // operation.
     if (!persistLeases(V4) && !persistLeases(V6)) {
+        // If the configuration is just checked, don't open any file and
+        // do not log anything about lease storage persistence.
         if (!MultiThreadingMgr::instance().isTestMode()) {
             LOG_WARN(dhcpsrv_logger, DHCPSRV_MEMFILE_NO_STORAGE);
         }
