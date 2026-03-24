@@ -150,7 +150,7 @@ This is the last moment to freeze the code! :snowflake:
 1. [ ] Upload packages to the testing Cloudsmith repos.
    1. Go to [release-upload-to-cloudsmith](https://jenkins.aws.isc.org/job/kea-dev/job/release-upload-to-cloudsmith/).
    1. Click `Build with Parameters`.
-   1. Pick the latest pkg build in the `Packages` field, and the corresponding tarball build in the `Tarball` field. Leave the rest as they are `PrivPubRepos: "both"`, `TarballOrPkg: "packages"`, `TestProdRepos: "testing"` and click `Build`.
+   1. Pick the latest pkg build in the `Packages` field, and the corresponding tarball build in the `Tarball` field. Set `PrivPubRepos: "both"`. Leave the rest as they are: `TarballOrPkg: "packages"`, `TestProdRepos: "testing"` and click `Build`.
    1. [ ] <mark>🟥 Security</mark>: Tick the `CVE` parameter.
 1. [ ] Run Jenkins job [releases-pkgs-check](https://jenkins.aws.isc.org/job/kea-dev/job/release-pkgs-check/) on the packages uploaded to the testing repos.
 
