@@ -107,9 +107,9 @@ END;
 DROP TABLE IF EXISTS flq_pool4;
 CREATE TABLE IF NOT EXISTS flq_pool4 (
     id SERIAL PRIMARY KEY NOT NULL,
-    start_address INET NOT NULL,
-    end_address INET NOT NULL,
-    last_returned_address INET NOT NULL DEFAULT '0.0.0.0',
+    start_address BIGINT NOT NULL,
+    end_address BIGINT NOT NULL,
+    last_returned_address BIGINT NOT NULL DEFAULT 0,
     subnet_id BIGINT NOT NULL,
     created_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -120,12 +120,9 @@ CREATE INDEX flq_pool4_by_subnet_id ON flq_pool4 (subnet_id);
 
 DROP TABLE IF EXISTS free_lease4;
 CREATE TABLE IF NOT EXISTS free_lease4 (
-    address INET PRIMARY KEY NOT NULL,
-    bin_address BIGINT NOT NULL,
+    address BIGINT PRIMARY KEY NULL,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE UNIQUE INDEX free_lease4_bin_address ON free_lease4 (bin_address);
 
 DROP TABLE IF EXISTS flq_pool6;
 CREATE TABLE IF NOT EXISTS flq_pool6 (
@@ -154,15 +151,11 @@ CREATE TABLE IF NOT EXISTS free_lease6 (
 CREATE UNIQUE INDEX free_lease6_bin_address ON free_lease6 (bin_address);
 
 -- Populate flq_pool4 and free_lease4 based on an address range.
-CREATE OR REPLACE PROCEDURE sflqCreateFlqPool4(p_start_address INET,
-                                               p_end_address INET,
+CREATE OR REPLACE PROCEDURE sflqCreateFlqPool4(p_start_address BIGINT,
+                                               p_end_address BIGINT,
                                                p_subnet_id BIGINT,
                                                p_recreate BOOLEAN)
 LANGUAGE plpgsql AS \$\$
-DECLARE
-    zero_inet INET := '0.0.0.0.'::INET;
-    next_address INET;
-    free_address INET;
 BEGIN
     -- Create the flq_pool4 row. Concurrent attempts will hang until
     -- this one commits and then they will fail with duplicate key
@@ -171,19 +164,18 @@ BEGIN
     THEN
         -- (Re)creating should ignore duplicate on insert
         INSERT INTO flq_pool4 (start_address, end_address, subnet_id, last_returned_address)
-           VALUES (p_start_address, p_end_address, p_subnet_id, zero_inet)
+           VALUES (p_start_address, p_end_address, p_subnet_id, 0)
            ON CONFLICT DO NOTHING;
     ELSE
         INSERT INTO flq_pool4 (start_address, end_address, subnet_id, last_returned_address)
-           VALUES (p_start_address, p_end_address, p_subnet_id, zero_inet);
+           VALUES (p_start_address, p_end_address, p_subnet_id, 0);
     END IF;
 
     -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
     DELETE FROM free_lease4 WHERE address >= p_start_address and address <= p_end_address;
 
-    INSERT INTO free_lease4 (address, bin_address)
-        SELECT zero_inet + avail, avail FROM generate_series((p_start_address - zero_inet),
-                                          (p_end_address - zero_inet), 1) AS avail
+    INSERT INTO free_lease4 (address)
+        SELECT avail FROM generate_series(p_start_address, p_end_address, 1) AS avail
             LEFT JOIN lease4 on avail = lease4.address
             WHERE (lease4.address IS NULL OR lease4.state = 2
                    OR (expire <= now() AND valid_lifetime != x'FFFFFFFF'::bigint))
@@ -198,28 +190,23 @@ END;
 \$\$;
 
 -- Select a free address from an address range.
-CREATE OR REPLACE FUNCTION sflqPickFreeLease4(alloc_start_address INET,
-                                              alloc_end_address INET)
-RETURNS INET
+CREATE OR REPLACE FUNCTION sflqPickFreeLease4(p_start_address BIGINT,
+                                              p_end_address BIGINT)
+RETURNS BIGINT
 AS \$\$
 DECLARE
     -- Declarations
     pool_id BIGINT;
-    last_address INET;
-    free_address INET;
-    zero_inet INET;
-    bin_start_address BIGINT;
-    bin_end_address BIGINT;
-    bin_last_address BIGINT;
+    last_address BIGINT;
+    free_address BIGINT;
 BEGIN
-    zero_inet = '0.0.0.0'::INET;
-    free_address = zero_inet;
+    free_address = 0;
 
     -- Find the pool, get the id and last addressed picked.
     SELECT id, last_returned_address INTO pool_id, last_address
         FROM flq_pool4
-        WHERE start_address = alloc_start_address
-        AND end_address = alloc_end_address;
+        WHERE start_address = p_start_address
+        AND end_address = p_end_address;
 
     IF (pool_id IS NULL)
     THEN
@@ -227,34 +214,30 @@ BEGIN
         RETURN free_address;
     END IF;
 
-    bin_last_address = last_address - zero_inet;
-    bin_start_address = alloc_start_address - zero_inet;
-    bin_end_address = alloc_end_address - zero_inet;
-
-    IF (bin_last_address < bin_start_address or bin_last_address >= bin_end_address)
+    IF (last_address < p_start_address or last_address >= p_end_address)
     THEN
         -- Set last pick to start address less one.
-       bin_last_address = bin_start_address - 1;
+       last_address = p_start_address - 1;
     END IF;
 
     -- Find first address greater than the last pick.
     SELECT f.address INTO free_address FROM free_lease4 f
-        LEFT JOIN lease4 ON f.bin_address = lease4.address
-        WHERE (f.bin_address > bin_last_address and f.bin_address <= bin_end_address)
+        LEFT JOIN lease4 ON f.address = lease4.address
+        WHERE (f.address > last_address and f.address <= p_end_address)
         AND (lease4.address IS NULL OR lease4.state = 2)
-        ORDER BY f.bin_address
+        ORDER BY f.address
         LIMIT 1;
 
     -- Didn't find one, so try front half of the range, including
     -- the last pick. This avoids returning nothing if there is only
     -- one address free.
-    IF (free_address IS NULL AND bin_last_address != bin_start_address)
+    IF (free_address IS NULL AND last_address != p_start_address)
     THEN
         SELECT f.address INTO free_address FROM free_lease4 f
-            LEFT JOIN lease4 ON f.bin_address = lease4.address
-            WHERE (f.bin_address >= bin_start_address AND f.bin_address <= bin_last_address)
+            LEFT JOIN lease4 ON f.address = lease4.address
+            WHERE (f.address >= p_start_address AND f.address <= last_address)
             AND (lease4.address IS NULL OR lease4.state = 2)
-            ORDER BY f.bin_address
+            ORDER BY f.address
             LIMIT 1;
     END IF;
 

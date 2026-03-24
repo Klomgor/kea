@@ -1114,13 +1114,16 @@ pgsql_upgrade_32_to_33_test() {
 
 
     # Verify sflqCreateFlqPool4.
-    qry="call sflqCreateFlqPool4('127.0.0.0'::inet, '127.0.0.10'::inet, 1::bigint, false)"
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.10'::inet - '0.0.0.0'::inet)"
+
+    qry="call sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
     run_command \
         pgsql_execute "${qry}"
     assert_eq 0 "${EXIT_CODE}" "call sflqCreateFlqPool4 failed. (expected status code %d, returned %d)"
 
-    qry="select count(start_address) from flq_pool4 where start_address = '127.0.0.0'::inet\
-         and end_address = '127.0.0.10'::inet"
+    qry="select count(start_address) from flq_pool4 where start_address = $start_address\
+         and end_address = $end_address"
     run_command \
         pgsql_execute "${qry}"
     assert_eq 0 "${EXIT_CODE}" "select from flq_pool4 failed. (expected status code %d, returned %d)"
@@ -1137,7 +1140,7 @@ pgsql_upgrade_32_to_33_test() {
     assert_eq 11 "${count}" "free_lease4 content wrong. (expected count %d, actual %d)"
 
     # Verify sflqPickFreeLease4.
-    qry="select sflqPickFreeLease4('127.0.0.0'::inet, '127.0.0.10'::inet)"
+    qry="select '0.0.0.0'::inet + sflqPickFreeLease4($start_address, $end_address)"
     run_command \
         pgsql_execute "${qry}"
     assert_eq 0 "${EXIT_CODE}" "select from sflqPickFreeLease4 failed. (expected status code %d, returned %d)"
@@ -3273,14 +3276,16 @@ pgsql_sflqCreateFlqPool4() {
 
     run_statement "insert 127.0.0.7" "$sql"  "";
 
-    sql="call sflqCreateFlqPool4('127.0.0.0'::inet, '127.0.0.8'::inet, 1, false)"
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.8'::inet - '0.0.0.0'::inet)"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1, false)"
     run_statement "sflqCreateFlqPool4" "$sql"
 
     sql="select count(address) from lease4 where ('0.0.0.0'::inet + address) in\
          ('127.0.0.1','127.0.0.3','127.0.0.5','127.0.0.7')"
     run_statement "select leases4" "$sql" "4"
 
-    sql="select count(address) from free_lease4 where host(address) in\
+    sql="select count(address) from free_lease4 where ('0.0.0.0'::inet + address) in\
          ('127.0.0.0','127.0.0.2','127.0.0.4','127.0.0.5',\
           '127.0.0.6','127.0.0.7','127.0.0.8')"
     run_statement "select free_leases4" "$sql" "7"
@@ -3305,10 +3310,12 @@ pgsql_sflqPickFreeLease4() {
 
     # We need to create an older database with lease data so we can
 
-    sql="call sflqCreateFlqPool4('127.0.0.0'::inet, '127.0.0.2'::inet, 1::bigint, false)"
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.2'::inet - '0.0.0.0'::inet)"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
     run_statement "sflqCreateFlqPool4" "$sql"
 
-    sql="select sflqPickFreeLease4('127.0.0.0'::inet, '127.0.0.2'::inet)"
+    sql="select ('0.0.0.0'::inet + sflqPickFreeLease4($start_address, $end_address))"
     run_statement "sflqPickFreeLease4.1" "$sql"  "127.0.0.0";
     run_statement "sflqPickFreeLease4.2" "$sql"  "127.0.0.1";
     run_statement "sflqPickFreeLease4.3" "$sql"  "127.0.0.2";
@@ -3316,7 +3323,7 @@ pgsql_sflqPickFreeLease4() {
     sql="insert into lease4 (address, subnet_id) values ('127.0.0.1'::inet - '0.0.0.0'::inet, 1)";
     run_statement "insert 127.0.0.1" "$sql"  "";
 
-    sql="select sflqPickFreeLease4('127.0.0.0'::inet, '127.0.0.2'::inet)"
+    sql="select ('0.0.0.0'::inet + sflqPickFreeLease4($start_address, $end_address))"
     run_statement "sflqPickFreeLease4.4" "$sql"  "127.0.0.0";
     run_statement "sflqPickFreeLease4.5" "$sql"  "127.0.0.2";
     run_statement "sflqPickFreeLease4.6" "$sql"  "127.0.0.0";
@@ -3324,7 +3331,7 @@ pgsql_sflqPickFreeLease4() {
     sql="update lease4 set state = 2 where address = ('127.0.0.1'::inet - '0.0.0.0'::inet);"
     run_statement "update 127.0.0.1" "$sql"  "";
 
-    sql="select sflqPickFreeLease4('127.0.0.0'::inet, '127.0.0.2'::inet)"
+    sql="select ('0.0.0.0'::inet + sflqPickFreeLease4($start_address, $end_address))"
     run_statement "sflqPickFreeLease4.7" "$sql"  "127.0.0.1";
     run_statement "sflqPickFreeLease4.8" "$sql"  "127.0.0.2";
     run_statement "sflqPickFreeLease4.9" "$sql"  "127.0.0.0";
@@ -3332,7 +3339,7 @@ pgsql_sflqPickFreeLease4() {
     sql="delete from lease4"
     run_statement "delete 127.0.0.1" "$sql"  "";
 
-    sql="select sflqPickFreeLease4('127.0.0.0'::inet, '127.0.0.2'::inet)"
+    sql="select ('0.0.0.0'::inet + sflqPickFreeLease4($start_address, $end_address))"
     run_statement "sflqPickFreeLease4.10" "$sql"  "127.0.0.1";
     run_statement "sflqPickFreeLease4.11" "$sql"  "127.0.0.2";
     run_statement "sflqPickFreeLease4.12" "$sql"  "127.0.0.0";
@@ -3342,7 +3349,6 @@ pgsql_sflqPickFreeLease4() {
 
     test_finish 0
 }
-
 
 # Verifies SFLQ sflqCreateFlqPool6 function
 pgsql_sflqCreateFlqPool6() {
@@ -3496,5 +3502,7 @@ pgsql_migrate_opt_record_type
 pgsql_remove_control_socket_parameters_test
 pgsql_migrate_client_class_test
 pgsql_migrate_dhcpX_options_client_classes
+pgsql_sflqCreateFlqPool4
 pgsql_sflqPickFreeLease4
+pgsql_sflqCreateFlqPool6
 pgsql_sflqPickFreeLease6
