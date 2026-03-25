@@ -403,7 +403,7 @@ public:
         }
 #if defined OS_LINUX
         // On Linux, for each link-local address there may be two
-        // additional sockets opened and bound to multicats. These sockets
+        // additional sockets opened and bound to multicast. These sockets
         // are only opened if the interface is multicast-capable.
         ASSERT_EQ(unicast_num
                   + (iface.flag_multicast_ ? 2 * link_local_num : 0)
