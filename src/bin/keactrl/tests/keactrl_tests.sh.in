@@ -1376,11 +1376,7 @@ version_command_test() {
     exp="keactrl: @PACKAGE_VERSION@\n"
     exp="${exp}kea-dhcp4: @PACKAGE_VERSION@\n"
     exp="${exp}kea-dhcp6: @PACKAGE_VERSION@\n"
-<<<<<<< HEAD
     exp="${exp}kea-dhcp-ddns: @PACKAGE_VERSION@"
-=======
-    exp="${exp}kea-dhcp-ddns: @PACKAGE_VERSION@\n"
->>>>>>> f000bd1240 ([#3448] Checkpoint)
     if ${have_netconf}; then
         exp="${exp}\nkea-netconf: @PACKAGE_VERSION@"
     fi
