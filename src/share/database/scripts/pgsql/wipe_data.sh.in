@@ -119,5 +119,10 @@ DELETE FROM dhcp6_server WHERE tag != 'all'; -- preserve the special tag
 DELETE FROM lease6_relay_id;
 DELETE FROM lease6_remote_id;
 
+DELETE FROM free_lease4;
+DELETE FROM flq_pool4;
+DELETE FROM free_lease6;
+DELETE FROM flq_pool6;
+
 COMMIT;
 EOF

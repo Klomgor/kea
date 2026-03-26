@@ -120,7 +120,7 @@ CREATE INDEX flq_pool4_by_subnet_id ON flq_pool4 (subnet_id);
 
 DROP TABLE IF EXISTS free_lease4;
 CREATE TABLE IF NOT EXISTS free_lease4 (
-    address BIGINT PRIMARY KEY NULL,
+    address BIGINT PRIMARY KEY NOT NULL,
     modification_ts TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
