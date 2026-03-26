@@ -101,6 +101,7 @@ BEGIN
     RETURN NULL;
 END;
 \$lease6_ADEL\$ LANGUAGE plpgsql;
+
 -- Update the schema version number.
 UPDATE schema_version
     SET version = '33', minor = '0';
