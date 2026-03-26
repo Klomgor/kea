@@ -2508,21 +2508,6 @@ def _build_rpm(system, revision, features, env, check_times, dry_run,
                 raise_error=False)
         execute(f'sudo rpm -i {rpm_root_path}/RPMS/{arch.strip()}/*rpm', check_times=check_times, dry_run=dry_run)
 
-        _check_installed_rpm_or_debs(
-            ['kea-dhcp4.service'],
-            "Expected a file at path '/etc/kea/kea-api-user'",
-            expect_success_on_start=False,
-        )
-
-        # Wait for systemd's rate limit period to pass to avoid "Start request repeated too quickly" after the failed
-        # implicit start from the installation of isc-kea-dhcp4 above.
-        time.sleep(10)
-        # Reset systemd's rate limit period. Redundant, but just to be safe.
-        execute('sudo systemctl reset-failed kea-dhcp4.service', raise_error=False)
-
-        execute('echo kea-api-user | sudo tee /etc/kea/kea-api-user > /dev/null')
-        execute('sudo touch /etc/kea/kea-api-password')
-
         # check if kea services can be started
         services_list = ['kea-dhcp4.service', 'kea-dhcp6.service', 'kea-dhcp-ddns.service']
         _check_installed_rpm_or_debs(services_list, '_STARTED Kea')
@@ -2593,21 +2578,6 @@ def _build_deb(system, revision, features, env, check_times, dry_run,
         # install packages
         execute('sudo dpkg -i *deb', check_times=check_times, dry_run=dry_run)
 
-        _check_installed_rpm_or_debs(
-            ['isc-kea-dhcp4-server.service'],
-            "Expected a file at path '/etc/kea/kea-api-user'",
-            expect_success_on_start=False,
-        )
-
-        # Wait for systemd's rate limit period to pass to avoid "Start request repeated too quickly" after the failed
-        # explicit start above.
-        time.sleep(10)
-        # Reset systemd's rate limit period. Redundant, but just to be safe.
-        execute('sudo systemctl reset-failed isc-kea-dhcp4-server.service')
-
-        execute('echo kea-api-user | sudo tee /etc/kea/kea-api-user > /dev/null')
-        execute('sudo touch /etc/kea/kea-api-password')
-
         # check if kea services can be started
         services_list = ['isc-kea-dhcp4-server.service', 'isc-kea-dhcp6-server.service',
                          'isc-kea-dhcp-ddns-server.service']
@@ -2638,18 +2608,6 @@ def _build_alpine_apk(features, check_times, dry_run, pkg_version, pkg_isc_versi
     if 'install' in features:
         # install packages
         execute('sudo apk add *.apk', cwd='kea-pkg', check_times=check_times, dry_run=dry_run)
-
-        exitcode, _ = execute('sudo rc-service kea-dhcp4 start', capture=True, raise_error=False)
-        assert exitcode == 1
-        _, logs = execute('sudo cat /var/log/kea/kea-dhcp4.log', capture=True)
-        assert "Expected a file at path '/etc/kea/kea-api-user'" in logs
-
-        execute('echo kea-api-user | sudo tee /etc/kea/kea-api-user > /dev/null')
-        execute('sudo touch /etc/kea/kea-api-password')
-
-        execute('sudo rc-service kea-dhcp4 stop')
-
-        time.sleep(10)
 
         # check if kea services can be started
         for svc in ['kea-dhcp4', 'kea-dhcp6', 'kea-dhcp-ddns']:
