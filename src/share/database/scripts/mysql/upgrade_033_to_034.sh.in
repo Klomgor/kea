@@ -243,6 +243,56 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Procedure to set session variable to the DB limit on recursion. The
+-- variable has different names under MySQL and Mariadb (naturally).
+-- This procedure tolerates the failed SQL errors on variable names
+-- that don't exist. It sets the session variable @kea_recursion_limit
+-- if it is not already set. If it fails to find either variable it
+-- defaults to 100.
+DROP PROCEDURE IF EXISTS setLoopLimit;
+DELIMITER $$
+CREATE PROCEDURE setLoopLimit()
+SP:
+BEGIN
+    DECLARE sqlv VARCHAR(512);
+
+    -- Ignore unknown variable errors.
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END;
+
+    IF (@kea_recursive_limit IS NOT NULL)
+    THEN
+        -- Alreaddy set it.
+        LEAVE SP;
+    END IF;
+
+    -- Try Mariab variable
+    SET @sqlv = "select @@max_recursive_iterations INTO @kea_recursive_limit";
+    PREPARE stmt FROM @sqlv;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    IF (@kea_recursive_limit IS NOT NULL)
+    THEN
+        -- We found it, all done.
+        LEAVE SP;
+    END IF;
+
+    -- Try MySQL variable.
+    SET @sqlv = "select @@cte_max_recursion_depth INTO @kea_recursive_limit";
+    PREPARE stmt FROM @sqlv;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+    IF (@kea_recursive_limit IS NOT NULL)
+    THEN
+        -- We found it, all done.
+        LEAVE SP;
+    END IF;
+
+    -- Found neither use a default.
+    SET @kea_recursive_limit = 100;
+END $$
+DELIMITER ;
+
 -- Populate flq_pool4 and free_lease4 based on an address range.
 DROP PROCEDURE IF EXISTS sflqCreateFlqPool4;
 DELIMITER $$
@@ -277,7 +327,8 @@ BEGIN
     -- Insert available leases into free_lease4 table.  If insert fails on
     -- duplicate ignore it. MySql limits recursive queries so we iterate
     -- pool address range in chunks.
-    SET loop_limit = 100;
+    CALL setLoopLimit();
+    SET loop_limit = @kea_recusrion_limit;
     SET next_start_address = p_start_address;
     SET next_end_address = p_start_address;
     WHILE next_start_address < p_end_address DO
