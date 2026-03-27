@@ -20,7 +20,7 @@
 /tools/check-for-missing-api-commands.sh      export-ignore
 /tools/check-lib-dependencies.sh              export-ignore
 /tools/clang-format.sh                        export-ignore
-/tools/exhonerated-duplicate-messages.txt     export-ignore
+/tools/exonerated-duplicate-messages.txt      export-ignore
 /tools/find-uninstalled-headers.py            export-ignore
 /tools/git-hooks                              export-ignore
 /tools/git-hooks-install                      export-ignore
