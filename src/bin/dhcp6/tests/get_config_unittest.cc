@@ -14973,7 +14973,7 @@ public:
 
             bool const too_long(SocketPath::isTooLongFromConfig(json));
             if (too_long) {
-                EXPECT_EQ(CONTROL_RESULT_ERROR, rcode_);
+                EXPECT_EQ(CONTROL_RESULT_FATAL_ERROR, rcode_);
                 string const exp_error("name too long");
                 string const error(comment_->stringValue());
                 EXPECT_NE(std::string::npos, error.find(exp_error));

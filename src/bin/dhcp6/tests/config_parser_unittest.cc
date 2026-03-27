@@ -505,7 +505,7 @@ public:
         // Socket name too long?
         bool const too_long(SocketPath::isTooLongFromConfig(json));
         if (too_long) {
-            EXPECT_EQ(CONTROL_RESULT_ERROR, rcode);
+            EXPECT_EQ(CONTROL_RESULT_FATAL_ERROR, rcode);
             exp_error = "name too long";
             EXPECT_NE(std::string::npos, text.find(exp_error));
             return;
