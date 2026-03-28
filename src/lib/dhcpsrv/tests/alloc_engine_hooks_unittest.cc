@@ -334,6 +334,114 @@ TEST_F(HookAllocEngine6Test, skip_lease6_select) {
     checkCalloutHandleReset(ctx.query_);
 }
 
+// This test checks if lease6_select callout can set the status to next
+// step skip with retry allocation from dynamic pool.
+TEST_F(HookAllocEngine6Test, skip_lease6_select_subnet_global_host) {
+
+    // Create allocation engine (hook names are registered in its ctor)
+    boost::scoped_ptr<AllocEngine> engine;
+    ASSERT_NO_THROW(engine.reset(new AllocEngine(100)));
+    ASSERT_TRUE(engine);
+
+    // Initialize Hooks Manager
+    HookLibsCollection libraries; // no libraries at this time
+    ASSERT_NO_THROW(HooksManager::loadLibraries(libraries));
+
+    // Install a callout
+    EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
+                        "lease6_select", lease6_select_skip_callout));
+
+    // Call allocateLeases6. Callouts should be triggered here.
+    Lease6Ptr lease;
+    AllocEngine::ClientContext6 ctx(subnet_, duid_, false, false, "", false,
+                                    Pkt6Ptr(new Pkt6(DHCPV6_REQUEST, 1234)),
+                                    HooksManager::createCalloutHandle());
+
+    HostPtr host(new Host(&duid_->getDuid()[0], duid_->getDuid().size(),
+                           Host::IDENT_DUID, SUBNET_ID_UNUSED, SUBNET_ID_GLOBAL,
+                           asiolink::IOAddress("0.0.0.0")));
+    host->setHostname("ghost1");
+    IPv6Resrv resv(IPv6Resrv::TYPE_NA, asiolink::IOAddress("2001:db8:1::1"), 128);
+    host->addReservation(resv);
+
+    CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
+    CfgMgr::instance().commit();
+
+    subnet_->setReservationsGlobal(true);
+
+    // Look up the reservation.
+    findReservation(*engine, ctx);
+    // Make sure we found our host.
+    ConstHostPtr current = ctx.currentHost();
+    ASSERT_TRUE(current);
+    ASSERT_EQ("ghost1", current->getHostname());
+
+    ctx.currentIA().iaid_ = iaid_;
+    EXPECT_NO_THROW(lease = expectOneLease(engine->allocateLeases6(ctx)));
+    // Check that we got no lease
+    EXPECT_FALSE(lease);
+
+    // Check that retry was attempted by doing dynamic allocation.
+    EXPECT_EQ(2, callback_skip_);
+
+    // Check if the callout handle state was reset after the callout.
+    checkCalloutHandleReset(ctx.query_);
+}
+
+// This test checks if lease6_select callout can set the status to next
+// step skip with retry allocation from dynamic pool.
+TEST_F(HookAllocEngine6Test, skip_lease6_select_subnet_subnet_host) {
+
+    // Create allocation engine (hook names are registered in its ctor)
+    boost::scoped_ptr<AllocEngine> engine;
+    ASSERT_NO_THROW(engine.reset(new AllocEngine(100)));
+    ASSERT_TRUE(engine);
+
+    // Initialize Hooks Manager
+    HookLibsCollection libraries; // no libraries at this time
+    ASSERT_NO_THROW(HooksManager::loadLibraries(libraries));
+
+    // Install a callout
+    EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
+                        "lease6_select", lease6_select_skip_callout));
+
+    // Call allocateLeases6. Callouts should be triggered here.
+    Lease6Ptr lease;
+    AllocEngine::ClientContext6 ctx(subnet_, duid_, false, false, "", false,
+                                    Pkt6Ptr(new Pkt6(DHCPV6_REQUEST, 1234)),
+                                    HooksManager::createCalloutHandle());
+
+    HostPtr host(new Host(&duid_->getDuid()[0], duid_->getDuid().size(),
+                           Host::IDENT_DUID, SUBNET_ID_UNUSED, subnet_->getID(),
+                           asiolink::IOAddress("0.0.0.0")));
+    host->setHostname("ghost1");
+    IPv6Resrv resv(IPv6Resrv::TYPE_NA, asiolink::IOAddress("2001:db8:1::1"), 128);
+    host->addReservation(resv);
+
+    CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
+    CfgMgr::instance().commit();
+
+    subnet_->setReservationsGlobal(true);
+
+    // Look up the reservation.
+    findReservation(*engine, ctx);
+    // Make sure we found our host.
+    ConstHostPtr current = ctx.currentHost();
+    ASSERT_TRUE(current);
+    ASSERT_EQ("ghost1", current->getHostname());
+
+    ctx.currentIA().iaid_ = iaid_;
+    EXPECT_NO_THROW(lease = expectOneLease(engine->allocateLeases6(ctx)));
+    // Check that we got no lease
+    EXPECT_FALSE(lease);
+
+    // Check that retry was attempted by doing dynamic allocation.
+    EXPECT_EQ(2, callback_skip_);
+
+    // Check if the callout handle state was reset after the callout.
+    checkCalloutHandleReset(ctx.query_);
+}
+
 /// @brief helper class used in Hooks testing in AllocEngine4
 ///
 /// It features a couple of callout functions and buffers to store
