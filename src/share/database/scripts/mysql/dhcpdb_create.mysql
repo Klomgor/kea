@@ -6884,25 +6884,33 @@ BEGIN
 
     -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
     DELETE FROM free_lease6 WHERE bin_address >= bin_next_address and bin_address <= bin_end_address;
+    -- Enumerate the addresses into a temp table to use in a bulk insert.
+    DROP TEMPORARY TABLE IF EXISTS _flq6_candidates;
+    CREATE TEMPORARY TABLE _flq6_candidates (
+        bin_address BINARY(16) NOT NULL PRIMARY KEY,
+        address VARCHAR(45) NOT NULL
+    ) ENGINE=InnoDB;
 
-    -- Insert available leases into free_lease6 table.  If insert fails on
-    -- duplicate ignore it. MySQL doesn't provide math operations on
-    -- binrary(16) so we do it one address at time, using our own function
-    -- to increment the address/prefix.
     WHILE bin_next_address <= bin_end_address
     DO
-        SELECT address INTO lease_address FROM lease6
-            WHERE (address = bin_next_address AND lease6.state != 2
-                   AND (expire > now() OR valid_lifetime = 0xFFFFFFFF));
-
-        IF (found_rows() = 0)
-        THEN
-            INSERT IGNORE INTO free_lease6(address, bin_address)
-                VALUES (INET6_NTOA(bin_next_address), bin_next_address);
-        END IF;
-
+        INSERT INTO _flq6_candidates (bin_address, address)
+            VALUES (bin_next_address, INET6_NTOA(bin_next_address));
         SET bin_next_address = incrementV6Prefix(bin_next_address, p_delegated_len);
     END WHILE;
+
+    -- Bulk insert available leases into free_lease6 table. If insert fails on
+    -- duplicate ignore it.
+    INSERT IGNORE INTO free_lease6 (address, bin_address)
+        SELECT c.address, c.bin_address
+        FROM _flq6_candidates c
+        WHERE NOT EXISTS (
+            SELECT 1 FROM lease6 l
+            WHERE l.address = c.address
+              AND l.state != 2
+              AND (l.expire > now() OR l.valid_lifetime = 0xFFFFFFFF)
+        );
+
+    DROP TEMPORARY TABLE _flq6_candidates;
 
     -- Update the modification time in the flq_pool row.
     UPDATE flq_pool6 SET modification_ts = now()
