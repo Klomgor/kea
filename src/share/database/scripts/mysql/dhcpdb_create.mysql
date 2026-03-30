@@ -6749,7 +6749,7 @@ BEGIN
     -- duplicate ignore it. MySql limits recursive queries so we iterate
     -- pool address range in chunks.
     CALL setLoopLimit();
-    SET loop_limit = @kea_recusrion_limit;
+    SET loop_limit = @kea_recursion_limit;
     SET next_start_address = p_start_address;
     SET next_end_address = p_start_address;
     WHILE next_start_address < p_end_address DO
