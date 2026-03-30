@@ -7170,10 +7170,10 @@ CREATE OR REPLACE PROCEDURE sflqCreateFlqPool6(p_start_address INET,
                                                p_recreate BOOLEAN)
 LANGUAGE plpgsql AS $$
 DECLARE
-    zero_inet INET := '::'::INET;
-    bin_next_address BYTEA;
-    next_address INET;
-    free_address INET;
+    current_ts TIMESTAMP WITH TIME ZONE := now();
+    batch_start_address INET := p_start_address;
+    batch_start_bin BYTEA := inetToBytea(p_start_address);
+    max_prefixes_per_batch INTEGER := 10000;
 BEGIN
     -- Create the flq_pool6 row. Concurrent attempts will hang until
     -- this one commits and then they will fail with duplicate key
@@ -7196,28 +7196,48 @@ BEGIN
     -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
     DELETE FROM free_lease6 WHERE address >= p_start_address and address <= p_end_address;
 
-    -- Insert available leases into free_lease6 table.  If insert fails on
-    -- duplicate ignore it. MySQL doesn't provide math operations on
-    -- binrary(16) so we do it one address at time, using our own function
-    -- to increment the address/prefix.
-
-    next_address = p_start_address;
-    bin_next_address = inetToBytea(next_address);
-    WHILE next_address <= p_end_address
+    -- Enumerate prefixes in bounded chunks and insert free entries in bulk.
+    WHILE batch_start_address <= p_end_address
     LOOP
-        SELECT address INTO free_address FROM lease6
-            WHERE (address = next_address AND lease6.state != 2
-                   AND (expire > now() OR valid_lifetime = x'FFFFFFFF'::bigint));
-
-        IF (free_address IS NULL)
-        THEN
+        WITH RECURSIVE prefixes(depth, bin_address, address) AS (
+            SELECT 1, batch_start_bin, batch_start_address
+            UNION ALL
+            SELECT prefixes.depth + 1,
+                   next_prefix.bin_address,
+                   byteaToInet(next_prefix.bin_address)
+            FROM prefixes,
+                 LATERAL (SELECT incrementV6Prefix(prefixes.bin_address, p_delegated_len)
+                 AS bin_address) AS next_prefix
+            WHERE prefixes.address < p_end_address
+              AND prefixes.depth < max_prefixes_per_batch
+        ),
+        ins AS (
             INSERT INTO free_lease6(address, bin_address)
-                VALUES (next_address, inetToBytea(next_address))
-                ON CONFLICT DO NOTHING;
+                SELECT p.address, p.bin_address
+                FROM prefixes p
+                LEFT JOIN lease6 l
+                    ON l.address = p.address
+                   AND l.state != 2
+                   AND (l.expire > current_ts OR l.valid_lifetime = x'FFFFFFFF'::bigint)
+                WHERE l.address IS NULL
+                ON CONFLICT DO NOTHING
+                RETURNING 1
+        )
+        SELECT byteaToInet(incrementV6Prefix(last_prefix.bin_address, p_delegated_len))
+            INTO batch_start_address
+            FROM (
+                SELECT bin_address
+                FROM prefixes
+                ORDER BY depth DESC
+                LIMIT 1
+            ) AS last_prefix;
+
+        IF (batch_start_address > p_end_address)
+        THEN
+            EXIT;
         END IF;
 
-       bin_next_address = incrementV6Prefix(bin_next_address, p_delegated_len);
-       next_address = byteaToInet(bin_next_address);
+        batch_start_bin = inetToBytea(batch_start_address);
     END LOOP;
 
     -- Update the modification time in the flq_pool row.
