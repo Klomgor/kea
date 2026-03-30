@@ -6734,8 +6734,9 @@ BEGIN
     IF p_recreate = 1
     THEN
         -- (Re)creating should ignore duplicate on insert
-        INSERT IGNORE INTO flq_pool4 (start_address, end_address, subnet_id)
-           VALUES (p_start_address, p_end_address, p_subnet_id);
+        INSERT INTO flq_pool4 (start_address, end_address, subnet_id)
+           VALUES (p_start_address, p_end_address, p_subnet_id)
+        ON DUPLICATE KEY UPDATE start_address = start_address;
     ELSE
         INSERT INTO flq_pool4 (start_address, end_address, subnet_id)
            VALUES (p_start_address, p_end_address, p_subnet_id);
@@ -6760,7 +6761,7 @@ BEGIN
             SET next_end_address = next_end_address + remaining;
         END IF;
 
-        INSERT IGNORE INTO free_lease4 (address)
+        INSERT INTO free_lease4 (address)
             WITH RECURSIVE addresses AS (
                 SELECT next_start_address AS avail
                 UNION ALL
@@ -6769,7 +6770,8 @@ BEGIN
             SELECT avail FROM addresses
                 LEFT JOIN lease4 on avail = lease4.address
                 WHERE (lease4.address IS NULL OR lease4.state = 2
-                       OR (expire <= now() AND valid_lifetime != 0xFFFFFFFF));
+                       OR (expire <= now() AND valid_lifetime != 0xFFFFFFFF))
+            ON DUPLICATE KEY UPDATE free_lease4.address = avail;
 
         SET next_start_address = next_start_address + loop_limit;
     END WHILE;
@@ -6859,19 +6861,28 @@ BEGIN
     DECLARE bin_next_address BINARY(16);
     DECLARE bin_end_address BINARY(16);
     DECLARE lease_address VARCHAR(45);
+    DECLARE error_msg VARCHAR(255);
+
+    IF (p_delegated_len < 1 OR p_delegated_len > 128)
+    THEN
+        SET error_msg = CONCAT('Invalid p_delegated_len: ', p_delegated_len);
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = error_msg;
+    END IF;
 
     START TRANSACTION;
 
-    -- Create the flq_pool4 row. Concurrent attempts will hang until
+    -- Create the flq_pool6 row. Concurrent attempts will hang until
     -- this one commits and then they will fail with duplicate key
     -- error. Callers should treat the duplicate error as success.
     IF p_recreate = 1
     THEN
         -- (Re)creating should ignore duplicate on insert
-        INSERT IGNORE INTO flq_pool6
+        INSERT INTO flq_pool6
             (start_address, end_address, lease_type, delegated_len, subnet_id)
             VALUES
-            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id);
+            (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id)
+            ON DUPLICATE KEY UPDATE start_address = start_address;
     ELSE
         INSERT INTO flq_pool6
             (start_address, end_address, lease_type, delegated_len, subnet_id)
@@ -6900,7 +6911,7 @@ BEGIN
 
     -- Bulk insert available leases into free_lease6 table. If insert fails on
     -- duplicate ignore it.
-    INSERT IGNORE INTO free_lease6 (address, bin_address)
+    INSERT INTO free_lease6 (address, bin_address)
         SELECT c.address, c.bin_address
         FROM _flq6_candidates c
         WHERE NOT EXISTS (
@@ -6908,7 +6919,8 @@ BEGIN
             WHERE l.address = c.address
               AND l.state != 2
               AND (l.expire > now() OR l.valid_lifetime = 0xFFFFFFFF)
-        );
+        )
+        ON DUPLICATE KEY UPDATE free_lease6.address = c.address;
 
     DROP TEMPORARY TABLE _flq6_candidates;
 

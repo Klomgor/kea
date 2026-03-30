@@ -461,6 +461,11 @@ DECLARE
     batch_start_bin BYTEA := inetToBytea(p_start_address);
     max_prefixes_per_batch INTEGER := 10000;
 BEGIN
+    IF (p_delegated_len < 1 OR p_delegated_len > 128)
+    THEN
+        RAISE EXCEPTION 'Invalid p_delegated_len: %', p_delegated_len;
+    END IF;
+
     -- Create the flq_pool6 row. Concurrent attempts will hang until
     -- this one commits and then they will fail with duplicate key
     -- error. Callers should treat the duplicate error as success.
