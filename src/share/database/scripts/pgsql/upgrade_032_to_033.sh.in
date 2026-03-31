@@ -231,7 +231,7 @@ BEGIN
     -- Didn't find one, so try front half of the range, including
     -- the last pick. This avoids returning nothing if there is only
     -- one address free.
-    IF (free_address IS NULL AND last_address != p_start_address)
+    IF (free_address IS NULL)
     THEN
         SELECT f.address INTO free_address FROM free_lease4 f
             LEFT JOIN lease4 ON f.address = lease4.address
@@ -587,7 +587,7 @@ BEGIN
     -- Didn't find one, so try front half of the range, including
     -- the last pick. This avoids returning nothing if there is only
     -- one address free.
-    IF (free_address IS NULL AND bin_last_address != bin_start_address)
+    IF (free_address IS NULL)
     THEN
         SELECT f.address INTO free_address FROM free_lease6 f
             LEFT JOIN lease6 on f.address = lease6.address
