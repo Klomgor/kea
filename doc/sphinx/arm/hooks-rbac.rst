@@ -230,104 +230,116 @@ The global parameters are:
 Sample Configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-A sample configuration is available in ``doc/examples/agent/rbac.json``
+A sample configuration is available in ``doc/examples/kea4/hooks-rbac.json``
 in the Kea source and is copied below.
 
 .. code-block:: javascript
    :linenos:
-   :emphasize-lines: 31-85
+   :emphasize-lines: 41-95
+
+    {"Dhcp4":
 
     {
-    "Control-agent": {
-        // We need to specify where the agent should listen to incoming HTTP
-        // queries.
-        "http-host": "127.0.0.1",
+    // Kea is told to listen on the eth0 interface only.
+      "interfaces-config": {
+        "interfaces": [ "eth0" ]
+      },
 
-        // If enabling HA and multi-threading, the 8000 port is used by the HA
-        // hook library http listener. When using HA hook library with
-        // multi-threading to function, make sure the port used by dedicated
-        // listener is different (e.g. 8001) than the one used by CA. Note
-        // the commands should still be sent via CA. The dedicated listener
-        // is specifically for HA updates only.
-        "http-port": 8000,
+    // Set up the storage for leases.
+      "lease-database": {
+        "type": "memfile"
+      },
 
-        // TLS trust anchor (Certificate Authority). This is a file name or
-        // (for OpenSSL only) a directory path.
-        "trust-anchor": "my-ca",
+      "valid-lifetime": 1800,
 
-        // TLS server certificate file name.
-        "cert-file": "my-cert",
-
-        // TLS server private key file name.
-        "key-file": "my-key",
-
-        // TLS require client certificates flag. Default is true and means
-        // require client certificates. False means they are optional.
-        "cert-required": true,
-
-        // Add hooks here.
-        "hooks-libraries": [
+    // Define a single subnet.
+      "subnet4": [
         {
-            "library": "libdhcp_rbac.so",
-            "parameters": {
-                // This section configures the RBAC hook library.
-                // Mandatory parameters.
-                "assign-role-method": "cert-subject",
-                "api-files": "/opt/share/kea/api",
-                // Optional parameters.
-                "require-tls": true,
-                "commands": [
-                {
-                    "name": "my-command",
-                    "access": "read",
-                    "hook": "my-hook"
-                } ],
-                "access-control-lists": [
-                {
-                    "my-none": { "not": "ALL" }
-                },{
-                    "another-none": { "and": [ "ALL", "NONE" ] }
-                },{
-                    "my-read": { "access": "read" }
-                } ],
-                "roles": [
-                {
-                    "name": "kea-client",
-                    "accept-commands":
-                    {
-                        "commands": [ "list-commands", "status-get" ]
-                    },
-                    "reject-commands": "NONE",
-                    "other-commands": "reject",
-                    "list-match-first": "accept",
-                    "response-filters": [ "list-commands" ]
-                },{
-                    "name": "admin",
-                    "accept-commands": "ALL",
-                    "reject-commands":
-                    {
-                        "hook": "cb_cmds"
-                    },
-                    "list-match-first": "reject"
-                } ],
-                "default-role":
-                {
-                    "accept-commands": "NONE",
-                    "reject-commands": "ALL"
-                },
-                "unknown-role":
-                {
-                    "accept-commands": "READ",
-                    "reject-commands": "WRITE"
-                }
-            }
-        } ]
+          "pools": [ { "pool": "192.0.2.1 - 192.0.2.200" } ],
+          "id": 1,
+          "subnet": "192.0.2.0/24",
+          "interface": "eth0"
+        }
+      ],
 
-        // Additional parameters, such as logging and others
-        // omitted for clarity.
+    // Control sockets.
+      "control-sockets": [
+        {
+          "socket-type": "https",
+          "socket-address": "127.0.0.1",
+          "socket-port": 8000,
+          "trust-anchor": "my-ca",
+          "cert-file": "my-cert",
+          "key-file": "my-key",
+          "cert-required": true
+        },
+      ],
+
+    // Add hooks here.
+      "hooks-libraries": [
+        {
+          "library": "libdhcp_rbac.so",
+          "parameters": {
+              // This section configures the RBAC hook library.
+              // Mandatory parameters.
+              "assign-role-method": "cert-subject",
+              "api-files": "/opt/share/kea/api",
+              // Optional parameters.
+              "require-tls": true,
+              "commands": [
+              {
+                  "name": "my-command",
+                  "access": "read",
+                  "hook": "my-hook"
+              } ],
+              "access-control-lists": [
+              {
+                  "my-none": { "not": "ALL" }
+              },{
+                  "another-none": { "and": [ "ALL", "NONE" ] }
+              },{
+                  "my-read": { "access": "read" }
+              } ],
+              "roles": [
+              {
+                  "name": "kea-client",
+                  "accept-commands":
+                  {
+                      "commands": [ "list-commands", "status-get" ]
+                  },
+                  "reject-commands": "NONE",
+                  "other-commands": "reject",
+                  "list-match-first": "accept",
+                  "response-filters": [ "list-commands" ]
+              },{
+                  "name": "admin",
+                  "accept-commands": "ALL",
+                  "reject-commands":
+                  {
+                      "hook": "cb_cmds"
+                  },
+                  "list-match-first": "reject"
+              } ],
+              "default-role":
+              {
+                  "accept-commands": "NONE",
+                  "reject-commands": "ALL"
+              },
+              "unknown-role":
+              {
+                  "accept-commands": "READ",
+                  "reject-commands": "WRITE"
+              }
+          }
+        }
+      ]
+
+      // Additional parameters, such as logging and others
+      // omitted for clarity.
 
     }
     }
+
 
 Accept/Reject Algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~

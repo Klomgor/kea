@@ -1,0 +1,103 @@
+// This is an example configuration file for the DHCPv4 server in Kea using
+// the Role Based Access Control (RBAC) hook library. It uses a basic scenario
+// of one IPv4 subnet configured with the default values for all parameters.
+
+{"Dhcp4":
+
+{
+// Kea is told to listen on the eth0 interface only.
+  "interfaces-config": {
+    "interfaces": [ "eth0" ]
+  },
+
+// Set up the storage for leases.
+  "lease-database": {
+    "type": "memfile"
+  },
+
+  "valid-lifetime": 1800,
+
+// Define a single subnet.
+  "subnet4": [
+    {
+      "pools": [ { "pool": "192.0.2.1 - 192.0.2.200" } ],
+      "id": 1,
+      "subnet": "192.0.2.0/24",
+      "interface": "eth0"
+    }
+  ],
+
+// Control sockets.
+  "control-sockets": [
+    {
+      "socket-type": "https",
+      "socket-address": "127.0.0.1",
+      "socket-port": 8000,
+      "trust-anchor": "my-ca",
+      "cert-file": "my-cert",
+      "key-file": "my-key",
+      "cert-required": true
+    },
+  ],
+
+// Add hooks here.
+  "hooks-libraries": [
+    {
+      "library": "libdhcp_rbac.so",
+      "parameters": {
+          // This section configures the RBAC hook library.
+          // Mandatory parameters.
+          "assign-role-method": "cert-subject",
+          "api-files": "/opt/share/kea/api",
+          // Optional parameters.
+          "require-tls": true,
+          "commands": [
+          {
+              "name": "my-command",
+              "access": "read",
+              "hook": "my-hook"
+          } ],
+          "access-control-lists": [
+          {
+              "my-none": { "not": "ALL" }
+          },{
+              "another-none": { "and": [ "ALL", "NONE" ] }
+          },{
+              "my-read": { "access": "read" }
+          } ],
+          "roles": [
+          {
+              "name": "kea-client",
+              "accept-commands":
+              {
+                  "commands": [ "list-commands", "status-get" ]
+              },
+              "reject-commands": "NONE",
+              "other-commands": "reject",
+              "list-match-first": "accept",
+              "response-filters": [ "list-commands" ]
+          },{
+              "name": "admin",
+              "accept-commands": "ALL",
+              "reject-commands":
+              {
+                  "hook": "cb_cmds"
+              },
+              "list-match-first": "reject"
+          } ],
+          "default-role":
+          {
+              "accept-commands": "NONE",
+              "reject-commands": "ALL"
+          },
+          "unknown-role":
+          {
+              "accept-commands": "READ",
+              "reject-commands": "WRITE"
+          }
+      }
+    }
+  ]
+}
+
+}

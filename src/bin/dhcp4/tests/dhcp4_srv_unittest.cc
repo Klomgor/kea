@@ -3073,6 +3073,7 @@ Dhcpv4SrvTest::checkConfigFiles() {
         "ha-load-balancing-server2-mt.json",
         "hooks.json",
         "hooks-radius.json",
+        "hooks-rbac.json",
         "leases-expiration.json",
         "multiple-options.json",
 #if defined (HAVE_MYSQL)

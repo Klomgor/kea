@@ -313,6 +313,7 @@ TEST(ParserTest, file) {
                                "ha-hot-standby-server1-with-tls.json",
                                "ha-hot-standby-server2.json",
                                "hooks.json",
+                               "hooks-rbac.json",
                                "iPXE.json",
                                "leases-expiration.json",
                                "multiple-options.json",

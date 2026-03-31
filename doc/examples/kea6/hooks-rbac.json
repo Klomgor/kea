@@ -1,0 +1,111 @@
+// This is an example configuration file for the DHCPv6 server in Kea using
+// the Role Based Access Control (RBAC) hook library. It uses a basic scenario
+// of one IPv6 subnet configured with the default values for all parameters.
+
+{"Dhcp6":
+
+{
+// Kea is told to listen on the eth0 interface only.
+  "interfaces-config": {
+    "interfaces": [ "eth0" ]
+  },
+
+// Set up the storage for leases.
+  "lease-database": {
+    "type": "memfile"
+  },
+
+// Set values to mandatory timers
+  "renew-timer": 900,
+  "rebind-timer": 1200,
+  "preferred-lifetime": 1800,
+  "valid-lifetime": 2700,
+
+// Define a single subnet.
+  "subnet6": [
+    {
+      "id": 1,
+      "pools": [
+        {
+          "pool": "2001:db8:1::/80",
+          "user-context": { "charging": true }
+        } ],
+      "subnet": "2001:db8:1::/64",
+      "interface": "eth0"
+    }
+  ],
+
+// Control sockets.
+  "control-sockets": [
+    {
+      "socket-type": "https",
+      "socket-address": "::1",
+      "socket-port": 8000,
+      "trust-anchor": "my-ca",
+      "cert-file": "my-cert",
+      "key-file": "my-key",
+      "cert-required": true
+    },
+  ],
+
+// Add hooks here.
+  "hooks-libraries": [
+    {
+      "library": "libdhcp_rbac.so",
+      "parameters": {
+          // This section configures the RBAC hook library.
+          // Mandatory parameters.
+          "assign-role-method": "cert-subject",
+          "api-files": "/opt/share/kea/api",
+          // Optional parameters.
+          "require-tls": true,
+          "commands": [
+          {
+              "name": "my-command",
+              "access": "read",
+              "hook": "my-hook"
+          } ],
+          "access-control-lists": [
+          {
+              "my-none": { "not": "ALL" }
+          },{
+              "another-none": { "and": [ "ALL", "NONE" ] }
+          },{
+              "my-read": { "access": "read" }
+          } ],
+          "roles": [
+          {
+              "name": "kea-client",
+              "accept-commands":
+              {
+                  "commands": [ "list-commands", "status-get" ]
+              },
+              "reject-commands": "NONE",
+              "other-commands": "reject",
+              "list-match-first": "accept",
+              "response-filters": [ "list-commands" ]
+          },{
+              "name": "admin",
+              "accept-commands": "ALL",
+              "reject-commands":
+              {
+                  "hook": "cb_cmds"
+              },
+              "list-match-first": "reject"
+          } ],
+          "default-role":
+          {
+              "accept-commands": "NONE",
+              "reject-commands": "ALL"
+          },
+          "unknown-role":
+          {
+              "accept-commands": "READ",
+              "reject-commands": "WRITE"
+          }
+      }
+    }
+  ]
+}
+
+}

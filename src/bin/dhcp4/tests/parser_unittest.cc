@@ -306,6 +306,7 @@ TEST(ParserTest, file) {
                                "ha-load-balancing-server1-mt-with-tls.json",
                                "ha-load-balancing-server2-mt.json",
                                "hooks-radius.json",
+                               "hooks-rbac.json",
                                "hooks.json",
                                "leases-expiration.json",
                                "multiple-options.json",

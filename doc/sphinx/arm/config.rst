@@ -65,7 +65,7 @@ Kea components use extended JSON with additional features allowed:
 
 The configuration file consists of a single object (often colloquially
 called a map) started with a curly bracket. It comprises only one of
-the "Dhcp4", "Dhcp6", "DhcpDdns", "Control-agent", or "Netconf" objects.
+the "Dhcp4", "Dhcp6", "DhcpDdns", or "Netconf" objects.
 It is possible to define additional elements but they will be ignored.
 
 A very simple configuration for DHCPv4 could look like this:
