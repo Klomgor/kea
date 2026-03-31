@@ -272,7 +272,7 @@ in the Kea source and is copied below.
           "cert-file": "my-cert",
           "key-file": "my-key",
           "cert-required": true
-        },
+        }
       ],
 
     // Add hooks here.
