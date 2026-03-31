@@ -3229,7 +3229,7 @@ pgsql_migrate_dhcpX_options_client_classes() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqCreateFlqPool4 function
+# Verifies sflqCreateFlqPool4 function
 pgsql_sflqCreateFlqPool4() {
     test_start "pgsql.pgsql_sflqCreateFlqPool4"
 
@@ -3296,7 +3296,7 @@ pgsql_sflqCreateFlqPool4() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqPickFreeLease4 function
+# Verifies sflqPickFreeLease4 function
 pgsql_sflqPickFreeLease4() {
     test_start "pgsql.pgsql_sflqPickFreeLease4"
 
@@ -3411,7 +3411,7 @@ pgsql_sflqCreateFlqPool6() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqPickFreeLease6 function
+# Verifies sflqPickFreeLease6 function
 pgsql_sflqPickFreeLease6() {
     test_start "pgsql.pgsql_sflqPickFreeLease6"
 
@@ -3464,6 +3464,561 @@ pgsql_sflqPickFreeLease6() {
     test_finish 0
 }
 
+# Verifies sflqInsertLease4 function
+pgsql_sflqInsertLease4() {
+    test_start "pgsql.pgsql_sflqInsertLease4"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.4'::inet - '0.0.0.0'::inet)"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= $start_address \
+            and address <= $end_address"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    # Insert an assigned lease for 127.0.0.1
+    lease_address="127.0.0.1"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address,\
+                               NULL, NULL, NULL, NULL,\
+                               1::bigint, 'f'::boolean, 'f'::boolean,\
+                               NULL, 0::bigint, NULL, NULL, NULL, 0::bigint)"
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Insert a declined lease for 127.0.0.2
+    lease_address="127.0.0.2"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address,\
+                               NULL, NULL, NULL, NULL,\
+                               1::bigint, 'f'::boolean, 'f'::boolean,\
+                               NULL, 1::bigint, NULL, NULL, NULL, 0::bigint)"
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Insert a reclaimed lease for 127.0.0.3
+    lease_address="127.0.0.3"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address,\
+                               NULL, NULL, NULL, NULL,\
+                               1::bigint, 'f'::boolean, 'f'::boolean,\
+                               NULL, 2::bigint, NULL, NULL, NULL, 0::bigint)"
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 and but not removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 3" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 3" "$sql"  "1"
+
+    # Insert an expired lease for 127.0.0.4
+    lease_address="127.0.0.4"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address, NULL, NULL,\
+                               3600::bigint, (current_timestamp -  make_interval(secs => 10)),\
+                               1::bigint, 'f'::boolean, 'f'::boolean,\
+                               NULL, 0::bigint, NULL, NULL, NULL, 0::bigint)"
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 but not removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 4" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 4" "$sql"  "1"
+
+    # Let's wipe the whole database
+    #pgsql_wipe
+
+    test_finish 0
+}
+
+# Verifies sflqUpdateLease4 function
+pgsql_sflqUpdateLease4() {
+    test_start "pgsql.pgsql_sflQUpdateLease4"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.4'::inet - '0.0.0.0'::inet)"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= $start_address \
+            and address <= $end_address"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select (current_timestamp + make_interval(secs => 3600))"
+    run_statement "get future time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Insert an assigned lease for 127.0.0.1
+    lease_address="127.0.0.1"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
+                               1::bigint, 'f'::boolean, 'f'::boolean, NULL, \
+                               0::bigint, NULL, NULL, NULL, 0::bigint)";
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Update the lease to declined
+    sql="call sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
+                               1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
+                               1::bigint, NULL, NULL, NULL, 0::bigint)";
+    run_statement "sflqUpdateLease4 1" "$sql"
+
+    # Verify lease is updated lease4 and but not present free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address and state = 1;"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Update the lease to be reclalmed.
+    sql="call sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
+                               1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
+                               2::bigint, NULL, NULL, NULL, 0::bigint)";
+    run_statement "sflqUpdateLease4 2" "$sql"
+
+    # Verify lease is updated in lease4 and added to free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address and state = 2;"
+    run_statement "check lease4 3" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 3" "$sql"  "1"
+
+    # Update requires expirations to match. In order to test expiration
+    # logic, need to get an expried time stamp and then update the lease
+    # directly setting expire.
+    sql="select (current_timestamp - make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+    sql="update lease4 set expire = '$expired'::timestamp\
+         where address = $bigint_address"
+    run_statement "update lease with expired time stamp" "$sql"
+
+    # Delete the lease from free_lease4;
+    sql="delete from free_lease4 where address = $bigint_address;"
+    run_statement "manually delete lease" "$sql"
+
+    # Update the expired lease.
+    sql="call sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$expired'::timestamp,\
+                               1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
+                               0::bigint, NULL, NULL, NULL, 0::bigint)";
+    run_statement "sflqUpdateLease4 3" "$sql"
+
+    # Verify lease is updated in lease4 and added to free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address and state = 0;"
+    run_statement "check lease4 4" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 4" "$sql"  "1"
+
+    # Let's wipe the whole database
+#    pgsql_wipe
+
+    test_finish 0
+}
+
+pgsql_sflqDeleteLease4() {
+    test_start "pgsql.pgsql_sflqDeleteLease4"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
+    end_address="('127.0.0.4'::inet - '0.0.0.0'::inet)"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= $start_address \
+            and address <= $end_address"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select (current_timestamp + make_interval(secs => 3600))"
+    run_statement "get future time stamp" "$sql"
+    future="${OUTPUT}"
+
+
+    # Insert an assigned lease for 127.0.0.1
+    lease_address="127.0.0.1"
+    bigint_address="('$lease_address'::inet - '0.0.0.0'::inet)"
+    sql="call sflqInsertLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
+                               1::bigint, 'f'::boolean, 'f'::boolean, NULL, \
+                               0::bigint, NULL, NULL, NULL, 0::bigint)";
+    run_statement "sflqInsertLease4 $lease_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Attempt to delete lease with mismatched expire.
+    sql="call sflqDeleteLease4($bigint_address, current_timestamp)"
+    run_statement "sflqDeleteLease4 $bigint_address" "$sql"
+
+    # Verify lease is still in lease4 and not in free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Delete lease with matching expire.
+    sql="call sflqDeleteLease4($bigint_address, '$future'::timestamp)"
+    run_statement "sflqDeleteLease4 $bigint_address" "$sql"
+
+    # Verify lease is not in lease4 but is in free_lease4
+    sql="select count(address) from lease4 where address = $bigint_address;"
+    run_statement "check lease4 3" "$sql" "0"
+    sql="select count(address) from free_lease4 where address = $bigint_address;"
+    run_statement "check free_lease4 3" "$sql" "1"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    test_finish 0
+}
+
+pgsql_sflqInsertLease6() {
+    test_start "pgsql.pgsql_sflqInsertLease6"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::'::inet, '3001::4'::inet, 1::smallint, 128::smallint,\
+                                 1::bigint, false)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease6 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inetToBytea('3001::'::inet) \
+            and bin_address <= inetToBytea('3001::4'::inet)"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select (CURRENT_TIMESTAMP + make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Get an expired timestamp
+    sql="select (CURRENT_TIMESTAMP - make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inetToBytea('3001::1'::inet)"
+    duid="decode('01020304','hex')"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Insert a declined lease for 3001::2
+    in_address="'3001::2'"
+    bin_address="inetToBytea('3001::2'::inet)"
+    state="1"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Insert a reclaimed lease for 3001::3
+    in_address="'3001::3'"
+    bin_address="inetToBytea('3001::3'::inet)"
+    state="2"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and but not removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 3" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 3" "$sql" "1"
+
+    # Insert an expired lease for 3001::4
+    in_address="'3001::34'"
+    bin_address="inetToBytea('3001::4'::inet)"
+    state="0"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$expired'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 but not removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 4" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 4" "$sql" "1"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    test_finish 0
+}
+
+pgsql_sflqUpdateLease6() {
+    test_start "pgsql.pgsql_sflqUpdateLease6"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::'::inet, '3001::4'::inet, 1::smallint, 128::smallint,\
+                                 1::bigint, false)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease6 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inetToBytea('3001::'::inet) \
+            and bin_address <= inetToBytea('3001::4'::inet)"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select (CURRENT_TIMESTAMP + make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Get an expired timestamp
+    sql="select (CURRENT_TIMESTAMP - make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inetToBytea('3001::1'::inet)"
+    duid="decode('01020304','hex')"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Update the lease to declined
+    state="1"
+    sql="call sflqUpdateLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated in lease6 and but not present in free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet and state = 1;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Update the lease to be reclalmed.
+    state="2"
+    sql="call sflqUpdateLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated in lease6 and added to free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet and state = 2;"
+    run_statement "check lease6 3" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_le3se6 3" "$sql" "1"
+
+    # Update requires expirations to match. In order to test expiration
+    # logic, need to update the lease directly setting expire.
+    sql="update lease6 set expire = '$expired'::timestamp\
+         where address = $in_address"
+    run_statement "update lease with expired time stamp" "$sql"
+
+    # Manually delete the lease from free_lease6;
+    sql="delete from free_lease6 where bin_address = $bin_address;"
+    run_statement "manually delete lease" "$sql"
+
+    # Update the expired lease.
+    state=0
+    sql="call sflqUpdateLease6($in_address::inet, $duid, 3600::bigint, '$expired'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated in lease6 and added to free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet and state = 0;"
+    run_statement "check lease6 4" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 4" "$sql" "1"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    test_finish 0
+}
+
+pgsql_sflqDeleteLease6() {
+    test_start "pgsql.pgsql_sflqDeleteLease6"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::'::inet, '3001::4'::inet, 1::smallint, 128::smallint,\
+                                 1::bigint, false)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease6 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inetToBytea('3001::'::inet) \
+            and bin_address <= inetToBytea('3001::4'::inet)"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select (CURRENT_TIMESTAMP + make_interval(secs => 3600))"
+    run_statement "get expired time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inetToBytea('3001::1'::inet)"
+    duid="decode('01020304','hex')"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+    sql="call sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
+                               $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
+                               $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
+                               NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
+                               NULL, 0::bigint)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Attempt to delete lease with mismatched expire.
+    sql="call sflqDeleteLease6($in_address::inet, current_timestamp)"
+    run_statement "sflqDeleteLease6 1 $in_address" "$sql"
+
+    # Verify lease is still in lease6 and not in free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Delete lease with matching expire.
+    sql="call sflqDeleteLease6($in_address::inet, '$future'::timestamp)"
+    run_statement "sflqDeleteLease6 2 $in_address" "$sql"
+
+    # Verify lease is not in lease6 but is in free_lease6
+    sql="select count(address) from lease6 where address = $in_address::inet;"
+    run_statement "check lease6 3" "$sql" "0"
+    sql="select count(address) from free_lease6 where bin_address = $bin_address;"
+    run_statement "check free_lease6 3" "$sql" "1"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    test_finish 0
+}
 
 # Handy shortcut for running a single test.
 if [ $# -gt 0 ]; then
@@ -3506,3 +4061,6 @@ pgsql_sflqCreateFlqPool4
 pgsql_sflqPickFreeLease4
 pgsql_sflqCreateFlqPool6
 pgsql_sflqPickFreeLease6
+pgsql_sflqInsertLease4
+pgsql_sflqUpdateLease4
+pgsql_sflqDeleteLease4

@@ -4071,7 +4071,7 @@ mysql_migrate_dhcpX_options_client_classes() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqCreateFlqPool4 function
+# Verifies sflqCreateFlqPool4 function
 mysql_sflqCreateFlqPool4() {
     test_start "mysql.mysql_sflqCreateFlqPool4"
 
@@ -4132,7 +4132,7 @@ mysql_sflqCreateFlqPool4() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqPickFreeLease4 function
+# Verifies sflqPickFreeLease4 function
 mysql_sflqPickFreeLease4() {
     test_start "mysql.mysql_sflqPickFreeLease4"
 
@@ -4184,7 +4184,7 @@ mysql_sflqPickFreeLease4() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqCreateFlqPool6 function
+# Verifies sflqCreateFlqPool6 function
 mysql_sflqCreateFlqPool6() {
     test_start "mysql.mysql_sflqCreateFlqPool6"
 
@@ -4244,7 +4244,7 @@ mysql_sflqCreateFlqPool6() {
     test_finish 0
 }
 
-# Verifies SFLQ sflqPickFreeLease6 function
+# Verifies sflqPickFreeLease6 function
 mysql_sflqPickFreeLease6() {
     test_start "mysql.mysql_sflqPickFreeLease6"
 
@@ -4289,6 +4289,515 @@ mysql_sflqPickFreeLease6() {
     run_statement "sflqPickFreeLease6.10" "$sql"  "3001::";
     run_statement "sflqPickFreeLease6.11" "$sql"  "3001::1";
     run_statement "sflqPickFreeLease6.12" "$sql"  "3001::2";
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqInsertLease4() {
+    test_start "mysql.mysql_sflqInsertLease4"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    sql="call sflqCreateFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.4'), 1, true)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= inet_aton('127.0.0.0') \
+            and address <= inet_aton('127.0.0.4')"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    # Insert an assigned lease for 127.0.0.1
+    in_address="'127.0.0.1'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, NULL, NULL,\
+                               1, 0, 0, NULL, 0, NULL, NULL, NULL, 0)";
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Insert a declined lease for 127.0.0.2
+    in_address="'127.0.0.2'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, NULL, NULL,\
+                               1, 0, 0, NULL, 1, NULL, NULL, NULL, 0)";
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Insert a reclaimed lease for 127.0.0.3
+    in_address="'127.0.0.3'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, NULL, NULL,\
+                               1, 0, 0, NULL, 2, NULL, NULL, NULL, 0)";
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 and but not removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 3" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 3" "$sql"  "1"
+
+    # Insert an expired lease for 127.0.0.4
+    in_address="'127.0.0.4'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, \
+                               3600, TIMESTAMPADD(SECOND, -10, CURRENT_TIMESTAMP), \
+                               1, 0, 0, NULL, 0, NULL, NULL, NULL, 0)";
+
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 but not removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 4" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 4" "$sql"  "1"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqUpdateLease4() {
+    test_start "mysql.mysql_sflQUpdateLease4"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    sql="call sflqCreateFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.4'), 1, true)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= inet_aton('127.0.0.0') \
+            and address <= inet_aton('127.0.0.4')"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    sql="select TIMESTAMPADD(SECOND, 3600, CURRENT_TIMESTAMP)"
+    run_statement "get expiration time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Insert an assigned lease for 127.0.0.1
+    in_address="'127.0.0.1'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, 3600, timestamp('$future'),\
+                               1, 0, 0, NULL, 0, NULL, NULL, NULL, 0)";
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Update the lease to declined
+    sql="call sflqUpdateLease4(inet_aton($in_address), NULL, NULL, 3600, timestamp('$future'),\
+                               1, 0, 0, NULL, 1, NULL, NULL, NULL, 0)";
+    run_statement "sflqUpdateLease4 $in_address" "$sql"
+
+    # Verify lease is updated lease4 and but not present free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address}) and state = 1;"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Update the lease to be reclalmed.
+    sql="call sflqUpdateLease4(inet_aton($in_address), NULL, NULL, 3600, timestamp('$future'),\
+                               1, 0, 0, NULL, 2, NULL, NULL, NULL, 0)";
+    run_statement "sflqUpdateLease4 to reclaimed $in_address" "$sql"
+
+    # Verify lease is updated in lease4 and added to free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address}) and state = 2;"
+    run_statement "check lease4 3" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 3" "$sql"  "1"
+
+    # Update requires expirations to match. In order to test expiration
+    # logic, need to get an expried time stamp and then update the lease
+    # directly setting expire.
+    sql="select TIMESTAMPADD(SECOND, -3600, CURRENT_TIMESTAMP)"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+    sql="update lease4 set expire = timestamp('$expired')\
+         where address = inet_aton($in_address)"
+    run_statement "update lease with expired time stamp" "$sql"
+
+    # Delete the lease from free_lease4;
+    sql="delete from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "manually delete lease" "$sql"
+
+    # Update the expired lease.
+    sql="call sflqUpdateLease4(inet_aton($in_address), NULL, NULL, 3600, timestamp('$expired'),\
+                               1, 0, 0, NULL, 0, NULL, NULL, NULL, 0)";
+    run_statement "sflqUpdateLease4 update expired $in_address" "$sql"
+
+    # Verify lease is updated in lease4 and added to free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address}) and state = 0;"
+    run_statement "check lease4 4" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 4" "$sql"  "1"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqDeleteLease4() {
+    test_start "mysql.mysql_sflqDeleteLease4"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 127.0.0.0 - 127.0.0.4
+    sql="call sflqCreateFlqPool4(inet_aton('127.0.0.0'), inet_aton('127.0.0.4'), 1, true)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(address) from free_lease4 \
+            where address >= inet_aton('127.0.0.0') \
+            and address <= inet_aton('127.0.0.4')"
+    run_statement "check sflqCreateFlqPool4" "$sql" "5"
+
+    sql="select TIMESTAMPADD(SECOND, 3600, CURRENT_TIMESTAMP)"
+    run_statement "get expiration time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Insert an assigned lease for 127.0.0.1
+    in_address="'127.0.0.1'"
+    sql="call sflqInsertLease4(inet_aton($in_address), NULL, NULL, 3600,\
+                               timestamp('$future'),\
+                               1, 0, 0, NULL, 0, NULL, NULL, NULL, 0)";
+    run_statement "sflqInsertLease4 $in_address" "$sql"
+
+    # Verify lease is inserted into lease4 and removed from free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 1" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 1" "$sql" "0"
+
+    # Attempt to delete lease with mismatched expire.
+    sql="call sflqDeleteLease4(inet_aton($in_address), now())"
+    run_statement "sflqDeleteLease4 $in_address" "$sql"
+
+    # Verify lease is still in lease4 and not in free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 2" "$sql" "1"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 2" "$sql" "0"
+
+    # Delete lease with matching expire.
+    sql="call sflqDeleteLease4(inet_aton($in_address), timestamp('$future'))"
+    run_statement "sflqDeleteLease4 $in_address" "$sql"
+
+    # Verify lease is not in lease4 but is in free_lease4
+    sql="select count(address) from lease4 where address = inet_aton(${in_address});"
+    run_statement "check lease4 3" "$sql" "0"
+    sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
+    run_statement "check free_lease4 3" "$sql"  "1"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqInsertLease6() {
+    test_start "mysql.mysql_sflqInsertLease6"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::', '3001::4', 1, 128, 1, 0)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inet6_aton('3001::') \
+            and bin_address <= inet6_aton('3001::4')"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select TIMESTAMPADD(SECOND, 3600, CURRENT_TIMESTAMP)"
+    run_statement "get future time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Get an expired timestamp
+    sql="select TIMESTAMPADD(SECOND, -3600, CURRENT_TIMESTAMP)"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inet6_aton('3001::1')"
+    duid="0x01020304"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Insert a declined lease for 3001::2
+    in_address="'3001::2'"
+    bin_address="inet6_aton('3001::2')"
+    state="1"
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Insert a reclaimed lease for 3001::3
+    in_address="'3001::3'"
+    bin_address="inet6_aton('3001::3')"
+    state="2"
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and but not removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 3" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 3" "$sql" "1"
+
+    # Insert an expired lease for 127.0.0.4
+    in_address="'3001::4'"
+    bin_address="inet6_aton('3001::4')"
+    state="0"
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$expired'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 but not removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 4" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 4" "$sql" "1"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqUpdateLease6() {
+    test_start "mysql.mysql_sflqUpdateLease6"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::', '3001::4', 1, 128, 1, 0)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inet6_aton('3001::') \
+            and bin_address <= inet6_aton('3001::4')"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select TIMESTAMPADD(SECOND, 3600, CURRENT_TIMESTAMP)"
+    run_statement "get future time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Get an expired timestamp
+    sql="select TIMESTAMPADD(SECOND, -3600, CURRENT_TIMESTAMP)"
+    run_statement "get expired time stamp" "$sql"
+    expired="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inet6_aton('3001::1')"
+    duid="0x01020304"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Update the lease to declined
+    state="1"
+    sql="call sflqUpdateLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated lease6 and but not present free_lease6
+    sql="select count(address) from lease6 where address = $bin_address and state = 1;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Update the lease to be reclalmed.
+    state="2"
+    sql="call sflqUpdateLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated in lease6 and added to free_lease6
+    sql="select count(address) from lease6 where address = $bin_address and state = 2;"
+    run_statement "check lease6 3" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 3" "$sql" "1"
+
+    # Update requires expirations to match. In order to test expiration
+    # logic, need to update the lease directly setting expire.
+    sql="update lease6 set expire = timestamp('$expired')\
+         where address = $bin_address"
+    run_statement "update lease with expired time stamp" "$sql"
+
+    # Manually delete the lease from free_lease6;
+    sql="delete from free_lease6 where bin_address = $bin_address;"
+    run_statement "manually delete lease" "$sql"
+
+    # Update the expired lease.
+    state=0
+    sql="call sflqUpdateLease6($bin_address, $duid, 3600, timestamp('$expired'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqUpdateLease6 $in_address" "$sql"
+
+    # Verify lease is updated in lease6 and added to free_lease6
+    sql="select count(address) from lease6 where address = $bin_address and state = 0;"
+    run_statement "check lease6 4" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 4" "$sql" "1"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
+mysql_sflqDeleteLease6() {
+    test_start "mysql.mysql_sflqDeleteLease6"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Create a SFLQ pool 3001:: - 3001::4
+    sql="call sflqCreateFlqPool6('3001::', '3001::4', 1, 128, 1, 0)"
+    run_statement "sflqCreateFlqPool6" "$sql"
+
+    # Verify free_lease4 has all five addresses
+    sql="select count(bin_address) from free_lease6 \
+            where bin_address >= inet6_aton('3001::') \
+            and bin_address <= inet6_aton('3001::4')"
+    run_statement "check sflqCreateFlqPool6" "$sql" "5"
+
+    # Get a future timestamp
+    sql="select TIMESTAMPADD(SECOND, 3600, CURRENT_TIMESTAMP)"
+    run_statement "get future time stamp" "$sql"
+    future="${OUTPUT}"
+
+    # Insert an assigned lease for 3001::1
+    in_address="'3001::1'"
+    bin_address="inet6_aton('3001::1')"
+    duid="0x01020304"
+    subnet_id="1"
+    ltype="1"
+    iaid="1234"
+    state="0"
+    sql="call sflqInsertLease6($bin_address, $duid, 3600, timestamp('$future'),\
+                               $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\
+                               NULL, NULL, 0, 0, $state, NULL, 0)"
+    run_statement "sflqInsertLease6 $in_address" "$sql"
+
+    # Verify lease is inserted into lease6 and removed from free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 1" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 1" "$sql" "0"
+
+    # Attempt to delete lease with mismatched expire.
+    sql="call sflqDeleteLease6($bin_address, now())"
+    run_statement "sflqDeleteLease6 1 $in_address" "$sql"
+
+    # Verify lease is still in lease4 and not in free_lease4
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 2" "$sql" "1"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 2" "$sql" "0"
+
+    # Delete lease with matching expire.
+    sql="call sflqDeleteLease6($bin_address, timestamp('$future'))"
+    run_statement "sflqDeleteLease6 1 $in_address" "$sql"
+
+    # Verify lease is not in lease6 but is in free_lease6
+    sql="select count(address) from lease6 where address = $bin_address;"
+    run_statement "check lease6 3" "$sql" "0"
+    sql="select count(address) from free_lease6 where address = $in_address;"
+    run_statement "check free_lease6 3" "$sql" "1"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4343,3 +4852,9 @@ mysql_sflqCreateFlqPool4
 mysql_sflqPickFreeLease4
 mysql_sflqCreateFlqPool6
 mysql_sflqPickFreeLease6
+mysql_sflqInsertLease4
+mysql_sflqUpdateLease4
+mysql_sflqDeleteLease4
+mysql_sflqInsertLease6
+mysql_sflqUpdateLease6
+mysql_sflqDeleteLease6
