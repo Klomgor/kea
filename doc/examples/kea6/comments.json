@@ -51,7 +51,7 @@
        }
    ],
 
-   // In control sockets (more for the agent)
+   // In control sockets
    "control-sockets": [
        {
            "socket-type": "unix",
