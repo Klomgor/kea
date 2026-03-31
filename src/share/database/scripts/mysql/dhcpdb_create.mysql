@@ -7022,7 +7022,6 @@ CREATE PROCEDURE sflqInsertLease4(
     IN p_remote_id VARBINARY(255),
     IN p_pool_id INT UNSIGNED)
 BEGIN
-    START TRANSACTION;
     INSERT INTO lease4 (address, hwaddr, client_id, valid_lifetime, expire,
                         subnet_id, fqdn_fwd, fqdn_rev, hostname, state,
                         user_context, relay_id, remote_id, pool_id)
@@ -7042,7 +7041,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 
@@ -7065,7 +7063,6 @@ CREATE PROCEDURE sflqUpdateLease4(
     IN p_remote_id VARBINARY(255),
     IN p_pool_id INT UNSIGNED)
 BEGIN
-    START TRANSACTION;
     UPDATE lease4 SET address = p_address, hwaddr = p_hwaddr, client_id = p_client_id,
                       valid_lifetime = p_valid_lifetime, expire = p_expire,
                       subnet_id = p_subnet_id, fqdn_fwd = p_fqdn_fwd,
@@ -7086,7 +7083,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 
@@ -7097,7 +7093,6 @@ CREATE PROCEDURE sflqDeleteLease4(
     IN p_address INT UNSIGNED,
     IN p_expire TIMESTAMP)
 BEGIN
-    START TRANSACTION;
     -- Delete the lease from lease4.
     DELETE FROM lease4 WHERE address = p_address AND expire = p_expire;
 
@@ -7110,7 +7105,6 @@ BEGIN
         INSERT INTO free_lease4 (address) VALUES (p_address)
         ON DUPLICATE KEY UPDATE address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 
@@ -7137,7 +7131,6 @@ CREATE PROCEDURE sflqInsertLease6(
     IN p_user_context TEXT,
     IN p_pool_id INT UNSIGNED)
 BEGIN
-    START TRANSACTION;
     INSERT INTO lease6 (address, duid, valid_lifetime, expire, subnet_id,
                         pref_lifetime, lease_type, iaid, prefix_len,
                         fqdn_fwd, fqdn_rev, hostname, hwaddr, hwtype,
@@ -7160,7 +7153,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE bin_address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 
@@ -7187,7 +7179,6 @@ CREATE PROCEDURE sflqUpdateLease6(
     IN p_user_context TEXT,
     IN p_pool_id INT UNSIGNED)
 BEGIN
-    START TRANSACTION;
     UPDATE lease6 SET address = p_address, duid = p_duid, valid_lifetime = p_valid_lifetime,
                       expire = p_expire, subnet_id = p_subnet_id, pref_lifetime = p_pref_lifetime,
                       lease_type = p_lease_type, iaid = p_iaid, prefix_len = p_prefix_len,
@@ -7209,7 +7200,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE bin_address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 
@@ -7220,7 +7210,6 @@ CREATE PROCEDURE sflqDeleteLease6(
     IN p_address BINARY(16),
     IN p_expire TIMESTAMP)
 BEGIN
-    START TRANSACTION;
     -- Delete the lease from lease4.
     DELETE FROM lease6 WHERE address = p_address AND expire = p_expire;
 
@@ -7234,7 +7223,6 @@ BEGIN
             VALUES (INET6_NTOA(p_address), p_address)
         ON DUPLICATE KEY UPDATE bin_address = p_address;
     END IF;
-    COMMIT;
 END $$
 DELIMITER ;
 

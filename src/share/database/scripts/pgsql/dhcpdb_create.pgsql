@@ -7357,7 +7357,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
-    COMMIT;
 END;
 $$;
 
@@ -7398,7 +7397,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
-    COMMIT;
 END;
 $$;
 
@@ -7422,7 +7420,6 @@ BEGIN
         INSERT INTO free_lease4 (address) VALUES (p_address)
             ON CONFLICT DO NOTHING;
     END IF;
-    COMMIT;
 END;
 $$;
 
@@ -7469,7 +7466,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE address = p_address;
     END IF;
-    COMMIT;
 END;
 $$;
 
@@ -7516,7 +7512,6 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE address = p_address;
     END IF;
-    COMMIT;
 END;
 $$;
 
@@ -7541,7 +7536,6 @@ BEGIN
             VALUES (p_address, inetToBytea(p_address))
             ON CONFLICT DO NOTHING;
     END IF;
-    COMMIT;
 END;
 $$;
 
