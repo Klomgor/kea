@@ -1,3 +1,8 @@
+2453.	[bug]		razvan
+	Properly handle lease allocation if client reserved lease is not
+	available because the hook has decided to skip the lease.
+	(Gitlab #4434)
+
 Kea 3.1.7 (development) released on March 25, 2026
 
 2452.	[build]		andrei
