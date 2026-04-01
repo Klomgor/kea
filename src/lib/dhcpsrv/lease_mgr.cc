@@ -1412,7 +1412,7 @@ LeaseMgr::updateStatsOnAdd(const Lease6Ptr& lease) {
     }
 }
 
-void 
+void
 LeaseMgr::bumpStat(const std::string& stat, SubnetID& subnet_id, PoolPtr pool, int value) {
     StatsMgr::instance().addValue(stat, static_cast<int64_t>(value));
     StatsMgr::instance().addValue(StatsMgr::generateName("subnet", subnet_id, stat),
@@ -1424,7 +1424,7 @@ LeaseMgr::bumpStat(const std::string& stat, SubnetID& subnet_id, PoolPtr pool, i
     }
 }
 
-void 
+void
 LeaseMgr::bumpStatPrefix(const std::string& stat, SubnetID& subnet_id, PoolPtr pool, int value) {
     StatsMgr::instance().addValue(stat, static_cast<int64_t>(value));
     StatsMgr::instance().addValue(StatsMgr::generateName("subnet", subnet_id, stat),
@@ -1959,6 +1959,27 @@ LeaseMgr::updateStatsOnDelete(const Lease6Ptr& lease) {
             }
         }
     }
+}
+
+
+bool
+LeaseMgr::sflqCreateFlqPool4(IOAddress, IOAddress, SubnetID, bool) {
+    isc_throw(NotImplemented, "LeaseMgr::sflqCreateFlqPool4() called");
+}
+
+IOAddress
+LeaseMgr::sflqPickFreeLease4(IOAddress, IOAddress) {
+    isc_throw(NotImplemented, "LeaseMgr::sflqPickFreeLease4() called");
+}
+
+bool
+LeaseMgr::sflqCreateFlqPool6(IOAddress, IOAddress, Lease::Type, uint8_t, SubnetID, bool) {
+    isc_throw(NotImplemented, "LeaseMgr::sflqCreateFlqPool6() called");
+}
+
+IOAddress
+LeaseMgr::sflqPickFreeLease6(IOAddress, IOAddress) {
+    isc_throw(NotImplemented, "LeaseMgr::sflqPickFreeLease6() called");
 }
 
 } // namespace isc::dhcp

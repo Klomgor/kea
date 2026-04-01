@@ -119,6 +119,7 @@ DELETE FROM lease4_stat_by_client_class;
 DELETE FROM lease6_stat_by_client_class;
 DELETE FROM lease6_relay_id;
 DELETE FROM lease6_remote_id;
+-- SFLQ tables
 DELETE FROM free_lease4;
 DELETE FROM flq_pool4;
 DELETE FROM free_lease6;

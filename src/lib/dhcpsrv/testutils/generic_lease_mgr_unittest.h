@@ -691,6 +691,20 @@ public:
 
     void testUpdateStatsOn6DifferentSubnetPD();
 
+    /// @brief Checks v4 SFLQ operations.
+    ///
+    /// @param exp_not_implemented when true verifies
+    /// that LeaseMgr::sflq* functions throw not implemented.
+    /// Defaults to true.
+    void testSFLQ4(bool exp_not_implemented = false);
+
+    /// @brief Checks v6 SFLQ operations.
+    ///
+    /// @param exp_not_implemented when true verifies
+    /// that LeaseMgr::sflq* functions throw not implemented.
+    /// Defaults to true.
+    void testSFLQ6(bool exp_not_implemented = false);
+
     /// @brief String forms of IPv4 addresses
     std::vector<std::string> straddress4_;
 
@@ -860,6 +874,8 @@ public:
     /// -# The registered DbFailedCallback was invoked after two reconnect
     /// attempts (once failing and second triggered by timer)
     void testDbLostAndFailedAfterTimeoutCallback();
+
+    void testSflq4(bool exp_not_implemented = false);
 
     /// @brief Callback function registered with the lease manager
     bool db_lost_callback(util::ReconnectCtlPtr /* not_used */) {

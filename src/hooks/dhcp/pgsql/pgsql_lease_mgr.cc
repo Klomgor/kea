@@ -687,6 +687,26 @@ PgSqlTaggedStatement tagged_statements[] = {
       "count_remote_id6",
       "SELECT COUNT(*) FROM lease6_remote_id" },
 
+    // SFLQ_CREATE_POOL4,
+    { 4, { OID_INT8, OID_INT8, OID_INT8, OID_BOOL },
+      "sflqCreateFlqPool4",
+      "CALL sflqCreateFlqPool4($1, $2, $3, $4)" },
+
+    // SFLQ_PICK_FREE_LEASE4,
+    { 2, { OID_INT8, OID_INT8 },
+      "sflqPickFreeLease4",
+      "SELECT sflqPickFreeLease4($1, $2)" },
+
+    // SFLQ_CREATE_POOL6,
+    { 6, { OID_VARCHAR, OID_VARCHAR, OID_INT2, OID_INT2, OID_INT8, OID_BOOL },
+      "sflqCreateFlqPool6",
+      "CALL sflqCreateFlqPool6(cast($1 as inet), cast($2 as inet), $3, $4, $5, $6)"},
+
+    // SFLQ_PICK_FREE_LEASE6,
+    { 2, { OID_VARCHAR, OID_VARCHAR },
+      "sflqPickFreeLease6",
+      "SELECT sflqPickFreeLease6(cast($1 as inet), cast($2 as inet))" },
+
     // End of list sentinel
     { 0, { 0 }, 0, 0 }
 };
@@ -3865,6 +3885,164 @@ PgSqlLeaseMgr::byRemoteId6size() const {
     uint64_t count;
     PgSqlExchange::getColumnValue(r, 0, 0, count);
     return (static_cast<size_t>(count));
+}
+
+bool
+PgSqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address,
+                                  SubnetID subnet_id, bool recreate) {
+    // Get a context
+    PgSqlLeaseContextAlloc get_context(*this);
+    PgSqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_CREATE_FLQ_POOL4;
+
+    // Create input parameter bindings.
+    PsqlBindArray ibind;
+    ibind.add(start_address.toUint32());
+    ibind.add(end_address.toUint32());
+    ibind.add(subnet_id);
+    ibind.add(recreate);
+
+    // Execute the select.
+    PgSqlResult r(PQexecPrepared(ctx->conn_,
+                                 tagged_statements[stindex].name,
+                                 tagged_statements[stindex].nbparams,
+                                 &ibind.values_[0],
+                                 &ibind.lengths_[0],
+                                 &ibind.formats_[0], 0));
+
+    if (PQresultStatus(r) != PGRES_COMMAND_OK) {
+        // Failure: check for the special case of duplicate entry.  If this is
+        // the case, we ignore it.
+        if (ctx->conn_.compareError(r, PgSqlConnection::DUPLICATE_KEY)) {
+            return (false);
+        }
+
+        ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
+    }
+
+    return (true);
+}
+
+IOAddress
+PgSqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address) {
+    // Get a context
+    PgSqlLeaseContextAlloc get_context(*this);
+    PgSqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_PICK_FREE_LEASE4;
+
+    // Create input parameter bindings.
+    PsqlBindArray ibind;
+    ibind.add(start_address.toUint32());
+    ibind.add(end_address.toUint32());
+
+    // Execute the select.
+    PgSqlResult r(PQexecPrepared(ctx->conn_,
+                                 tagged_statements[stindex].name,
+                                 tagged_statements[stindex].nbparams,
+                                 &ibind.values_[0],
+                                 &ibind.lengths_[0],
+                                 &ibind.formats_[0], 0));
+
+    if (PQresultStatus(r) != PGRES_COMMAND_OK) {
+        ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
+    }
+
+    int rows = PQntuples(r);
+    if (rows != 1) {
+        isc_throw(Unexpected, "sflqPickFreeLeas4 returned " << rows 
+                    << ", should always return 1"
+                    << start_address << " - " << end_address);
+    }
+
+    uint32_t int_address;
+    PgSqlExchange::getColumnValue(r, 0, 0, int_address);
+
+    // Return the address.
+    return (IOAddress(int_address));
+}
+
+bool
+PgSqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address,
+                                  Lease::Type lease_type, uint8_t delegated_len,
+                                  SubnetID subnet_id, bool recreate) {
+    // Get a context
+    PgSqlLeaseContextAlloc get_context(*this);
+    PgSqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_CREATE_FLQ_POOL6;
+
+    // Create input parameter bindings.
+    PsqlBindArray ibind;
+    ibind.addTempString(start_address.toText());
+    ibind.addTempString(end_address.toText());
+    ibind.add(lease_type);
+    ibind.add(delegated_len);
+    ibind.add(subnet_id);
+    ibind.add(recreate);
+
+    // Execute the select.
+    PgSqlResult r(PQexecPrepared(ctx->conn_,
+                                 tagged_statements[stindex].name,
+                                 tagged_statements[stindex].nbparams,
+                                 &ibind.values_[0],
+                                 &ibind.lengths_[0],
+                                 &ibind.formats_[0], 0));
+
+    if (PQresultStatus(r) != PGRES_COMMAND_OK) {
+        // Failure: check for the special case of duplicate entry.  If this is
+        // the case, we ignore it.
+        if (ctx->conn_.compareError(r, PgSqlConnection::DUPLICATE_KEY)) {
+            return (false);
+        }
+
+        ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
+    }
+
+    return (true);
+}
+
+IOAddress
+PgSqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
+    // Get a context
+    PgSqlLeaseContextAlloc get_context(*this);
+    PgSqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_PICK_FREE_LEASE6;
+
+    // Create input parameter bindings.
+    PsqlBindArray ibind;
+    ibind.addTempString(start_address.toText());
+    ibind.addTempString(end_address.toText());
+
+    // Execute the select.
+    PgSqlResult r(PQexecPrepared(ctx->conn_,
+                                 tagged_statements[stindex].name,
+                                 tagged_statements[stindex].nbparams,
+                                 &ibind.values_[0],
+                                 &ibind.lengths_[0],
+                                 &ibind.formats_[0], 0));
+
+    if (PQresultStatus(r) != PGRES_COMMAND_OK) {
+        // Failure: check for the special case of duplicate entry.  If this is
+        // the case, we ignore it.
+        if (ctx->conn_.compareError(r, PgSqlConnection::DUPLICATE_KEY)) {
+            return (false);
+        }
+
+        ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
+    }
+
+    int rows = PQntuples(r);
+    if (rows != 1) {
+        isc_throw(Unexpected, "sflqPickFreeLeas6 returned " << rows 
+                    << ", should always return 1"
+                    << start_address << " - " << end_address);
+    }
+
+    // Return the address.
+    return (PgSqlExchange::getInetValue6(r, 0, 0));
 }
 
 TrackingLeaseMgrPtr

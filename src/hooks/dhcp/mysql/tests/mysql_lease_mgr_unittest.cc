@@ -81,8 +81,13 @@ public:
     /// @brief Destroys the LM and the schema.
     void destroyTest() {
         LeaseMgrFactory::destroy();
-        // If data wipe enabled, delete transient data otherwise destroy the schema
-        destroyMySQLSchema();
+        if (getenv("KEA_UNIT_TEST_KEEP_SCHEMA")) {
+            // Leaves schema intact for post-test debugging.
+            std::cout << "KEA_UNIT_TEST_KEEP_SCHEMA set" << std::endl;
+        } else {
+            // If data wipe enabled, delete transient data otherwise destroy the schema
+            destroyMySQLSchema();
+        }
 
         // Disable Multi-Threading.
         MultiThreadingMgr::instance().setMode(false);
@@ -1435,6 +1440,14 @@ TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnet) {
 
 TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) { 
     testUpdateStatsOn6DifferentSubnetPD();
+}
+
+TEST_F(MySqlLeaseMgrTest, testSFLQ4) { 
+    testSFLQ4();
+}
+
+TEST_F(MySqlLeaseMgrTest, testSFLQ6) { 
+    testSFLQ6();
 }
 
 /// @brief Test fixture class for testing @ref CfgDbAccessTest using MySQL

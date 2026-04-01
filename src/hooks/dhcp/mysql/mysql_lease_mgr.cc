@@ -553,6 +553,15 @@ tagged_statements = { {
                     "SELECT COUNT(*) FROM lease6_relay_id"},
     {MySqlLeaseMgr::COUNT_REMOTE_ID6,
                     "SELECT COUNT(*) FROM lease6_remote_id"},
+    // SFLQ statements
+    {MySqlLeaseMgr::SFLQ_CREATE_FLQ_POOL4,
+                    "CALL sflqCreateFlqPool4(?,?,?,?)"},
+    {MySqlLeaseMgr::SFLQ_PICK_FREE_LEASE4,
+                    "SELECT sflqPickFreeLease4(?,?)"},
+    {MySqlLeaseMgr::SFLQ_CREATE_FLQ_POOL6,
+                    "CALL sflqCreateFlqPool6(?,?,?,?,?,?)"},
+    {MySqlLeaseMgr::SFLQ_PICK_FREE_LEASE6,
+                    "SELECT sflqPickFreeLease6(?,?)"},
 } };  // tagged_statements
 
 }  // namespace
@@ -4883,6 +4892,202 @@ MySqlLeaseMgr::byRemoteId6size() const {
         checkError(ctx, status, stindex, "unable to fetch results");
     }
     return (static_cast<size_t>(count));
+}
+
+bool
+MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address,
+                                  SubnetID subnet_id, bool recreate) {
+    // Get a context.
+    MySqlLeaseContextAlloc get_context(*this);
+    MySqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_CREATE_FLQ_POOL4;
+
+    // Create input parameter bindings.
+    MySqlBindingCollection ibind({
+        MySqlBinding::createInteger<uint32_t>(start_address.toUint32()),
+        MySqlBinding::createInteger<uint32_t>(end_address.toUint32()),
+        MySqlBinding::createInteger<uint32_t>(subnet_id),
+        MySqlBinding::createInteger<uint8_t>(recreate)
+    });
+
+    // Extract native input bindings.
+    std::vector<MYSQL_BIND> ibind_vec;
+    getNativeBindings(ibind, ibind_vec);
+
+    int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), &ibind_vec[0]);
+    checkError(ctx, status, stindex, "unable to bind parameters");
+
+    // Execute
+    status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        // Failure: check for the special case of duplicate entry.  If this is
+        // the case, we ignore it.
+        if (mysql_errno(ctx->conn_.mysql_) == ER_DUP_ENTRY) {
+            return (false);
+        }
+
+        checkError(ctx, status, stindex, "unable to execute");
+    }
+
+    return (true);
+}
+
+IOAddress
+MySqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address) {
+    // Get a context.
+    MySqlLeaseContextAlloc get_context(*this);
+    MySqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_PICK_FREE_LEASE4;
+
+    // Create input parameter bindings.
+    MySqlBindingCollection ibind({
+        MySqlBinding::createInteger<uint32_t>(start_address.toUint32()),
+        MySqlBinding::createInteger<uint32_t>(end_address.toUint32()),
+    });
+
+    // Extract native input bindings.
+    std::vector<MYSQL_BIND> ibind_vec;
+    getNativeBindings(ibind, ibind_vec);
+
+    int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), &ibind_vec[0]);
+    checkError(ctx, status, stindex, "unable to bind parameters");
+
+    // Output value storage.
+    uint32_t b_free_address = 0;
+
+    // Build the output value bind array.
+    MYSQL_BIND obind[1];
+    memset(obind, 0, sizeof(obind));
+    obind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+    obind[0].buffer = reinterpret_cast<char*>(&b_free_address);
+
+    // Bind the output bind array to the statement
+    status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), &obind[0]);
+    checkError(ctx, status, stindex, "unable to bind output");
+
+    // Execute.
+    status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        checkError(ctx, status, stindex, "unable to execute");
+    }
+
+    // Store the result.
+    status = mysql_stmt_store_result(ctx->conn_.getStatement(stindex));
+    checkError(ctx, status, stindex, "unable to store result");
+
+    // Fetch the result.
+    MySqlFreeResult fetch_release(ctx->conn_.getStatement(stindex));
+    status = mysql_stmt_fetch(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        checkError(ctx, status, stindex, "unable to fetch results");
+    }
+
+    // Return the address.
+    return (IOAddress(b_free_address));
+}
+
+bool
+MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address,
+                                  Lease::Type lease_type, uint8_t delegated_len,
+                                  SubnetID subnet_id, bool recreate) {
+    // Get a context.
+    MySqlLeaseContextAlloc get_context(*this);
+    MySqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_CREATE_FLQ_POOL6;
+
+    // Create input parameter bindings.
+    MySqlBindingCollection ibind({
+        MySqlBinding::createString(start_address.toText()),
+        MySqlBinding::createString(end_address.toText()),
+        MySqlBinding::createInteger<uint8_t>(lease_type),
+        MySqlBinding::createInteger<uint8_t>(delegated_len),
+        MySqlBinding::createInteger<uint32_t>(subnet_id),
+        MySqlBinding::createInteger<uint8_t>(recreate)
+    });
+
+    // Extract native input bindings.
+    std::vector<MYSQL_BIND> ibind_vec;
+    getNativeBindings(ibind, ibind_vec);
+
+    int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), &ibind_vec[0]);
+    checkError(ctx, status, stindex, "unable to bind parameters");
+
+    // Execute
+    status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        // Failure: check for the special case of duplicate entry.  If this is
+        // the case, we ignore it.
+        if (mysql_errno(ctx->conn_.mysql_) == ER_DUP_ENTRY) {
+            return (false);
+        }
+
+        checkError(ctx, status, stindex, "unable to execute");
+    }
+
+    return (true);
+}
+
+IOAddress
+MySqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
+    // Get a context.
+    MySqlLeaseContextAlloc get_context(*this);
+    MySqlLeaseContextPtr ctx = get_context.ctx_;
+
+    StatementIndex stindex = SFLQ_PICK_FREE_LEASE6;
+
+    // Create input parameter bindings.
+    MySqlBindingCollection ibind({
+        MySqlBinding::createString(start_address.toText()),
+        MySqlBinding::createString(end_address.toText())
+    });
+
+    // Extract native input bindings.
+    std::vector<MYSQL_BIND> ibind_vec;
+    getNativeBindings(ibind, ibind_vec);
+
+    // Bind the parameters to the statement.
+    int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), &ibind_vec[0]);
+    checkError(ctx, status, stindex, "unable to bind parameters");
+
+    // Build a bind array to receive the returned free address value.
+    MYSQL_BIND obind[1];
+    memset(obind, 0, sizeof(obind));
+
+    char b_addr_buffer[45];
+    unsigned long b_addr_length = sizeof(b_addr_length);
+    obind[0].buffer_type = MYSQL_TYPE_STRING;
+    obind[0].buffer = reinterpret_cast<char*>(b_addr_buffer);
+    obind[0].buffer_length = b_addr_length;
+    obind[0].length = &b_addr_length;
+
+    // Bind the output array to the statement.
+    status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
+    checkError(ctx, status, stindex, "unable to bind output");
+
+    // Execute
+    status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        std::cout << "status is: " << status << std::endl;
+        checkError(ctx, status, stindex, "unable to execute");
+    }
+
+    // Store the result.
+    status = mysql_stmt_store_result(ctx->conn_.getStatement(stindex));
+    checkError(ctx, status, stindex, "unable to store result");
+
+    // Fetch the result.
+    MySqlFreeResult fetch_release(ctx->conn_.getStatement(stindex));
+    status = mysql_stmt_fetch(ctx->conn_.getStatement(stindex));
+    if (status != 0) {
+        checkError(ctx, status, stindex, "unable to fetch results");
+    }
+
+    // Return the address.
+    std::string tmp(b_addr_buffer, b_addr_buffer + b_addr_length);
+    return (IOAddress(tmp));
 }
 
 TrackingLeaseMgrPtr

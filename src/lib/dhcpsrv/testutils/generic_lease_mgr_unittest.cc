@@ -5742,6 +5742,101 @@ GenericLeaseMgrTest::testUpdateStatsOn6DifferentSubnetPD() {
     }
 }
 
+void
+GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
+    IOAddress start_address("127.0.0.0");
+    IOAddress end_address("127.0.0.3");
+    IOAddress picked_address("0.0.0.0");
+
+    if (exp_not_implemented) {
+        ASSERT_THROW(lmptr_->sflqCreateFlqPool4(start_address, end_address, 1, false),
+                     NotImplemented);
+
+        ASSERT_THROW(lmptr_->sflqPickFreeLease4(start_address, end_address),
+                     NotImplemented);
+        return;
+    }
+
+    // First pass, the pool does not exist, paas receate as false.
+    // Second pass, pool exists, pass recreate as false, should be ok.
+    // Third pass, pool exists, pass recreate as true, should be ok.
+    // On each pass we should be able to pick all of the pool's addresses.
+    for (int i = 0; i < 3; i++) {
+        // Recreate true on last pass only.
+        bool recreate = (i > 1);
+
+        // Create a pool of 4 addresses
+        bool created;
+        ASSERT_NO_THROW_LOG(created = lmptr_->sflqCreateFlqPool4(start_address,
+                                                                 end_address, 1, recreate));
+        // Return should be true on first and last pass.
+        ASSERT_EQ(created, (i != 1 ? true : false));
+
+        // Verify that all 4 addresse can be picked.
+        // We use a set to collect the picked addresses. This way we do not
+        // rely on the order they are picked but can still verify they
+        // all get picked.
+        std::set<IOAddress> picked;
+        for (int i = 0; i < 4; ++i) {
+            // then verify all 4 can be picked?
+            ASSERT_NO_THROW_LOG(picked_address =
+                                lmptr_->sflqPickFreeLease4(start_address, end_address));
+            ASSERT_NE(picked_address, IOAddress::IPV4_ZERO_ADDRESS());
+            ASSERT_TRUE(start_address <= picked_address && picked_address <= end_address);
+            picked.emplace(picked_address);
+        }
+
+        ASSERT_EQ(picked.size(), 4);
+    }
+}
+
+void
+GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
+    IOAddress start_address("3001::");
+    IOAddress end_address("3001::3");
+    IOAddress picked_address("::");
+
+    if (exp_not_implemented) {
+        ASSERT_THROW(lmptr_->sflqCreateFlqPool6(start_address, end_address,
+                                                Lease::TYPE_PD, 128, 1, false),
+                     NotImplemented);
+        ASSERT_THROW(lmptr_->sflqPickFreeLease4(start_address, end_address),
+                     NotImplemented);
+        return;
+    }
+
+    // First pass, the pool does not exist, paas receate as false.
+    // Second pass, pool exists, pass recreate as false, should be ok.
+    // Third pass, pool exists, pass recreate as true, should be ok.
+    // On each pass we should be able to pick all of the pool's addresses.
+    for (int i = 0; i < 3; i++) {
+        // Recreate true on last pass only.
+        bool recreate = (i > 1);
+
+        // Create a pool of 4 addresses
+        bool created;
+        ASSERT_NO_THROW_LOG(created = lmptr_->sflqCreateFlqPool6(start_address, end_address,
+                                                                 Lease::TYPE_PD, 128, 1, recreate));
+        // Return should be true on first and last pass.
+        ASSERT_EQ(created, (i != 1 ? true : false));
+
+        // Verify that all 4 addresse can be picked.
+        // We use a set to collect the picked addresses. This way we do not
+        // rely on the order they are picked but can still verify they
+        // all get picked.
+        std::set<IOAddress> picked;
+        for (int i = 0; i < 4; ++i) {
+            ASSERT_NO_THROW_LOG(picked_address =
+                                lmptr_->sflqPickFreeLease6(start_address, end_address));
+            ASSERT_NE(picked_address, IOAddress::IPV6_ZERO_ADDRESS());
+            ASSERT_TRUE(start_address <= picked_address && picked_address <= end_address);
+            picked.emplace(picked_address);
+        }
+
+        ASSERT_EQ(picked.size(), 4);
+    }
+}
+
 }  // namespace test
 }  // namespace dhcp
 }  // namespace isc

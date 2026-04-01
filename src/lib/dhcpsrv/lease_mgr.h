@@ -1091,6 +1091,67 @@ public:
     /// @returns By default an error saying the backend is not the memfile one.
     virtual isc::data::ConstElementPtr lfcStartHandler();
 
+    /// @brief Creates a v4 SFLQ Pool
+    ///
+    /// Calls stored procedure to create a v4 SFLQ pool. If the pool already
+    /// exists and recreate is false it simply returns. Otherwise it (re)creates
+    /// and (re)populates the pool.
+    ///
+    /// @param start_address first address in the pool.
+    /// @param last_addresss last address in the pool.
+    /// @param subnet_id id of the subnet to which the pool belongs.
+    /// @param recreate when true, the pool is recreated if it already exits.
+    ///
+    /// @return True if the pool is (re)created, false it if already exists.
+    virtual bool sflqCreateFlqPool4(asiolink::IOAddress start_address,
+                                    asiolink::IOAddress end_address,
+                                    SubnetID subnet_id, bool recreate = false);
+
+    /// @brief Finds a free V4 address within the given pool range.
+    ///
+    /// Calls the sflqPickFreeLease4 stored procedure to find a free address
+    /// within the SFLQ pool described by the given address range.  If there
+    /// are no free addresses in the pool or the pool does not exist it returns
+    /// 0.0.0.0. Note the returned address must still be checked for HR
+    /// conflicts.
+    ///
+    /// @param start_address first address in the pool.
+    /// @param last_addresss last address in the pool.
+    ///
+    /// @return A free V4 address or IOAddress::IPV4_ZERO_ADDRESS().
+    virtual asiolink::IOAddress sflqPickFreeLease4(asiolink::IOAddress start_address,
+                                                   asiolink::IOAddress end_address);
+
+    /// @brief Calls stored procedure to create an SFLQ pool for v6.
+    ///
+    /// @todo TYPE_NA prohibited or no?
+    /// @param start_address first address/prefix in the pool.
+    /// @param last_addresss last address/prefix in the pool.
+    /// @param lease_type TYPE_NA or TYPE_PD.
+    /// @param delegated_len bit length of the address/prefix to be leases. For
+    /// TYPE_NA this parameter should be 128.
+    /// @param subnet_id id of the subnet to which the pool belongs.
+    /// @param recreate when true, the pool is recreated if it already exits.
+    ///
+    /// @return True if the pool is (re)created, false it if already exists.
+    virtual bool sflqCreateFlqPool6(asiolink::IOAddress start_address,
+                                    asiolink::IOAddress end_address,
+                                    Lease::Type lease_type, uint8_t delegated_len,
+                                    SubnetID subnet_id, bool recreate = false);
+
+    /// @brief Finds a free V6 address/prefix within the given pool range.
+    ///
+    /// Calls the sflqPickFreeLease6 stored procedure to find a free address/prefix
+    /// within the SFLQ pool described by the given address range.  If there
+    /// are none free in the pool or the pool does not exist it returns ::.
+    /// Note the returned address/prefix must still be checked for HR conflicts.
+    ///
+    /// @param start_address first address in the pool.
+    /// @param last_addresss last address in the pool.
+    ///
+    /// @return A free V6 address/prefix or IOAddress::IPV6_ZERO_ADDRESS().
+    virtual asiolink::IOAddress sflqPickFreeLease6(asiolink::IOAddress start_address,
+                                                   asiolink::IOAddress end_address);
 
     /// @brief Update in-memory stats when adding a v4 lease.
     ///

@@ -345,5 +345,12 @@ MySqlBinding::setTimestampValue(const ptime& timestamp) {
     bind_.buffer = &buffer_[0];
 }
 
+void getNativeBindings(MySqlBindingCollection& collection,
+                       std::vector<MYSQL_BIND>& bind_vector) {
+    for (const MySqlBindingPtr& binding : collection) {
+        bind_vector.push_back(binding->getMySqlBinding());
+    }
+}
+
 } // end of namespace isc::db
 } // end of namespace isc

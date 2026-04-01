@@ -664,7 +664,12 @@ private:
 /// @brief Collection of bindings.
 typedef std::vector<MySqlBindingPtr> MySqlBindingCollection;
 
-
+/// @brief Convert Binding pointers to vector of bindings.
+///
+/// @param collection collection of bindings to convert.
+/// @param bind_vector vector to which native bindings are added.
+void getNativeBindings(MySqlBindingCollection& collection,
+                       std::vector<MYSQL_BIND>& bind_vector);
 } // end of namespace isc::db
 } // end of namespace isc
 

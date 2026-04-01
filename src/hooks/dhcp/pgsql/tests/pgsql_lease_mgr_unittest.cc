@@ -1399,6 +1399,14 @@ TEST_F(PgSqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) {
     testUpdateStatsOn6DifferentSubnetPD();
 }
 
+TEST_F(PgSqlLeaseMgrTest, testSFLQ4) {
+    testSFLQ4();
+}
+
+TEST_F(PgSqlLeaseMgrTest, testSFLQ6) {
+    testSFLQ6();
+}
+
 /// @brief Test fixture class for testing @ref CfgDbAccessTest using PostgreSQL
 /// backend.
 class CfgPgSqlLbDbAccessTest : public ::testing::Test {
