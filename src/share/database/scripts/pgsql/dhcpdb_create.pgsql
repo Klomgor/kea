@@ -7165,7 +7165,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE sflqCreateFlqPool6(p_start_address INET,
                                                p_end_address INET,
                                                p_lease_type SMALLINT,
-                                               p_delegated_len SMALLiNT,
+                                               p_delegated_len SMALLINT,
                                                p_subnet_id BIGINT,
                                                p_recreate BOOLEAN)
 LANGUAGE plpgsql AS $$

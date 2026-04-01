@@ -6685,7 +6685,7 @@ BEGIN
         LEAVE SP;
     END IF;
 
-    -- Try Mariab variable
+    -- Try Mariadb variable
     SET @sqlv = "select @@max_recursive_iterations INTO @kea_recursion_limit";
     PREPARE stmt FROM @sqlv;
     EXECUTE stmt;

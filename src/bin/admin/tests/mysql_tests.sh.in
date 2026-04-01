@@ -1113,7 +1113,7 @@ mysql_upgrade_33_to_34_test() {
        mysql_execute "${query}"
     assert_eq 1 "${EXIT_CODE}" "${query}: expected %d, returned %d"
 
-    # Makse sure all four SFLQ tables exist.
+    # Make sure all four SFLQ tables exist.
     check_table_column start_address flq_pool4
     check_table_column address free_lease4
     check_table_column start_address flq_pool6
@@ -4421,7 +4421,7 @@ mysql_sflqUpdateLease4() {
     sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
     run_statement "check free_lease4 2" "$sql" "0"
 
-    # Update the lease to be reclalmed.
+    # Update the lease to be reclaimed.
     sql="call sflqUpdateLease4(inet_aton($in_address), NULL, NULL, 3600, timestamp('$future'),\
                                1, 0, 0, NULL, 2, NULL, NULL, NULL, 0)";
     run_statement "sflqUpdateLease4 to reclaimed $in_address" "$sql"
@@ -4433,7 +4433,7 @@ mysql_sflqUpdateLease4() {
     run_statement "check free_lease4 3" "$sql"  "1"
 
     # Update requires expirations to match. In order to test expiration
-    # logic, need to get an expried time stamp and then update the lease
+    # logic, need to get an expired time stamp and then update the lease
     # directly setting expire.
     sql="select TIMESTAMPADD(SECOND, -3600, CURRENT_TIMESTAMP)"
     run_statement "get expired time stamp" "$sql"
@@ -4692,7 +4692,7 @@ mysql_sflqUpdateLease6() {
     sql="select count(address) from free_lease6 where address = $in_address;"
     run_statement "check free_lease6 2" "$sql" "0"
 
-    # Update the lease to be reclalmed.
+    # Update the lease to be reclaimed.
     state="2"
     sql="call sflqUpdateLease6($bin_address, $duid, 3600, timestamp('$future'),\
                                $subnet_id, 3600, $ltype, $iaid, 128, 0, 0,\

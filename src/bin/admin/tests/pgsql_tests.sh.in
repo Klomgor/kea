@@ -1099,7 +1099,7 @@ pgsql_upgrade_32_to_33_test() {
         pgsql_execute "${qry}"
     assert_eq 3 "${EXIT_CODE}" "select isJsonSupported() should have failed. (expected status code %d, returned %d)"
 
-    # Makse sure all four SFLQ tables exist.
+    # Make sure all four SFLQ tables exist.
     check_table_column start_address flq_pool4
     check_table_column address free_lease4
     check_table_column start_address flq_pool6
@@ -3609,7 +3609,7 @@ pgsql_sflqUpdateLease4() {
     sql="select count(address) from free_lease4 where address = $bigint_address;"
     run_statement "check free_lease4 2" "$sql" "0"
 
-    # Update the lease to be reclalmed.
+    # Update the lease to be reclaimed.
     sql="call sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
                                1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
                                2::bigint, NULL, NULL, NULL, 0::bigint)";
@@ -3622,7 +3622,7 @@ pgsql_sflqUpdateLease4() {
     run_statement "check free_lease4 3" "$sql"  "1"
 
     # Update requires expirations to match. In order to test expiration
-    # logic, need to get an expried time stamp and then update the lease
+    # logic, need to get an expired time stamp and then update the lease
     # directly setting expire.
     sql="select (current_timestamp - make_interval(secs => 3600))"
     run_statement "get expired time stamp" "$sql"
@@ -3900,7 +3900,7 @@ pgsql_sflqUpdateLease6() {
     sql="select count(address) from free_lease6 where bin_address = $bin_address;"
     run_statement "check free_lease6 2" "$sql" "0"
 
-    # Update the lease to be reclalmed.
+    # Update the lease to be reclaimed.
     state="2"
     sql="call sflqUpdateLease6($in_address::inet, $duid, 3600::bigint, '$future'::timestamp,\
                                $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
