@@ -144,6 +144,8 @@ CfgIface::openSocketsWithRetry(ReconnectCtlPtr reconnect_ctl,
                                const bool can_use_bcast) const {
     MultiThreadingCriticalSection cs;
 
+    IfaceMgr::instance().detectIfaces(true);
+
     // Remove selection of unicast addresses from all interfaces.
     IfaceMgr::instance().clearUnicasts();
 
@@ -232,8 +234,6 @@ CfgIface::openSocketsWithRetry(ReconnectCtlPtr reconnect_ctl,
         CfgIface::multipleAddressesPerInterfaceActive()) {
         LOG_WARN(dhcpsrv_logger, DHCPSRV_MULTIPLE_RAW_SOCKETS_PER_IFACE);
     }
-
-    IfaceMgr::instance().detectIfaces(true);
 
     // Skip opened sockets in the retry calls.
     bool is_initial_call = (reconnect_ctl->retriesLeft() == reconnect_ctl->maxRetries());
