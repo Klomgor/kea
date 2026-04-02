@@ -236,10 +236,11 @@ Now it's time to publish the code.
     1. Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
     1. [ ] <mark>Latest 🟩 Stable</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/kea/builds/?version__slug=stable), click `Rebuild version`.
 1. [ ] <mark>🟥 Security</mark>: Copy release notes from the private Kea wiki to the public Kea wiki.
-1. [ ] <mark>🟩 Stable or 🏗️ Dev</mark>: Create an issue and a merge request to bump up Kea version in `meson.build` to the next development version which could be, based on just released version `A.B.C`:
-    * `A.B.z-git` where `z == C + 1` most of the time, or
-    * `A.y.0-git` where `y == B + 2` if a new development series starts, or
-    * `x.1.0-git` where `x == A + 1` when the released minor version `b` is 9 and `A.B.C` was the last version in the development series and a new development version is coming up next.
+1. [ ] <mark>🟩 Stable or 🏗️ Dev</mark>: Bump up versions. Run QA script [bump-up-versions-post-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/kea/release/bump-up-versions-post-release.py).
+   1. [ ] Check if the changes in the `kea-clone` directory that the script created look good.
+   1. [ ] Return to the working directory where you called the script from.
+   1. [ ] Run again with `--upload-only` which will create an issue and a merge request.
+   1. [ ] Ask for review, and eventually and hopefully merge.
 1. [ ] Contact the Marketing team, and find a member who will continue work on this release:
     1. [ ] Assign this ticket to the person who will continue.
     1. [ ] Share the link to signing the ticket either directly or as a comment in this issue.
@@ -249,7 +250,7 @@ Now it's time to publish the code.
 1. [ ] Write blog article (if a major release).
 1. [ ] Check that the tarballs are available on Cloudsmith. The downloads page points to downloads.isc.org now, but for packages and especially subscriber-only hooks, users must install from Cloudsmith.
 1. [ ] Publish links to downloads on the ISC website. Update release dates and check EOL dates.
-1. [ ] <mark>🟥 Securit</mark>: Update the security releases version table in the downloads data file on the website. This information is used by Stork to flag new security versions.
+1. [ ] <mark>🟥 Security</mark>: Update the security releases version table in the downloads data file on the website. This information is used by Stork to flag new security versions.
 1. [ ] <mark>🟩 Stable</mark>: If it is a new `major.minor` version, SWENG will have created a new repo in Cloudsmith, which will need the customer tokens migrated from an existing repo. Verify that the KB on installing from Cloudsmith has also been updated. When posting a new Stable major version, you will also need to update the Cloudsmith repo location on the downloads page.
    * If the tokens were not migrated, contact QA team and coordinate fix.
 1. [ ] Upload Premium hooks tarball to SendOwl for legacy 2.4 or 2.6 branches.
