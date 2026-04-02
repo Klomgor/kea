@@ -5051,7 +5051,8 @@ MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
 IOAddress
 MySqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_PICK_LEASE6)
-        .arg(start_address.toText());
+        .arg(start_address.toText())
+        .arg(end_address.toText());
 
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);

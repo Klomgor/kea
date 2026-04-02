@@ -4024,7 +4024,8 @@ PgSqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
 IOAddress
 PgSqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
     LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_SFLQ_PICK_LEASE6)
-        .arg(start_address.toText());
+        .arg(start_address.toText())
+        .arg(end_address.toText());
 
     // Get a context
     PgSqlLeaseContextAlloc get_context(*this);
