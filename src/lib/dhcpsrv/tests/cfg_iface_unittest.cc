@@ -16,6 +16,7 @@
 #include <dhcpsrv/timer_mgr.h>
 #include <testutils/test_to_element.h>
 #include <gtest/gtest.h>
+#include <functional>
 
 using namespace isc;
 using namespace isc::asiolink;
@@ -24,6 +25,8 @@ using namespace isc::dhcp::test;
 using namespace isc::test;
 using namespace isc::data;
 using namespace isc::util;
+
+namespace ph = std::placeholders;
 
 namespace {
 
@@ -86,10 +89,12 @@ CfgIfaceTest::SetUp() {
     IfaceMgr::instance().setTestMode(true);
     io_service_.reset(new asiolink::IOService());
     TimerMgr::instance()->setIOService(io_service_);
+    IfaceMgr::instance().setDetectCallback(std::bind(&IfaceMgr::checkDetectIfaces, &IfaceMgr::instance(), ph::_1));
 }
 
 void
 CfgIfaceTest::TearDown() {
+    IfaceMgr::instance().setDetectCallback(std::bind(&IfaceMgr::checkDetectIfaces, &IfaceMgr::instance(), ph::_1));
     // Remove all timers.
     TimerMgr::instance()->unregisterTimers();
 
@@ -1031,14 +1036,19 @@ TEST_F(CfgIfaceTest, retryOpenServiceSockets4OmitNewInterfaces) {
 
         total_calls++;
 
-        // Fail to open a socket on eth0, success for eth1
-        if (total_calls == 1) {
-            io_service_->post([&]() {
+        auto detectIfaces = [&](bool) {
+            if (!IfaceMgr::instance().getIface("eth2")) {
                 iface_mgr_test_config_.addIface("eth2", 5);
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("192.0.3.7"));
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("fe80::3a60:77ff:fed5:1234"));
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("3001:db8:1::1"));
-            });
+            }
+            return (false);
+        };
+
+        // Fail to open a socket on eth0, success for eth1
+        if (total_calls == 1) {
+            IfaceMgr::instance().setDetectCallback(detectIfaces);
             isc_throw(Unexpected, "CfgIfaceTest: cannot open a port");
         }
     };
@@ -1605,14 +1615,19 @@ TEST_F(CfgIfaceTest, retryOpenServiceSockets6OmitNewInterfaces) {
 
         total_calls++;
 
-        // Fail to open a socket on eth0, success for eth1
-        if (total_calls == 1) {
-            io_service_->post([&]() {
+        auto detectIfaces = [&](bool) {
+            if (!IfaceMgr::instance().getIface("eth2")) {
                 iface_mgr_test_config_.addIface("eth2", 5);
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("192.0.3.7"));
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("fe80::3a60:77ff:fed5:1234"));
                 iface_mgr_test_config_.addAddress("eth2", IOAddress("3001:db8:1::1"));
-            });
+            }
+            return (false);
+        };
+
+        // Fail to open a socket on eth0, success for eth1
+        if (total_calls == 1) {
+            IfaceMgr::instance().setDetectCallback(detectIfaces);
             isc_throw(Unexpected, "CfgIfaceTest: cannot open a port");
         }
     };

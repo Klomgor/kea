@@ -144,6 +144,8 @@ CfgIface::openSocketsWithRetry(ReconnectCtlPtr reconnect_ctl,
                                const bool can_use_bcast) const {
     MultiThreadingCriticalSection cs;
 
+    // The detection must be done before resetting and setting the
+    // inactive4_ and inactive6_ flags.
     IfaceMgr::instance().detectIfaces(true);
 
     // Remove selection of unicast addresses from all interfaces.
