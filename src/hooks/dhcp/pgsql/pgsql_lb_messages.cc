@@ -54,6 +54,10 @@ extern const isc::log::MessageID PGSQL_LB_GET_SUBID_PAGE6 = "PGSQL_LB_GET_SUBID_
 extern const isc::log::MessageID PGSQL_LB_GET_VERSION = "PGSQL_LB_GET_VERSION";
 extern const isc::log::MessageID PGSQL_LB_NEGATIVE_LEASES_STAT = "PGSQL_LB_NEGATIVE_LEASES_STAT";
 extern const isc::log::MessageID PGSQL_LB_ROLLBACK = "PGSQL_LB_ROLLBACK";
+extern const isc::log::MessageID PGSQL_LB_SFLQ_CREATE_POOL4 = "PGSQL_LB_SFLQ_CREATE_POOL4";
+extern const isc::log::MessageID PGSQL_LB_SFLQ_CREATE_POOL6 = "PGSQL_LB_SFLQ_CREATE_POOL6";
+extern const isc::log::MessageID PGSQL_LB_SFLQ_PICK_LEASE4 = "PGSQL_LB_SFLQ_PICK_LEASE4";
+extern const isc::log::MessageID PGSQL_LB_SFLQ_PICK_LEASE6 = "PGSQL_LB_SFLQ_PICK_LEASE6";
 extern const isc::log::MessageID PGSQL_LB_UPDATE_ADDR4 = "PGSQL_LB_UPDATE_ADDR4";
 extern const isc::log::MessageID PGSQL_LB_UPDATE_ADDR6 = "PGSQL_LB_UPDATE_ADDR6";
 extern const isc::log::MessageID PGSQL_LB_UPGRADE_EXTENDED_INFO4 = "PGSQL_LB_UPGRADE_EXTENDED_INFO4";
@@ -116,6 +120,10 @@ const char* values[] = {
     "PGSQL_LB_GET_VERSION", "obtaining schema version information",
     "PGSQL_LB_NEGATIVE_LEASES_STAT", "recount of leases returned a negative value",
     "PGSQL_LB_ROLLBACK", "rolling back PostgreSQL database",
+    "PGSQL_LB_SFLQ_CREATE_POOL4", "creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4",
+    "PGSQL_LB_SFLQ_CREATE_POOL6", "creating shared-flq pool for address range %1 - %2, type %3, delegated lenght: %4, subnet id %5, recreate %6",
+    "PGSQL_LB_SFLQ_PICK_LEASE4", "picking a free lease from address range %1 - %2",
+    "PGSQL_LB_SFLQ_PICK_LEASE6", "picking a free lease from address range %1 - %2",
     "PGSQL_LB_UPDATE_ADDR4", "updating IPv4 lease for address %1",
     "PGSQL_LB_UPDATE_ADDR6", "updating IPv6 lease for address %1, lease type %2",
     "PGSQL_LB_UPGRADE_EXTENDED_INFO4", "upgrading IPv4 leases done in %1 pages with %2 updated leases",

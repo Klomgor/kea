@@ -4897,6 +4897,12 @@ MySqlLeaseMgr::byRemoteId6size() const {
 bool
 MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address,
                                   SubnetID subnet_id, bool recreate) {
+    LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_CREATE_POOL4)
+        .arg(start_address.toText())
+        .arg(end_address.toText())
+        .arg(subnet_id)
+        .arg(recreate);
+
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
@@ -4935,6 +4941,10 @@ MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
 
 IOAddress
 MySqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address) {
+    LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_PICK_LEASE4)
+        .arg(start_address.toText())
+        .arg(end_address.toText());
+
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
@@ -4992,6 +5002,14 @@ bool
 MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address,
                                   Lease::Type lease_type, uint8_t delegated_len,
                                   SubnetID subnet_id, bool recreate) {
+    LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_CREATE_POOL6)
+        .arg(start_address.toText())
+        .arg(end_address.toText())
+        .arg(lease_type)
+        .arg(delegated_len)
+        .arg(subnet_id)
+        .arg(recreate);
+
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
@@ -5032,6 +5050,9 @@ MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
 
 IOAddress
 MySqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
+    LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_PICK_LEASE6)
+        .arg(start_address.toText());
+
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);
     MySqlLeaseContextPtr ctx = get_context.ctx_;

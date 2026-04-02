@@ -56,6 +56,10 @@ extern const isc::log::MessageID MYSQL_LB_GET_VERSION = "MYSQL_LB_GET_VERSION";
 extern const isc::log::MessageID MYSQL_LB_NEGATIVE_LEASES_STAT = "MYSQL_LB_NEGATIVE_LEASES_STAT";
 extern const isc::log::MessageID MYSQL_LB_NO_TLS = "MYSQL_LB_NO_TLS";
 extern const isc::log::MessageID MYSQL_LB_ROLLBACK = "MYSQL_LB_ROLLBACK";
+extern const isc::log::MessageID MYSQL_LB_SFLQ_CREATE_POOL4 = "MYSQL_LB_SFLQ_CREATE_POOL4";
+extern const isc::log::MessageID MYSQL_LB_SFLQ_CREATE_POOL6 = "MYSQL_LB_SFLQ_CREATE_POOL6";
+extern const isc::log::MessageID MYSQL_LB_SFLQ_PICK_LEASE4 = "MYSQL_LB_SFLQ_PICK_LEASE4";
+extern const isc::log::MessageID MYSQL_LB_SFLQ_PICK_LEASE6 = "MYSQL_LB_SFLQ_PICK_LEASE6";
 extern const isc::log::MessageID MYSQL_LB_TLS_CIPHER = "MYSQL_LB_TLS_CIPHER";
 extern const isc::log::MessageID MYSQL_LB_UPDATE_ADDR4 = "MYSQL_LB_UPDATE_ADDR4";
 extern const isc::log::MessageID MYSQL_LB_UPDATE_ADDR6 = "MYSQL_LB_UPDATE_ADDR6";
@@ -121,6 +125,10 @@ const char* values[] = {
     "MYSQL_LB_NEGATIVE_LEASES_STAT", "recount of leases returned a negative value",
     "MYSQL_LB_NO_TLS", "TLS was required but is not used",
     "MYSQL_LB_ROLLBACK", "rolling back MySQL database",
+    "MYSQL_LB_SFLQ_CREATE_POOL4", "creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4",
+    "MYSQL_LB_SFLQ_CREATE_POOL6", "creating shared-flq pool for address range %1 - %2, type %3, delegated lenght: %4, subnet id %5, recreate %6",
+    "MYSQL_LB_SFLQ_PICK_LEASE4", "picking a free lease from address range %1 - %2",
+    "MYSQL_LB_SFLQ_PICK_LEASE6", "picking a free lease from address range %1 - %2",
     "MYSQL_LB_TLS_CIPHER", "TLS cipher: %1",
     "MYSQL_LB_UPDATE_ADDR4", "updating IPv4 lease for address %1",
     "MYSQL_LB_UPDATE_ADDR6", "updating IPv6 lease for address %1, lease type %2",

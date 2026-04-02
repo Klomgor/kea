@@ -3890,6 +3890,12 @@ PgSqlLeaseMgr::byRemoteId6size() const {
 bool
 PgSqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address,
                                   SubnetID subnet_id, bool recreate) {
+    LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_SFLQ_CREATE_POOL4)
+        .arg(start_address.toText())
+        .arg(end_address.toText())
+        .arg(subnet_id)
+        .arg(recreate);
+
     // Get a context
     PgSqlLeaseContextAlloc get_context(*this);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
@@ -3926,6 +3932,10 @@ PgSqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
 
 IOAddress
 PgSqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address) {
+   LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_SFLQ_PICK_LEASE4)
+        .arg(start_address.toText())
+        .arg(end_address.toText());
+
     // Get a context
     PgSqlLeaseContextAlloc get_context(*this);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
@@ -3967,6 +3977,14 @@ bool
 PgSqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address,
                                   Lease::Type lease_type, uint8_t delegated_len,
                                   SubnetID subnet_id, bool recreate) {
+    LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_SFLQ_CREATE_POOL6)
+        .arg(start_address.toText())
+        .arg(end_address.toText())
+        .arg(lease_type)
+        .arg(delegated_len)
+        .arg(subnet_id)
+        .arg(recreate);
+
     // Get a context
     PgSqlLeaseContextAlloc get_context(*this);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
@@ -4005,6 +4023,9 @@ PgSqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
 
 IOAddress
 PgSqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address) {
+    LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_SFLQ_PICK_LEASE6)
+        .arg(start_address.toText());
+
     // Get a context
     PgSqlLeaseContextAlloc get_context(*this);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
