@@ -92,7 +92,7 @@ private:
     /// @return allocation state instance for the pool.
     PoolIterativeAllocationStatePtr getPoolState(const PoolPtr& pool) const;
 
-protected:
+public:
 
     /// @brief Returns the next prefix.
     ///

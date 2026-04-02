@@ -10,6 +10,7 @@
 #include <asiolink/addr_utilities.h>
 #include <dhcpsrv/cfg_subnets6.h>
 #include <dhcpsrv/dhcpsrv_log.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <dhcpsrv/lease_mgr_factory.h>
 #include <dhcpsrv/subnet_id.h>
 #include <stats/stats_mgr.h>
@@ -572,6 +573,7 @@ CfgSubnets6::updateStatistics() {
 
 void
 CfgSubnets6::initAllocatorsAfterConfigure() {
+    SharedFlqAllocator::setInUse(false);
     for (auto const& subnet : subnets_) {
         subnet->initAllocatorsAfterConfigure();
     }

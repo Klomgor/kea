@@ -112,6 +112,7 @@ sources = [
     'resource_handler_unittest.cc',
     'run_unittests.cc',
     'sanity_checks_unittest.cc',
+    'sflq_allocator_unittest.cc',
     'shared_network_parser_unittest.cc',
     'shared_network_unittest.cc',
     'shared_networks_list_parser_unittest.cc',

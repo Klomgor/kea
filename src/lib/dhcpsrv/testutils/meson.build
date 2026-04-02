@@ -16,6 +16,7 @@ sources = [
     'host_data_source_utils.cc',
     'lease_file_io.cc',
     'memory_host_data_source.cc',
+    'sflqtest_lease_mgr.cc',
     'test_config_backend_dhcp4.cc',
     'test_config_backend_dhcp6.cc',
     'test_utils.cc',

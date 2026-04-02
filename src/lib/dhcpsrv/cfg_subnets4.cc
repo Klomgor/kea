@@ -11,6 +11,7 @@
 #include <dhcpsrv/cfg_subnets4.h>
 #include <dhcpsrv/dhcpsrv_log.h>
 #include <dhcpsrv/lease_mgr_factory.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <dhcpsrv/shared_network.h>
 #include <dhcpsrv/subnet_id.h>
 #include <asiolink/io_address.h>
@@ -612,6 +613,7 @@ CfgSubnets4::updateStatistics() {
 
 void
 CfgSubnets4::initAllocatorsAfterConfigure() {
+    SharedFlqAllocator::setInUse(false);
     for (auto const& subnet : subnets_) {
         subnet->initAllocatorsAfterConfigure();
     }
