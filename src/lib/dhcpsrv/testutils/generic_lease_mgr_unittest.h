@@ -875,8 +875,6 @@ public:
     /// attempts (once failing and second triggered by timer)
     void testDbLostAndFailedAfterTimeoutCallback();
 
-    void testSflq4(bool exp_not_implemented = false);
-
     /// @brief Callback function registered with the lease manager
     bool db_lost_callback(util::ReconnectCtlPtr /* not_used */) {
         return (++db_lost_callback_called_);

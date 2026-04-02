@@ -5757,7 +5757,7 @@ GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
         return;
     }
 
-    // First pass, the pool does not exist, paas receate as false.
+    // First pass, the pool does not exist, pass recreate as false.
     // Second pass, pool exists, pass recreate as false, should be ok.
     // Third pass, pool exists, pass recreate as true, should be ok.
     // On each pass we should be able to pick all of the pool's addresses.
@@ -5772,7 +5772,7 @@ GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
         // Return should be true on first and last pass.
         ASSERT_EQ(created, (i != 1 ? true : false));
 
-        // Verify that all 4 addresse can be picked.
+        // Verify that all 4 addresses can be picked.
         // We use a set to collect the picked addresses. This way we do not
         // rely on the order they are picked but can still verify they
         // all get picked.
@@ -5805,7 +5805,7 @@ GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
         return;
     }
 
-    // First pass, the pool does not exist, paas receate as false.
+    // First pass, the pool does not exist, pass recreate as false.
     // Second pass, pool exists, pass recreate as false, should be ok.
     // Third pass, pool exists, pass recreate as true, should be ok.
     // On each pass we should be able to pick all of the pool's addresses.
@@ -5820,7 +5820,7 @@ GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
         // Return should be true on first and last pass.
         ASSERT_EQ(created, (i != 1 ? true : false));
 
-        // Verify that all 4 addresse can be picked.
+        // Verify that all 4 addresses can be picked.
         // We use a set to collect the picked addresses. This way we do not
         // rely on the order they are picked but can still verify they
         // all get picked.

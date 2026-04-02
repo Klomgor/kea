@@ -6681,7 +6681,7 @@ BEGIN
 
     IF (@kea_recursion_limit IS NOT NULL)
     THEN
-        -- Alreaddy set it.
+        -- Already set it.
         LEAVE SP;
     END IF;
 

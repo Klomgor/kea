@@ -81,9 +81,9 @@ public:
     /// @brief Destroys the LM and the schema.
     void destroyTest() {
         LeaseMgrFactory::destroy();
-        if (getenv("KEA_UNIT_TEST_KEEP_SCHEMA")) {
+        if (getenv("KEA_UNIT_TEST_KEEP_DB_DATA")) {
             // Leaves schema intact for post-test debugging.
-            std::cout << "KEA_UNIT_TEST_KEEP_SCHEMA set" << std::endl;
+            std::cout << "KEA_UNIT_TEST_KEEP_DB_DATA set" << std::endl;
         } else {
             // If data wipe enabled, delete transient data otherwise destroy the schema
             destroyMySQLSchema();

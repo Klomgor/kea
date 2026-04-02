@@ -6865,10 +6865,11 @@ CREATE TABLE IF NOT EXISTS free_lease6 (
 CREATE UNIQUE INDEX free_lease6_bin_address ON free_lease6 (bin_address);
 
 -- Populate flq_pool4 and free_lease4 based on an address range.
-CREATE OR REPLACE PROCEDURE sflqCreateFlqPool4(p_start_address BIGINT,
+CREATE OR REPLACE FUNCTION sflqCreateFlqPool4(p_start_address BIGINT,
                                                p_end_address BIGINT,
                                                p_subnet_id BIGINT,
                                                p_recreate BOOLEAN)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
     -- Create the flq_pool4 row. Concurrent attempts will hang until
@@ -6898,8 +6899,6 @@ BEGIN
     -- Update the modification time in the flq_pool row.
     UPDATE flq_pool4 SET modification_ts = now()
         WHERE (start_address = p_start_address AND end_address = p_end_address);
-
-    COMMIT;
 END;
 $$;
 
@@ -7162,12 +7161,13 @@ $$ LANGUAGE plpgsql;
 
 -- Populate flq_pool6 and free_lease6 based on an address
 -- range and delegated len. Use 128 for NA addresses.
-CREATE OR REPLACE PROCEDURE sflqCreateFlqPool6(p_start_address INET,
+CREATE OR REPLACE FUNCTION sflqCreateFlqPool6(p_start_address INET,
                                                p_end_address INET,
                                                p_lease_type SMALLINT,
                                                p_delegated_len SMALLINT,
                                                p_subnet_id BIGINT,
                                                p_recreate BOOLEAN)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 DECLARE
     current_ts TIMESTAMP WITH TIME ZONE := now();
@@ -7248,8 +7248,6 @@ BEGIN
     -- Update the modification time in the flq_pool row.
     UPDATE flq_pool6 SET modification_ts = now()
         WHERE (start_address = p_start_address AND end_address = p_end_address);
-
-    COMMIT;
 END;
 $$;
 
@@ -7322,7 +7320,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Procedure to insert a v4 lease and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqInsertLease4(p_address BIGINT,
+CREATE OR REPLACE FUNCTION sflqInsertLease4(p_address BIGINT,
                                              p_hwaddr  BYTEA,
                                              p_client_id BYTEA,
                                              p_valid_lifetime BIGINT,
@@ -7336,6 +7334,7 @@ CREATE OR REPLACE PROCEDURE sflqInsertLease4(p_address BIGINT,
                                              p_relay_id BYTEA,
                                              p_remote_id BYTEA,
                                              p_pool_id BIGINT)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
     INSERT INTO lease4 (address, hwaddr, client_id, valid_lifetime, expire,
@@ -7361,7 +7360,7 @@ END;
 $$;
 
 -- Procedure to update a v4 lease and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqUpdateLease4(p_address BIGINT,
+CREATE OR REPLACE FUNCTION sflqUpdateLease4(p_address BIGINT,
                                              p_hwaddr  BYTEA,
                                              p_client_id BYTEA,
                                              p_valid_lifetime BIGINT,
@@ -7375,6 +7374,7 @@ CREATE OR REPLACE PROCEDURE sflqUpdateLease4(p_address BIGINT,
                                              p_relay_id BYTEA,
                                              p_remote_id BYTEA,
                                              p_pool_id BIGINT)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE lease4 SET address = p_address, hwaddr = p_hwaddr, client_id = p_client_id,
@@ -7401,8 +7401,9 @@ END;
 $$;
 
 -- Procedure to delete a v4 lease by address and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqDeleteLease4(p_address BIGINT,
+CREATE OR REPLACE FUNCTION sflqDeleteLease4(p_address BIGINT,
                                              p_expire TIMESTAMP WITH TIME ZONE)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 DECLARE
     row_count INTEGER;
@@ -7424,7 +7425,7 @@ END;
 $$;
 
 -- Procedure to insert a v6 lease and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqInsertLease6(p_address INET,
+CREATE OR REPLACE FUNCTION sflqInsertLease6(p_address INET,
                                              p_duid BYTEA,
                                              p_valid_lifetime BIGINT,
                                              p_expire TIMESTAMP WITH TIME ZONE,
@@ -7442,6 +7443,7 @@ CREATE OR REPLACE PROCEDURE sflqInsertLease6(p_address INET,
                                              p_state BIGINT,
                                              p_user_context TEXT,
                                              p_pool_id BIGINT)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
     INSERT INTO lease6 (address, duid, valid_lifetime, expire, subnet_id,
@@ -7470,7 +7472,7 @@ END;
 $$;
 
 -- Procedure to update a v6 lease and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqUpdateLease6(p_address INET,
+CREATE OR REPLACE FUNCTION sflqUpdateLease6(p_address INET,
                                              p_duid BYTEA,
                                              p_valid_lifetime BIGINT,
                                              p_expire TIMESTAMP WITH TIME ZONE,
@@ -7488,6 +7490,7 @@ CREATE OR REPLACE PROCEDURE sflqUpdateLease6(p_address INET,
                                              p_state BIGINT,
                                              p_user_context TEXT,
                                              p_pool_id BIGINT)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE lease6
@@ -7516,8 +7519,9 @@ END;
 $$;
 
 -- Procedure to delete a v6 lease by address and update SFLQ data.
-CREATE OR REPLACE PROCEDURE sflqDeleteLease6(p_address INET,
+CREATE OR REPLACE FUNCTION sflqDeleteLease6(p_address INET,
                                              p_expire TIMESTAMP WITH TIME ZONE)
+RETURNS VOID
 LANGUAGE plpgsql AS $$
 DECLARE
     row_count INTEGER;

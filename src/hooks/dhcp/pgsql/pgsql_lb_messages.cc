@@ -121,7 +121,7 @@ const char* values[] = {
     "PGSQL_LB_NEGATIVE_LEASES_STAT", "recount of leases returned a negative value",
     "PGSQL_LB_ROLLBACK", "rolling back PostgreSQL database",
     "PGSQL_LB_SFLQ_CREATE_POOL4", "creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4",
-    "PGSQL_LB_SFLQ_CREATE_POOL6", "creating shared-flq pool for address range %1 - %2, type %3, delegated lenght: %4, subnet id %5, recreate %6",
+    "PGSQL_LB_SFLQ_CREATE_POOL6", "creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6",
     "PGSQL_LB_SFLQ_PICK_LEASE4", "picking a free lease from address range %1 - %2",
     "PGSQL_LB_SFLQ_PICK_LEASE6", "picking a free lease from address range %1 - %2",
     "PGSQL_LB_UPDATE_ADDR4", "updating IPv4 lease for address %1",

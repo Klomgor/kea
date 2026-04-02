@@ -328,7 +328,7 @@ This debug message is issued when the server asks the lease back end for
 a free address from the pool described in the arguments.
 Applies to MySQL and PostgreSQL lease back ends only.
 
-% MYSQL_LB_SFLQ_CREATE_POOL6 creating shared-flq pool for address range %1 - %2, type %3, delegated lenght: %4, subnet id %5, recreate %6
+% MYSQL_LB_SFLQ_CREATE_POOL6 creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6
 Logged at debug log level 50.
 This debug message is issued when the server asks the lease back end to
 (re)create the shared free lease data for the pool described in the arguments.

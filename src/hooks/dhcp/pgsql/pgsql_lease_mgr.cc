@@ -690,7 +690,7 @@ PgSqlTaggedStatement tagged_statements[] = {
     // SFLQ_CREATE_POOL4,
     { 4, { OID_INT8, OID_INT8, OID_INT8, OID_BOOL },
       "sflqCreateFlqPool4",
-      "CALL sflqCreateFlqPool4($1, $2, $3, $4)" },
+      "SELECT sflqCreateFlqPool4($1, $2, $3, $4)" },
 
     // SFLQ_PICK_FREE_LEASE4,
     { 2, { OID_INT8, OID_INT8 },
@@ -700,7 +700,7 @@ PgSqlTaggedStatement tagged_statements[] = {
     // SFLQ_CREATE_POOL6,
     { 6, { OID_VARCHAR, OID_VARCHAR, OID_INT2, OID_INT2, OID_INT8, OID_BOOL },
       "sflqCreateFlqPool6",
-      "CALL sflqCreateFlqPool6(cast($1 as inet), cast($2 as inet), $3, $4, $5, $6)"},
+      "SELECT sflqCreateFlqPool6(cast($1 as inet), cast($2 as inet), $3, $4, $5, $6)"},
 
     // SFLQ_PICK_FREE_LEASE6,
     { 2, { OID_VARCHAR, OID_VARCHAR },

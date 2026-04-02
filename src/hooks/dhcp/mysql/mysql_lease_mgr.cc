@@ -4970,7 +4970,7 @@ MySqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address
     // Build the output value bind array.
     MYSQL_BIND obind[1];
     memset(obind, 0, sizeof(obind));
-    obind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+    obind[0].buffer_type = MYSQL_TYPE_LONG;
     obind[0].buffer = reinterpret_cast<char*>(&b_free_address);
 
     // Bind the output bind array to the statement
@@ -5079,7 +5079,7 @@ MySqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address
     memset(obind, 0, sizeof(obind));
 
     char b_addr_buffer[45];
-    unsigned long b_addr_length = sizeof(b_addr_length);
+    unsigned long b_addr_length = sizeof(b_addr_buffer);
     obind[0].buffer_type = MYSQL_TYPE_STRING;
     obind[0].buffer = reinterpret_cast<char*>(b_addr_buffer);
     obind[0].buffer_length = b_addr_length;
