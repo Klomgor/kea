@@ -231,6 +231,17 @@ Now it's time to publish the code.
 1. [ ] <mark>🟥 Security</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-braches.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/kea --target-project isc-projects/kea --branch master`.
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/forge --target-project isc-projects/forge --branch master`.
+   1. [ ] It will create issues and merge requests. Ask for review. You could also check that the hashes on the latest commit match for the private and the public repo. In that case, it's safe to say the code is identical and you could merge without review (since it's somewhat time-sensitive because you require this step to regenerate docs on ReadTheDocs).
+1. [ ] <mark>🟥 Security</mark>: Tags need to be synced. There isn't a script for this yet. Here is how you can do it manually (change tag name accordingly):
+  ```
+  git clone git@gitlab.isc.org:isc-private/kea.git
+  cd kea
+  git remote add public git@gitlab.isc.org:isc-projects/kea.git
+  git remote update
+  git pull --tags
+  git push Kea-2.3.4 public
+  ```
+1. [ ] <mark>🟥 Security</mark>: Gitlab Releases were not created on public repo because of missing tags. A quick way to create them is to run [add-missing-releases.sh](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/kea/build/add-missing-releases.sh)
 1. [ ] <mark>Latest 🟩 Stable</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/kea/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `Kea-A.B.C`.
 1. [ ] Update docs on <https://app.readthedocs.org/projects/kea/>.
     1. Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
