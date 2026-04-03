@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2025 Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) 2012-2026 Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6774,7 +6774,7 @@ BEGIN
     SET loop_limit = @kea_recursion_limit;
     SET next_start_address = p_start_address;
     SET next_end_address = p_start_address;
-    WHILE next_start_address <= p_end_address DO
+    start_loop: WHILE next_start_address <= p_end_address DO
         SET remaining = p_end_address - next_start_address;
         IF (remaining > loop_limit)
         THEN
@@ -6795,8 +6795,12 @@ BEGIN
                        OR (expire <= now() AND valid_lifetime != 0xFFFFFFFF))
             ON DUPLICATE KEY UPDATE free_lease4.address = avail;
 
-        SET next_start_address = next_start_address + loop_limit;
-    END WHILE;
+        IF next_start_address + loop_limit <= 4294967295 THEN
+            SET next_start_address = next_start_address + loop_limit;
+        ELSE
+            LEAVE start_loop;
+        END IF;
+    END WHILE start_loop;
 
     -- Update the modification time in the flq_pool row.
     UPDATE flq_pool4 SET modification_ts = now()
