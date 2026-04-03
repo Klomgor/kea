@@ -248,7 +248,7 @@ DELIMITER ;
 -- This procedure tolerates the failed SQL errors on variable names
 -- that don't exist. It sets the session variable @kea_recursion_limit
 -- if it is not already set. If it fails to find either variable it
--- defaults to 100.
+-- defaults to 1000.
 DROP PROCEDURE IF EXISTS setLoopLimit;
 DELIMITER $$
 CREATE PROCEDURE setLoopLimit()
@@ -266,30 +266,52 @@ BEGIN
     END IF;
 
     -- Try Mariadb variable
-    SET @sqlv = "select @@max_recursive_iterations INTO @kea_recursion_limit";
-    PREPARE stmt FROM @sqlv;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
-    IF (@kea_recursion_limit IS NOT NULL)
-    THEN
-        -- We found it, all done.
-        LEAVE SP;
-    END IF;
-
-    -- Try MySQL variable.
-    SET @sqlv = "select @@cte_max_recursion_depth INTO @kea_recursion_limit";
+    SET @sqlv = "SELECT @@max_recursive_iterations INTO @kea_recursion_limit";
     PREPARE stmt FROM @sqlv;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 
-    IF (@kea_recursion_limit IS NOT NULL)
+    IF (@kea_recursion_limit = 0)
     THEN
-        -- We found it, all done.
+        -- Recursion is disabled. Override it.
+        SET @sqlv = "SET @@max_recursive_iterations = 1000";
+        PREPARE stmt FROM @sqlv;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        SET @kea_recursion_limit = 1000;
         LEAVE SP;
     END IF;
 
-    -- Found neither use a default.
-    SET @kea_recursion_limit = 100;
+    IF (@kea_recursion_limit IS NULL)
+    THEN
+        -- Try MySQL variable.
+        SET @sqlv = "SELECT @@cte_max_recursion_depth INTO @kea_recursion_limit";
+        PREPARE stmt FROM @sqlv;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        IF (@kea_recursion_limit = 0)
+        THEN
+            -- Recursion is disabled. Override it.
+            SET @sqlv = "SET @@cte_max_recursion_depth = 1000";
+            PREPARE stmt FROM @sqlv;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+            SET @kea_recursion_limit = 1000;
+            LEAVE SP;
+        END IF;
+    END IF;
+
+    IF (@kea_recursion_limit IS NULL)
+    THEN
+        -- Found neither use a default.
+        SET @kea_recursion_limit = 1000;
+    ELSE
+        -- Keep it sane.
+        IF (@kea_recursion_limit <= 0 OR @kea_recursion_limit >= 1000)
+        THEN
+            SET @kea_recursion_limit = 1000;
+        END IF;
+    END IF;
 END $$
 DELIMITER ;
 
