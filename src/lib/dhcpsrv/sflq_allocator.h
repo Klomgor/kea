@@ -17,7 +17,7 @@ namespace dhcp {
 /// @brief An allocator maintaining a shared queue of free leases.
 ///
 /// This allocator is part of the Shared Free Lease Queue (SFLQ) Allocation
-/// scheme. The concept is similar to FLQ Alloction but rather than the
+/// scheme. The concept is similar to FLQ Allocation but rather than the
 /// creating and maintaining free lease data locally, it is created and
 /// maintained in the lease back end (MySql and PosgreSQL only) where it
 /// can be shared by other servers.
@@ -32,7 +32,7 @@ namespace dhcp {
 /// pools.
 ///
 /// The SLFQ data tracks the last address picked for each SFLQ pool such
-/// that consecutive queries for the same pool will return a differnent
+/// that consecutive queries for the same pool will return a different
 /// free address.  This should minimize conflicts with other servers until
 /// the number of free addresses approaches zero.
 ///
@@ -43,9 +43,9 @@ namespace dhcp {
 /// pool (including /8) and the prefix delegation pools with similar capacity.
 /// This allocator is not suitable for a typical IPv6 address pool (e.g., /64).
 /// An attempt to populate free leases for such a giant pool would freeze the
-/// server and likely exhaust its memory.
+/// server and likely exhaust the database server's storage.
 ///
-/// Free leases are populated in a random order.
+/// As opposed to FLQ, free leases are populated in sequential order.
 class SharedFlqAllocator : public Allocator {
 public:
 
@@ -83,7 +83,7 @@ private:
 
     /// @brief Populates the queue of free addresses (IPv4 and IPv6).
     ///
-    /// Instructs lease the laase back end to (re)create SFLQ datam for
+    /// Instructs lease the laase back end to (re)create SFLQ data for
     /// each pool in a subnet.
     ///
     /// @param pools collection of pools in the subnet.

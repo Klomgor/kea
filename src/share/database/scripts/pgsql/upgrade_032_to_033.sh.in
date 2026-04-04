@@ -158,6 +158,12 @@ CREATE OR REPLACE FUNCTION sflqCreateFlqPool4(p_start_address BIGINT,
 RETURNS VOID
 LANGUAGE plpgsql AS \$\$
 BEGIN
+    IF (p_start_address = 0 OR p_start_address > p_end_address)
+    THEN
+        RAISE EXCEPTION 'Invalid range: % - %', ('0.0.0.0'::inet + p_start_address),
+                        ('0.0.0.0'::inet + p_end_address);
+    END IF;
+
     -- Create the flq_pool4 row. Concurrent attempts will hang until
     -- this one commits and then they will fail with duplicate key
     -- error. Callers should treat the duplicate error as success.
@@ -308,8 +314,14 @@ BEGIN
         IF (octet_len = 0)
         THEN
             -- Skip over omitted octets.
-            num_pad = 8 - num_octets + 1;
-            bin_idx = bin_idx + (num_pad * 2);
+            IF (octet_idx = 1)
+            THEN
+                -- First octet empty.
+                bin_idx = bin_idx + 2;
+            ELSE
+                num_pad = 8 - num_octets + 1;
+                bin_idx = bin_idx + (num_pad * 2);
+            END IF;
         ELSE
             num_pad = 4 - octet_len;
             digit_idx = 1;
@@ -457,10 +469,18 @@ RETURNS VOID
 LANGUAGE plpgsql AS \$\$
 DECLARE
     current_ts TIMESTAMP WITH TIME ZONE := now();
+    p_end_bin BYTEA := inetToBytea(p_end_address);
     batch_start_address INET := p_start_address;
     batch_start_bin BYTEA := inetToBytea(p_start_address);
     max_prefixes_per_batch INTEGER := 10000;
+    last_bin BYTEA;
+    next_bin BYTEA;
 BEGIN
+    IF ((p_start_address = '::'::inet) OR (p_start_address > p_end_address))
+    THEN
+        RAISE EXCEPTION 'Invalid range: % - %', host(p_start_address), host(p_end_address);
+    END IF;
+
     IF (p_delegated_len < 1 OR p_delegated_len > 128)
     THEN
         RAISE EXCEPTION 'Invalid p_delegated_len: %', p_delegated_len;
@@ -497,8 +517,8 @@ BEGIN
                    next_prefix.bin_address,
                    byteaToInet(next_prefix.bin_address)
             FROM prefixes,
-                 LATERAL (SELECT incrementV6Prefix(prefixes.bin_address, p_delegated_len)
-                 AS bin_address) AS next_prefix
+                LATERAL (SELECT incrementV6Prefix(prefixes.bin_address, p_delegated_len)
+                    AS bin_address) AS next_prefix
             WHERE prefixes.address < p_end_address
               AND prefixes.depth < max_prefixes_per_batch
         ),
@@ -514,8 +534,7 @@ BEGIN
                 ON CONFLICT DO NOTHING
                 RETURNING 1
         )
-        SELECT byteaToInet(incrementV6Prefix(last_prefix.bin_address, p_delegated_len))
-            INTO batch_start_address
+        SELECT last_prefix.bin_address INTO STRICT last_bin
             FROM (
                 SELECT bin_address
                 FROM prefixes
@@ -523,12 +542,17 @@ BEGIN
                 LIMIT 1
             ) AS last_prefix;
 
-        IF (batch_start_address > p_end_address)
+        next_bin := incrementV6Prefix(last_bin, p_delegated_len);
+
+        -- Stepped past the pool end (binary order), or increment wrapped at
+        -- all-ones IPv6 (:: after FFFF:...:FFFF) so inet compare would loop forever.
+        IF next_bin > p_end_bin OR next_bin < last_bin
         THEN
             EXIT;
         END IF;
 
-        batch_start_bin = inetToBytea(batch_start_address);
+        batch_start_bin := next_bin;
+        batch_start_address := byteaToInet(next_bin);
     END LOOP;
 
     -- Update the modification time in the flq_pool row.

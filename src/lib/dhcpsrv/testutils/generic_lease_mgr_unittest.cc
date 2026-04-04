@@ -5777,7 +5777,7 @@ GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
         // rely on the order they are picked but can still verify they
         // all get picked.
         std::set<IOAddress> picked;
-        for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
             // then verify all 4 can be picked?
             ASSERT_NO_THROW_LOG(picked_address =
                                 lmptr_->sflqPickFreeLease4(start_address, end_address));
@@ -5825,7 +5825,7 @@ GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
         // rely on the order they are picked but can still verify they
         // all get picked.
         std::set<IOAddress> picked;
-        for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
             ASSERT_NO_THROW_LOG(picked_address =
                                 lmptr_->sflqPickFreeLease6(start_address, end_address));
             ASSERT_NE(picked_address, IOAddress::IPV6_ZERO_ADDRESS());

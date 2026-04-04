@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2014-2025 Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) 2014-2026 Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -36,6 +36,9 @@ kea_admin="@abs_top_builddir@/src/bin/admin/kea-admin"
 # param qry - SQL statement to run
 # param exp_value - optional expected value.  This can be used IF the SQL statement
 # generates a single value, such as a SELECT which returns one column for one row.
+#
+# A specific exit code other than 0 can be expected by setting the KEA_EXPECTED_EXIT_CODE env var.
+#
 # Examples:
 #
 #   qry="insert into lease6 (address, lease_type, subnet_id, state) values ($addr,$ltype,1,0)"
@@ -44,9 +47,9 @@ kea_admin="@abs_top_builddir@/src/bin/admin/kea-admin"
 #   qry="select leases from lease6_stat where subnet_id = 1 and lease_type = $ltype and state = 0"
 #   run_statement "#3" "$qry" 1
 run_statement() {
-    hdr="$1";shift
-    qry="$1";shift
-    exp_value="${1-}" # Optional value. If not given, replace with empty string.
+    hdr="$1"; shift
+    qry="$1"; shift
+    exp_value="${1-}"  # Optional value. If not given, replace with empty string.
 
     # Execute the statement
     run_command \
@@ -56,8 +59,13 @@ run_statement() {
     # Reason for disable: OUTPUT is assigned in run_command.
     value="${OUTPUT}"
 
-    # Execution should succeed
-    assert_eq 0 "${EXIT_CODE}" "$hdr: SQL=[$qry] failed: (expected status code %d, returned %d)"
+    if test -n "${KEA_EXPECTED_EXIT_CODE+x}"; then
+        # We expect a specific exit code.
+        assert_eq "${KEA_EXPECTED_EXIT_CODE}" "${EXIT_CODE}" "$hdr: SQL=[${qry}] expected to return %d, returned %d"
+    else
+        # Execution should succeed.
+        assert_eq 0 "${EXIT_CODE}" "$hdr: SQL=[$qry] failed: (expected status code %d, returned %d)"
+    fi
 
     # If there's an expected value, test it
     if [ "x$exp_value" != "x" ]
@@ -436,7 +444,7 @@ mysql_upgrade_13_to_14_test() {
     assert_eq 0 "${EXIT_CODE}" "${query}: expected %d, returned %d"
     assert_str_eq "" "${OUTPUT}" "${query}: expected output %s, returned %s"
 
-    # Populate the lease tables. 
+    # Populate the lease tables.
     run_command \
         mysql_execute "
             INSERT INTO lease4 (address, subnet_id, state, user_context) VALUES (100,1,0,
@@ -4132,6 +4140,34 @@ mysql_sflqCreateFlqPool4() {
     test_finish 0
 }
 
+# Verifies sflqCreateFlqPool4 parameter validation
+mysql_sflqCreateFlqPool4Invalid() {
+    test_start "mysql.mysql_sflqCreateFlqPool4Invalid"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool4(inet_aton('0.0.0.0'), inet_aton('127.0.0.8'), 1, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool4(inet_aton('127.0.0.8'), inet_aton('127.0.0.0'), 1, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
 # Verifies sflqPickFreeLease4 function
 mysql_sflqPickFreeLease4() {
     test_start "mysql.mysql_sflqPickFreeLease4"
@@ -4177,6 +4213,24 @@ mysql_sflqPickFreeLease4() {
     run_statement "sflqPickFreeLease4.10" "$sql"  "127.0.0.1";
     run_statement "sflqPickFreeLease4.11" "$sql"  "127.0.0.2";
     run_statement "sflqPickFreeLease4.12" "$sql"  "127.0.0.0";
+
+    # Check pools with one address.
+    address='192.0.2.0'
+    sql="call sflqCreateFlqPool4(inet_aton('${address}'), inet_aton('${address}'), 1, false)"
+    run_statement "sflqCreateFlqPool4.2" "${sql}"
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('${address}'), inet_aton('${address}')))"
+    run_statement "sflqPickFreeLease4.10" "${sql}" "${address}";
+    # Rolling over results in the same address when there is only one.
+    run_statement "sflqPickFreeLease4.11" "${sql}" "${address}";
+
+    # Should this be legit?
+    # Check picking 255.255.255.255.
+    address='255.255.255.255'
+    sql="call sflqCreateFlqPool4(inet_aton('${address}'), inet_aton('${address}'), 1, false)"
+    run_statement "sflqCreateFlqPool4.4" "${sql}"
+    sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('${address}'), inet_aton('${address}')))"
+    run_statement "sflqPickFreeLease4.14" "${sql}" "${address}";
+    run_statement "sflqPickFreeLease4.14" "${sql}" "${address}";
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4244,6 +4298,48 @@ mysql_sflqCreateFlqPool6() {
     test_finish 0
 }
 
+# Verifies sflqCreateFlqPool6 parameter validation
+mysql_sflqCreateFlqPool6Invalid() {
+    test_start "mysql.mysql_sflqCreateFlqPool6Invalid"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init mysql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    # Cannot use :: as a start.
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool6('::', '::1', 1, 128, 1, false)"
+    run_statement "sflqCreateFlqPool6.3" "${sql}"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    # Cannot start cannot be greater than end.
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool6('::2', '::1', 1, 128, 1, false)"
+    run_statement "sflqCreateFlqPool6.3" "${sql}"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    # Cannot specify delegated_len < 1
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool6('::1', '::2', 1, 0, 1, false)"
+    run_statement "sflqCreateFlqPool6.3" "${sql}"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    # Cannot specify delegated_len > 128
+    export KEA_EXPECTED_EXIT_CODE="1"
+    sql="call sflqCreateFlqPool6('::1', '::2', 1, 129, 1, false)"
+    run_statement "sflqCreateFlqPool6.3" "${sql}"
+    unset KEA_EXPECTED_EXIT_CODE
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
 # Verifies sflqPickFreeLease6 function
 mysql_sflqPickFreeLease6() {
     test_start "mysql.mysql_sflqPickFreeLease6"
@@ -4289,6 +4385,23 @@ mysql_sflqPickFreeLease6() {
     run_statement "sflqPickFreeLease6.10" "$sql"  "3001::";
     run_statement "sflqPickFreeLease6.11" "$sql"  "3001::1";
     run_statement "sflqPickFreeLease6.12" "$sql"  "3001::2";
+
+    # Check pools with one address.
+    address='2001:db8::8bd:1002'
+    sql="call sflqCreateFlqPool6('${address}', '${address}', 1, 128, 1, false)"
+    run_statement "sflqCreateFlqPool6.2" "${sql}"
+    sql="select sflqPickFreeLease6('${address}', '${address}')"
+    run_statement "sflqPickFreeLease6.13" "${sql}" "${address}";
+    # Rolling over results in the same address when there is only one.
+    run_statement "sflqPickFreeLease6.14" "${sql}" "${address}";
+
+    # Check picking last address.
+    address='ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'
+    sql="call sflqCreateFlqPool6('${address}', '${address}', 1, 128, 1, false)"
+    run_statement "sflqCreateFlqPool6.4" "${sql}"
+    sql="select sflqPickFreeLease6('${address}', '${address}')"
+    run_statement "sflqPickFreeLease6.17" "${sql}" "${address}";
+    run_statement "sflqPickFreeLease6.18" "${sql}" "${address}";
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4849,6 +4962,7 @@ mysql_remove_control_socket_parameters_test
 mysql_migrate_client_class_test
 mysql_migrate_dhcpX_options_client_classes
 mysql_sflqCreateFlqPool4
+mysql_sflqCreateFlqPool4Invalid
 mysql_sflqPickFreeLease4
 mysql_sflqCreateFlqPool6
 mysql_sflqPickFreeLease6

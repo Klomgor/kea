@@ -26,7 +26,7 @@ struct SflqPool {
     /// @brief Constructor.
     ///
     /// @param start_address first address in the pool.
-    /// @param last_addresss last address in the pool.
+    /// @param last_address last address in the pool.
     /// @param subnet_id id of the subnet to which the pool belongs.
     /// @param recreate when true, the pool is recreated if it already exits.
     /// @param lease_type Lease::TYPE_V4, TYPE_NA, or TYPE_PD
@@ -110,7 +110,7 @@ public:
     /// @brief Creates a v4 SFLQ Pool
     ///
     /// @param start_address first address in the pool.
-    /// @param last_addresss last address in the pool.
+    /// @param last_address last address in the pool.
     /// @param subnet_id id of the subnet to which the pool belongs.
     /// @param recreate when true, the pool is recreated if it already exits.
     ///
@@ -122,7 +122,7 @@ public:
     /// @brief Finds a free V4 address within the given pool range.
     ///
     /// @param start_address first address in the pool.
-    /// @param last_addresss last address in the pool.
+    /// @param last_address last address in the pool.
     ///
     /// @return A free V4 address or IOAddress::IPV4_ZERO_ADDRESS().
     virtual asiolink::IOAddress sflqPickFreeLease4(asiolink::IOAddress start_address,
@@ -131,7 +131,7 @@ public:
     /// @brief Calls stored procedure to create an SFLQ pool for v6.
     ///
     /// @param start_address first address/prefix in the pool.
-    /// @param last_addresss last address/prefix in the pool.
+    /// @param last_address last address/prefix in the pool.
     /// @param lease_type TYPE_NA or TYPE_PD.
     /// @param delegated_len bit length of the address/prefix to be leases. For
     /// TYPE_NA this parameter should be 128.
@@ -147,7 +147,7 @@ public:
     /// @brief Finds a free V6 address/prefix within the given pool range.
     ///
     /// @param start_address first address in the pool.
-    /// @param last_addresss last address in the pool.
+    /// @param last_address last address in the pool.
     ///
     /// @return A free V6 address/prefix or IOAddress::IPV6_ZERO_ADDRESS().
     virtual asiolink::IOAddress sflqPickFreeLease6(asiolink::IOAddress start_address,
@@ -156,7 +156,7 @@ public:
     /// @brief Finds an SflqPool in the list of SflqPools
     ///
     /// @param start_address first address in the pool.
-    /// @param last_addresss last address in the pool.
+    /// @param last_address last address in the pool.
     ///
     /// @return Pointer to the desired pool are an empty pointer.
     SflqPoolPtr findPool(asiolink::IOAddress start_address, asiolink::IOAddress end_address);

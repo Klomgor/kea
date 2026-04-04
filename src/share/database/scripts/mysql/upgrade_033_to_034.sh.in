@@ -327,6 +327,16 @@ BEGIN
     DECLARE next_start_address INT UNSIGNED;
     DECLARE next_end_address INT UNSIGNED;
     DECLARE remaining INT UNSIGNED;
+    DECLARE error_msg VARCHAR(512);
+
+    IF (p_start_address = inet_aton('0.0.0.0') OR
+        p_start_address > p_end_address)
+    THEN
+        SET error_msg = CONCAT('Invalid range: ', inet_ntoa(p_start_address),
+                               ' - ', inet_ntoa(p_end_address));
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = error_msg;
+    END IF;
 
     START TRANSACTION;
 
@@ -469,7 +479,19 @@ BEGIN
     DECLARE bin_next_address BINARY(16);
     DECLARE bin_end_address BINARY(16);
     DECLARE lease_address VARCHAR(45);
-    DECLARE error_msg VARCHAR(255);
+    DECLARE error_msg VARCHAR(512);
+
+    SET bin_next_address = INET6_ATON(p_start_address);
+    SET bin_end_address = INET6_ATON(p_end_address);
+
+    IF (p_start_address =  "::" OR
+        bin_next_address > bin_end_address)
+    THEN
+        SET error_msg = CONCAT('Invalid range: ', p_start_address,
+                               ' - ', p_end_address);
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = error_msg;
+    END IF;
 
     IF (p_delegated_len < 1 OR p_delegated_len > 128)
     THEN
@@ -498,9 +520,6 @@ BEGIN
             (p_start_address, p_end_address, p_lease_type, p_delegated_len, p_subnet_id);
     END IF;
 
-    SET bin_next_address = INET6_ATON(p_start_address);
-    SET bin_end_address = INET6_ATON(p_end_address);
-
     -- Wipe out existing free addresses. This ensures we fix any mixed allocation entries.
     DELETE FROM free_lease6 WHERE bin_address >= bin_next_address and bin_address <= bin_end_address;
 
@@ -511,12 +530,18 @@ BEGIN
         address VARCHAR(45) NOT NULL
     ) ENGINE=InnoDB;
 
-    WHILE bin_next_address <= bin_end_address
+    label: WHILE bin_next_address <= bin_end_address
     DO
         INSERT INTO _flq6_candidates (bin_address, address)
             VALUES (bin_next_address, INET6_NTOA(bin_next_address));
+
+        IF (bin_next_address = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+        THEN
+            LEAVE label;
+        END IF;
+
         SET bin_next_address = incrementV6Prefix(bin_next_address, p_delegated_len);
-    END WHILE;
+    END WHILE label;
 
     -- Bulk insert available leases into free_lease6 table. If insert fails on
     -- duplicate ignore it.
