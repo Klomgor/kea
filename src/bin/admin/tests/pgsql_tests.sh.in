@@ -3348,8 +3348,6 @@ pgsql_sflqPickFreeLease4() {
         "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
     assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
 
-    # We need to create an older database with lease data so we can
-
     start_address="('127.0.0.0'::inet - '0.0.0.0'::inet)"
     end_address="('127.0.0.2'::inet - '0.0.0.0'::inet)"
     sql="select sflqCreateFlqPool4($start_address, $end_address, 1::bigint, false)"
@@ -3522,8 +3520,6 @@ pgsql_sflqPickFreeLease6() {
     run_command \
         "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
     assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
-
-    # We need to create an older database with lease data so we can
 
     sql="select sflqCreateFlqPool6('3001::'::inet, '3001::02'::inet, 1::smallint,\
                                  128::smallint, 1::bigint, false)"
@@ -4140,6 +4136,43 @@ pgsql_sflqDeleteLease6() {
 
     test_finish 0
 }
+# Verifies inetToBytea function
+pgsql_inetToBytea() {
+    test_start "pgsql.pgsql_sflqPickFreeLease6"
+
+    # Let's wipe the whole database
+    pgsql_wipe
+
+    # Create the database
+    run_command \
+        "${kea_admin}" db-init pgsql -u "${db_user}" -p "${db_password}" -n "${db_name}" -d "${db_scripts_dir}"
+    assert_eq 0 "${EXIT_CODE}" "cannot initialize the database, expected exit code: %d, actual: %d"
+
+    sql="select byteaToInet(inetToBytea('::1'::inet))"
+    run_statement "case 1" "$sql" "::1"
+
+    sql="select byteaToInet(inetToBytea('::2222:1'::inet))"
+    run_statement "case 1" "$sql" "::34.34.0.1"
+
+    sql="select byteaToInet(inetToBytea('::'::inet))"
+    run_statement "case 1" "$sql" "::"
+
+    sql="select byteaToInet(inetToBytea('3001::'::inet))"
+    run_statement "case 1" "$sql" "3001::"
+
+    sql="select byteaToInet(inetToBytea('3001::ff'::inet))"
+    run_statement "case 1" "$sql" "3001::ff"
+
+    sql="select byteaToInet(inetToBytea('2:dead:beef::ff'::inet))"
+    run_statement "case 1" "$sql" "2:dead:beef::ff"
+
+    sql="select byteaToInet(inetToBytea('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'::inet))"
+    run_statement "case 1" "$sql" "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+
+#    pgsql_wipe
+
+    test_finish 0
+}
 
 # Handy shortcut for running a single test.
 if [ $# -gt 0 ]; then
@@ -4181,9 +4214,13 @@ pgsql_migrate_dhcpX_options_client_classes
 pgsql_sflqCreateFlqPool4
 pgsql_sflqCreateFlqPool4Invalid
 pgsql_sflqPickFreeLease4
+pgsql_inetToBytea
 pgsql_sflqCreateFlqPool6
 pgsql_sflqCreateFlqPool6Invalid
 pgsql_sflqPickFreeLease6
 pgsql_sflqInsertLease4
 pgsql_sflqUpdateLease4
 pgsql_sflqDeleteLease4
+pgsql_sflqInsertLease6
+pgsql_sflqUpdateLease6
+pgsql_sflqDeleteLease6

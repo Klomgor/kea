@@ -7014,28 +7014,39 @@ DECLARE
     digit_place SMALLINT;
     cur_byte SMALLINT;
     num_pad SMALLINT;
+    first_octet_zero BOOLEAN := false;
 BEGIN
-    octets = string_to_array(host(inet_address), ':');
-
-    num_octets = array_length(octets, 1);
-    octet_idx = 1;
-    dummy = '';
-    bin_idx = 0;
     bin_address = '\x00000000000000000000000000000000'::bytea;
+
+    -- Avoid v4 mapped output of host()
+    IF (inet_address < '0000:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF'::inet)
+    THEN
+        inet_address = inet_address | ('FFFF::'::inet);
+        first_octet_zero = true;
+    END IF;
+
+    octets = string_to_array(host(inet_address), ':');
+    num_octets = array_length(octets, 1);
+
+    -- Skip first octet if we faked above.
+    IF (first_octet_zero = true)
+    THEN
+        octet_idx = 2;
+        bin_idx = 2;
+    ELSE
+        octet_idx = 1;
+        bin_idx = 0;
+    END IF;
+
+    dummy = '';
     WHILE (octet_idx <= num_octets) LOOP
         octet = octets[octet_idx];
         octet_len = char_length(octet);
         IF (octet_len = 0)
         THEN
             -- Skip over omitted octets.
-            IF (octet_idx = 1)
-            THEN
-                -- First octet empty.
-                bin_idx = bin_idx + 2;
-            ELSE
-                num_pad = 8 - num_octets + 1;
-                bin_idx = bin_idx + (num_pad * 2);
-            END IF;
+            num_pad = 8 - num_octets + 1;
+            bin_idx = bin_idx + (num_pad * 2);
         ELSE
             num_pad = 4 - octet_len;
             digit_idx = 1;
