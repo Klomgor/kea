@@ -122,12 +122,12 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 6);
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.1.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.1.1")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.2.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.2.1")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.3.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.3.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.1.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.1.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.2.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.2.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.3.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.3.1")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -149,8 +149,8 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 2);
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.2.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.2.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.2.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.2.1")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -173,10 +173,10 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 4);
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.1.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.1.1")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.3.0")));
-    ASSERT_TRUE(picked.contains(IOAddress("192.0.3.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.1.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.1.1")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.3.0")));
+    ASSERT_TRUE(picked.count(IOAddress("192.0.3.1")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -318,12 +318,12 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 6);
-    ASSERT_TRUE(picked.contains(IOAddress("3001::10")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::11")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::20")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::21")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::30")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::31")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::10")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::11")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::20")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::21")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::30")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::31")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -345,8 +345,8 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 2);
-    ASSERT_TRUE(picked.contains(IOAddress("3001::20")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::21")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::20")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::21")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -369,10 +369,10 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     }
 
     ASSERT_EQ(picked.size(), 4);
-    ASSERT_TRUE(picked.contains(IOAddress("3001::10")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::11")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::30")));
-    ASSERT_TRUE(picked.contains(IOAddress("3001::31")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::10")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::11")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::30")));
+    ASSERT_TRUE(picked.count(IOAddress("3001::31")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
@@ -434,12 +434,12 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     }
 
     ASSERT_EQ(picked.size(), 6);
-    ASSERT_TRUE(picked.contains(IOAddress("2001::10")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::11")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::20")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::21")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::30")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::31")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::10")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::11")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::20")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::21")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::30")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::31")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
@@ -465,8 +465,8 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     }
 
     ASSERT_EQ(picked.size(), 2);
-    ASSERT_TRUE(picked.contains(IOAddress("2001::20")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::21")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::20")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::21")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
@@ -492,10 +492,10 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     }
 
     ASSERT_EQ(picked.size(), 4);
-    ASSERT_TRUE(picked.contains(IOAddress("2001::10")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::11")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::30")));
-    ASSERT_TRUE(picked.contains(IOAddress("2001::31")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::10")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::11")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::30")));
+    ASSERT_TRUE(picked.count(IOAddress("2001::31")));
 
     // Verify an additional pick returns zero address.
     ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),

@@ -117,7 +117,8 @@ public:
     /// @return True if the pool is (re)created, false it if already exists.
     virtual bool sflqCreateFlqPool4(asiolink::IOAddress start_address,
                                     asiolink::IOAddress end_address,
-                                    SubnetID subnet_id, bool recreate = false);
+                                    SubnetID subnet_id, bool recreate = false)
+                                    override;
 
     /// @brief Finds a free V4 address within the given pool range.
     ///
@@ -126,7 +127,8 @@ public:
     ///
     /// @return A free V4 address or IOAddress::IPV4_ZERO_ADDRESS().
     virtual asiolink::IOAddress sflqPickFreeLease4(asiolink::IOAddress start_address,
-                                                   asiolink::IOAddress end_address);
+                                                   asiolink::IOAddress end_address)
+                                                   override;
 
     /// @brief Calls stored procedure to create an SFLQ pool for v6.
     ///
@@ -142,7 +144,8 @@ public:
     virtual bool sflqCreateFlqPool6(asiolink::IOAddress start_address,
                                     asiolink::IOAddress end_address,
                                     Lease::Type lease_type, uint8_t delegated_len,
-                                    SubnetID subnet_id, bool recreate = false);
+                                    SubnetID subnet_id, bool recreate = false)
+                                    override;
 
     /// @brief Finds a free V6 address/prefix within the given pool range.
     ///
@@ -151,7 +154,8 @@ public:
     ///
     /// @return A free V6 address/prefix or IOAddress::IPV6_ZERO_ADDRESS().
     virtual asiolink::IOAddress sflqPickFreeLease6(asiolink::IOAddress start_address,
-                                                   asiolink::IOAddress end_address);
+                                                   asiolink::IOAddress end_address)
+                                                   override;
 
     /// @brief Finds an SflqPool in the list of SflqPools
     ///

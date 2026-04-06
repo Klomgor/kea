@@ -4138,7 +4138,7 @@ pgsql_sflqDeleteLease6() {
 }
 # Verifies inetToBytea function
 pgsql_inetToBytea() {
-    test_start "pgsql.pgsql_sflqPickFreeLease6"
+    test_start "pgsql.pgsql_initToBytea"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -4152,24 +4152,28 @@ pgsql_inetToBytea() {
     run_statement "case 1" "$sql" "::1"
 
     sql="select byteaToInet(inetToBytea('::2222:1'::inet))"
-    run_statement "case 1" "$sql" "::34.34.0.1"
+    run_statement "case 2" "$sql" "::34.34.0.1"
 
     sql="select byteaToInet(inetToBytea('::'::inet))"
-    run_statement "case 1" "$sql" "::"
+    run_statement "case 3" "$sql" "::"
 
     sql="select byteaToInet(inetToBytea('3001::'::inet))"
-    run_statement "case 1" "$sql" "3001::"
+    run_statement "case 4" "$sql" "3001::"
 
     sql="select byteaToInet(inetToBytea('3001::ff'::inet))"
-    run_statement "case 1" "$sql" "3001::ff"
+    run_statement "case 5" "$sql" "3001::ff"
 
     sql="select byteaToInet(inetToBytea('2:dead:beef::ff'::inet))"
-    run_statement "case 1" "$sql" "2:dead:beef::ff"
+    run_statement "case 6" "$sql" "2:dead:beef::ff"
 
     sql="select byteaToInet(inetToBytea('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'::inet))"
-    run_statement "case 1" "$sql" "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+    run_statement "case 7" "$sql" "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
 
-#    pgsql_wipe
+    sql="select byteaToInet(inetToBytea('00FF:0000:0000:0000:0000:0000:2222:1'))"
+    run_statement "case 8" "$sql" "ff::2222:1"
+
+
+    pgsql_wipe
 
     test_finish 0
 }
