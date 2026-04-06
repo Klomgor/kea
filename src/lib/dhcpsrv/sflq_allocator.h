@@ -83,7 +83,7 @@ private:
 
     /// @brief Populates the queue of free addresses (IPv4 and IPv6).
     ///
-    /// Instructs lease the laase back end to (re)create SFLQ data for
+    /// Instructs lease the lease back end to (re)create SFLQ data for
     /// each pool in a subnet.
     ///
     /// @param pools collection of pools in the subnet.

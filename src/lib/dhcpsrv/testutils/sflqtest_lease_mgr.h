@@ -38,7 +38,7 @@ struct SflqPool {
              Lease::Type lease_type = Lease::TYPE_V4,
              uint8_t delegated_len  = 1);
 
-    /// @brief Desructor.
+    /// @brief Destructor.
     ~SflqPool(){};
 
     /// @brief Refills the free lease list with all leases in the pool.
