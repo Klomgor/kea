@@ -1153,6 +1153,24 @@ public:
     virtual asiolink::IOAddress sflqPickFreeLease6(asiolink::IOAddress start_address,
                                                    asiolink::IOAddress end_address);
 
+    /// @brief Determine if SFLQ alternate SQL statements should be used
+    /// for a given v4 lease
+    ///
+    /// @param lease v4 lease to test
+    ///
+    /// @return true if SLFQ is in use in this config and the lease's subnet uses
+    /// SFLQ allocation
+    static bool useSharedFlqStatement(Lease4Ptr lease);
+
+    /// @brief Determine if SFLQ alternate SQL statements should be used
+    /// for a given v6 lease
+    ///
+    /// @param lease v6 lease to test
+    ///
+    /// @return true if SLFQ is in use in this config and the lease's subnet uses
+    /// SFLQ allocation for the lease's lease type.
+    static bool useSharedFlqStatement(Lease6Ptr lease);
+
     /// @brief Update in-memory stats when adding a v4 lease.
     ///
     /// @param lease Added lease.

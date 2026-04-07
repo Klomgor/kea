@@ -1442,12 +1442,20 @@ TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) {
     testUpdateStatsOn6DifferentSubnetPD();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSFLQ4) { 
-    testSFLQ4();
+TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick4) { 
+    testSflqCreateAndPick4();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSFLQ6) { 
-    testSFLQ6();
+TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps4) { 
+    testSflqLeaseOps4();
+}
+
+TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick6) { 
+    testSflqCreateAndPick6();
+}
+
+TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps6) { 
+    testSflqLeaseOps6();
 }
 
 /// @brief Test fixture class for testing @ref CfgDbAccessTest using MySQL

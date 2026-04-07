@@ -12,6 +12,7 @@
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/dhcpsrv_log.h>
 #include <dhcpsrv/lease_mgr.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <exceptions/exceptions.h>
 #include <stats/stats_mgr.h>
 #include <util/encode/encode.h>
@@ -1980,6 +1981,38 @@ LeaseMgr::sflqCreateFlqPool6(IOAddress, IOAddress, Lease::Type, uint8_t, SubnetI
 IOAddress
 LeaseMgr::sflqPickFreeLease6(IOAddress, IOAddress) {
     isc_throw(NotImplemented, "LeaseMgr::sflqPickFreeLease6() called");
+}
+
+bool
+LeaseMgr::useSharedFlqStatement(Lease4Ptr lease) {
+    // Only check the subnet if SFLQ is in-use in this config.
+    if (SharedFlqAllocator::inUse()) {
+         auto const& subnet = CfgMgr::instance().getCurrentCfg()->
+                    getCfgSubnets4()->getBySubnetId(lease->subnet_id_);
+
+        // We should? always have a subnet.
+        if (subnet) {
+            return (subnet->getAllocator(Lease::TYPE_V4)->getType() == "shared-flq");
+        }
+    }
+
+    return false;
+}
+
+bool
+LeaseMgr::useSharedFlqStatement(Lease6Ptr lease) {
+    // Only check the subnet if SFLQ is in-use in this config.
+    if (SharedFlqAllocator::inUse()) {
+         auto const& subnet = CfgMgr::instance().getCurrentCfg()->
+                    getCfgSubnets6()->getBySubnetId(lease->subnet_id_);
+
+        // We should? always have a subnet.
+        if (subnet) {
+            return (subnet->getAllocator(lease->getType())->getType() == "shared-flq");
+        }
+    }
+
+    return false;
 }
 
 } // namespace isc::dhcp

@@ -707,6 +707,51 @@ PgSqlTaggedStatement tagged_statements[] = {
       "sflqPickFreeLease6",
       "SELECT sflqPickFreeLease6(cast($1 as inet), cast($2 as inet))" },
 
+    // SFLQ_INSERT_LEASE4
+    { 14, { OID_INT8, OID_BYTEA, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8,
+            OID_BOOL, OID_BOOL, OID_VARCHAR, OID_INT8, OID_TEXT, OID_BYTEA,
+            OID_BYTEA, OID_INT8 },
+      "sflqInsertLease4",
+      "SELECT sflqInsertLease4($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)" },
+
+    // SFLQ_UPDATE_LEASE4
+    // Code sets all 16 bindinggs, we only need first 14.
+    { 16, { OID_INT8, OID_BYTEA, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8,
+            OID_BOOL, OID_BOOL, OID_VARCHAR, OID_INT8, OID_TEXT, OID_BYTEA,
+            OID_BYTEA, OID_INT8, OID_INT8, OID_TIMESTAMP },
+
+      "slfqUpdateLease4",
+      "SELECT sflqUpdateLease4($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)" },
+
+    // SLQ_DELETE_LEASE4
+    { 2, { OID_INT8, OID_TIMESTAMP },
+      "sflqDeleteLease4",
+      "SELECT sflqDeleteLease4($1, $2)" },
+
+    // SFLQ_INSERT_LEASE6
+    { 18, { OID_VARCHAR, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8,
+            OID_INT8, OID_INT2, OID_INT4, OID_INT2, OID_BOOL, OID_BOOL,
+            OID_VARCHAR, OID_BYTEA, OID_INT2, OID_INT2, OID_INT8, OID_TEXT,
+            OID_INT8},
+      "sflqInsertLease6",
+      "SELECT sflqInsertLease6(cast($1 as inet), $2, $3, $4, $5, $6, $7, $8, $9, "
+                              "$10, $11, $12, $13, $14, $15, $16, $17, $18)" },
+
+    // SFLQ_UPDATE_LEASE6
+    // Code sets all 20 bindinggs, we only need first 18.
+    { 20, { OID_VARCHAR, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8, OID_INT8,
+            OID_INT2, OID_INT4, OID_INT2, OID_BOOL, OID_BOOL, OID_VARCHAR,
+            OID_BYTEA, OID_INT2, OID_INT2,
+            OID_INT8, OID_TEXT, OID_INT8, OID_TEXT, OID_TIMESTAMP },
+      "slfqUpdateLease6",
+      "SELECT sflqUpdateLease6(cast($1 as inet), $2, $3, $4, $5, $6, $7, $8, $9, "
+                              "$10, $11, $12, $13, $14, $15, $16, $17, $18)" },
+
+    // SFLQ_DELETE_LEASE6
+    { 2, { OID_VARCHAR, OID_TIMESTAMP },
+      "sflqDeleteLease6",
+      "SELECT sflqDeleteLease6(cast($1 as inet), $2)" },
+
     // End of list sentinel
     { 0, { 0 }, 0, 0 }
 };
@@ -1859,7 +1904,8 @@ PgSqlLeaseMgr::addLease(const Lease4Ptr& lease) {
 
     PsqlBindArray bind_array;
     ctx->exchange4_->createBindForSend(lease, bind_array);
-    auto result = addLeaseCommon(ctx, INSERT_LEASE4, bind_array);
+    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE4 : SFLQ_INSERT_LEASE4);
+    auto result = addLeaseCommon(ctx, index, bind_array);
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -1888,7 +1934,8 @@ PgSqlLeaseMgr::addLease(const Lease6Ptr& lease) {
     PsqlBindArray bind_array;
     ctx->exchange6_->createBindForSend(lease, bind_array);
 
-    auto result = addLeaseCommon(ctx, INSERT_LEASE6, bind_array);
+    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE6 : SFLQ_INSERT_LEASE6);
+    auto result = addLeaseCommon(ctx, index, bind_array);
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -2706,7 +2753,8 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
 
 void
 PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    const StatementIndex stindex = UPDATE_LEASE4;
+    const StatementIndex stindex = (!useSharedFlqStatement(lease)
+                                    ? UPDATE_LEASE4 : SFLQ_UPDATE_LEASE4);
 
     LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_UPDATE_ADDR4)
         .arg(lease->addr_.toText());
@@ -2747,7 +2795,8 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    const StatementIndex stindex = UPDATE_LEASE6;
+    const StatementIndex stindex = (!useSharedFlqStatement(lease)
+                                    ? UPDATE_LEASE6 : SFLQ_UPDATE_LEASE6);
 
     LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_UPDATE_ADDR6)
         .arg(lease->addr_.toText())
@@ -2851,7 +2900,8 @@ PgSqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
     PgSqlLeaseTrackingContextAlloc get_context(*this, lease);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE4, bind_array);
+    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE4 : SFLQ_DELETE_LEASE4);
+    auto affected_rows = deleteLeaseCommon(ctx, index, bind_array);
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -2901,7 +2951,8 @@ PgSqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     PgSqlLeaseTrackingContextAlloc get_context(*this, lease);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE6, bind_array);
+    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE6 : SFLQ_DELETE_LEASE6);
+    auto affected_rows = deleteLeaseCommon(ctx, index, bind_array);
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -3961,7 +4012,7 @@ PgSqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address
 
     int rows = PQntuples(r);
     if (rows != 1) {
-        isc_throw(Unexpected, "sflqPickFreeLeas4 returned " << rows 
+        isc_throw(Unexpected, "sflqPickFreeLeas4 returned " << rows
                     << ", should always return 1"
                     << start_address << " - " << end_address);
     }
@@ -4058,7 +4109,7 @@ PgSqlLeaseMgr::sflqPickFreeLease6(IOAddress start_address, IOAddress end_address
 
     int rows = PQntuples(r);
     if (rows != 1) {
-        isc_throw(Unexpected, "sflqPickFreeLeas6 returned " << rows 
+        isc_throw(Unexpected, "sflqPickFreeLeas6 returned " << rows
                     << ", should always return 1"
                     << start_address << " - " << end_address);
     }

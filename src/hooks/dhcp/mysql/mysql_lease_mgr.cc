@@ -562,6 +562,22 @@ tagged_statements = { {
                     "CALL sflqCreateFlqPool6(?,?,?,?,?,?)"},
     {MySqlLeaseMgr::SFLQ_PICK_FREE_LEASE6,
                     "SELECT sflqPickFreeLease6(?,?)"},
+    {MySqlLeaseMgr::SFLQ_INSERT_LEASE4,
+                    "CALL sflqInsertLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                          "?, ?, ?, ?, ?)"},
+    {MySqlLeaseMgr::SFLQ_UPDATE_LEASE4,
+                    "CALL sflqUpdateLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                          "?, ?, ?, ?, ?)"},
+    {MySqlLeaseMgr::SFLQ_DELETE_LEASE4,
+                    "CALL sflqDeleteLease4(?,?)"},
+    {MySqlLeaseMgr::SFLQ_INSERT_LEASE6,
+                    "CALL sflqInsertLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                          "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
+    {MySqlLeaseMgr::SFLQ_UPDATE_LEASE6,
+                    "CALL sflqUpdateLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                          "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
+    {MySqlLeaseMgr::SFLQ_DELETE_LEASE6,
+                    "CALL sflqDeleteLease6(?, ?)"},
 } };  // tagged_statements
 
 }  // namespace
@@ -2400,7 +2416,8 @@ MySqlLeaseMgr::addLease(const Lease4Ptr& lease) {
     std::vector<MYSQL_BIND> bind = ctx->exchange4_->createBindForSend(lease);
 
     // ... and drop to common code.
-    auto result = addLeaseCommon(ctx, INSERT_LEASE4, bind);
+    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE4 : SFLQ_INSERT_LEASE4);
+    auto result = addLeaseCommon(ctx, index, bind);
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -2430,7 +2447,8 @@ MySqlLeaseMgr::addLease(const Lease6Ptr& lease) {
     std::vector<MYSQL_BIND> bind = ctx->exchange6_->createBindForSend(lease);
 
     // ... and drop to common code.
-    auto result = addLeaseCommon(ctx, INSERT_LEASE6, bind);
+    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE6 : SFLQ_INSERT_LEASE6);
+    auto result = addLeaseCommon(ctx, index, bind);
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -3490,7 +3508,8 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
 
 void
 MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    const StatementIndex stindex = UPDATE_LEASE4;
+    const StatementIndex stindex = (!useSharedFlqStatement(lease)
+                                    ? UPDATE_LEASE4 : SFLQ_UPDATE_LEASE4);
 
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_UPDATE_ADDR4)
         .arg(lease->addr_.toText());
@@ -3542,7 +3561,8 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    const StatementIndex stindex = UPDATE_LEASE6;
+    const StatementIndex stindex = (!useSharedFlqStatement(lease)
+                                    ? UPDATE_LEASE6 : SFLQ_UPDATE_LEASE6);
 
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_UPDATE_ADDR6)
         .arg(lease->addr_.toText())
@@ -3677,7 +3697,8 @@ MySqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
     MySqlLeaseTrackingContextAlloc get_context(*this, lease);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE4, inbind);
+    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE4 : SFLQ_DELETE_LEASE4);
+    auto affected_rows = deleteLeaseCommon(ctx, index, inbind);
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -3740,7 +3761,8 @@ MySqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     MySqlLeaseTrackingContextAlloc get_context(*this, lease);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE6, inbind);
+    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE6 : SFLQ_DELETE_LEASE6);
+    auto affected_rows = deleteLeaseCommon(ctx, index, inbind);
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -4972,6 +4994,7 @@ MySqlLeaseMgr::sflqPickFreeLease4(IOAddress start_address, IOAddress end_address
     memset(obind, 0, sizeof(obind));
     obind[0].buffer_type = MYSQL_TYPE_LONG;
     obind[0].buffer = reinterpret_cast<char*>(&b_free_address);
+    obind[0].is_unsigned = MLM_TRUE;
 
     // Bind the output bind array to the statement
     status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), &obind[0]);

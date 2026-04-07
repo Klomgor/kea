@@ -81,8 +81,15 @@ public:
     /// @brief Destroys the LM and the schema.
     void destroyTest() {
         LeaseMgrFactory::destroy();
+
         // If data wipe enabled, delete transient data otherwise destroy the schema
-        destroyPgSQLSchema();
+        if (getenv("KEA_UNIT_TEST_KEEP_DB_DATA")) {
+            // Leaves schema intact for post-test debugging.
+            std::cout << "KEA_UNIT_TEST_KEEP_DB_DATA set" << std::endl;
+        } else {
+            // If data wipe enabled, delete transient data otherwise destroy the schema
+            destroyPgSQLSchema();
+        }
 
         // Disable Multi-Threading.
         MultiThreadingMgr::instance().setMode(false);
@@ -1399,12 +1406,20 @@ TEST_F(PgSqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) {
     testUpdateStatsOn6DifferentSubnetPD();
 }
 
-TEST_F(PgSqlLeaseMgrTest, testSFLQ4) {
-    testSFLQ4();
+TEST_F(PgSqlLeaseMgrTest, testSflqCreateAndPick4) {
+    testSflqCreateAndPick4();
 }
 
-TEST_F(PgSqlLeaseMgrTest, testSFLQ6) {
-    testSFLQ6();
+TEST_F(PgSqlLeaseMgrTest, testSflqLeaseOps4) {
+    testSflqLeaseOps4();
+}
+
+TEST_F(PgSqlLeaseMgrTest, testSflqCreateAndPick6) {
+    testSflqCreateAndPick6();
+}
+
+TEST_F(PgSqlLeaseMgrTest, testSflqLeaseOps6) {
+    testSflqLeaseOps6();
 }
 
 /// @brief Test fixture class for testing @ref CfgDbAccessTest using PostgreSQL

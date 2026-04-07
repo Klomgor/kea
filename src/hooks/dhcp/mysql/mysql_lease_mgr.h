@@ -850,6 +850,12 @@ public:
         SFLQ_PICK_FREE_LEASE4,       // Find a free lease in a V4 SFLQ pool
         SFLQ_CREATE_FLQ_POOL6,       // Create a v6 SFLQ pool
         SFLQ_PICK_FREE_LEASE6,       // Find a free lease in a V6 SFLQ pool
+        SFLQ_INSERT_LEASE4,          // SFLQ Alternate for inserting v4 lease
+        SFLQ_UPDATE_LEASE4,          // SFLQ Alternate for updating v4 lease
+        SFLQ_DELETE_LEASE4,          // SFLQ Alternate for deleting v4 lease
+        SFLQ_INSERT_LEASE6,          // SFLQ Alternate for inserting v6 lease
+        SFLQ_UPDATE_LEASE6,          // SFLQ Alternate for updating v6 lease
+        SFLQ_DELETE_LEASE6,          // SFLQ Alternate for deleting v6 lease
         NUM_STATEMENTS               // Number of statements
     };
 

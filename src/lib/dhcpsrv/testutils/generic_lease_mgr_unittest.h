@@ -691,19 +691,25 @@ public:
 
     void testUpdateStatsOn6DifferentSubnetPD();
 
-    /// @brief Checks v4 SFLQ operations.
+    /// @brief Checks v4 SFLQ pool creation and pick lease operations.
     ///
     /// @param exp_not_implemented when true verifies
     /// that LeaseMgr::sflq* functions throw not implemented.
     /// Defaults to true.
-    void testSFLQ4(bool exp_not_implemented = false);
+    void testSflqCreateAndPick4(bool exp_not_implemented = false);
 
-    /// @brief Checks v6 SFLQ operations.
+    /// @brief Checks v4 SFLQ add, update, and delete
+    void testSflqLeaseOps4();
+
+    /// @brief Checks v6 SFLQ pool creation and pick lease operations.
     ///
     /// @param exp_not_implemented when true verifies
     /// that LeaseMgr::sflq* functions throw not implemented.
     /// Defaults to true.
-    void testSFLQ6(bool exp_not_implemented = false);
+    void testSflqCreateAndPick6(bool exp_not_implemented = false);
+
+    /// @brief Checks v6 SFLQ add, update, and delete
+    void testSflqLeaseOps6();
 
     /// @brief String forms of IPv4 addresses
     std::vector<std::string> straddress4_;

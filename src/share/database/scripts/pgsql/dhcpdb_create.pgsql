@@ -6960,12 +6960,14 @@ BEGIN
             LIMIT 1;
     END IF;
 
-    IF (free_address IS NOT NULL)
+    IF (free_address IS NULL)
     THEN
-        -- Update the pool table with the pick.
-        UPDATE flq_pool4 SET last_returned_address = free_address
-            WHERE id = pool_id;
+        free_address = 0;
     END IF;
+
+    -- Update the pool table with the pick.
+    UPDATE flq_pool4 SET last_returned_address = free_address
+        WHERE id = pool_id;
 
     RETURN free_address;
 END;
@@ -7343,12 +7345,14 @@ BEGIN
             LIMIT 1;
     END IF;
 
-    IF (free_address IS NOT NULL)
+    IF (free_address IS NULL)
     THEN
-        -- Update the pool table with the pick.
-        UPDATE flq_pool6 SET last_returned_address = free_address
-            WHERE id = pool_id;
+        free_address = '::'::inet;
     END IF;
+
+    -- Update the pool table with the pick.
+    UPDATE flq_pool6 SET last_returned_address = free_address
+        WHERE id = pool_id;
 
     RETURN free_address;
 END;

@@ -12,6 +12,7 @@
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/dhcpsrv_exceptions.h>
 #include <dhcpsrv/lease_mgr_factory.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <dhcpsrv/testutils/generic_lease_mgr_unittest.h>
 #include <dhcpsrv/testutils/test_utils.h>
 #include <exceptions/exceptions.h>
@@ -5743,7 +5744,7 @@ GenericLeaseMgrTest::testUpdateStatsOn6DifferentSubnetPD() {
 }
 
 void
-GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
+GenericLeaseMgrTest::testSflqCreateAndPick4(bool exp_not_implemented /* = false */) {
     IOAddress start_address("127.0.0.0");
     IOAddress end_address("127.0.0.3");
     IOAddress picked_address("0.0.0.0");
@@ -5791,7 +5792,127 @@ GenericLeaseMgrTest::testSFLQ4(bool exp_not_implemented /* = false */) {
 }
 
 void
-GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
+GenericLeaseMgrTest::testSflqLeaseOps4() {
+    // Create a subnet with a one address pool for simplicity.
+    IOAddress start_address("192.0.2.0");
+    IOAddress end_address("192.0.2.0");
+    CfgSubnets4Ptr cfg = CfgMgr::instance().getStagingCfg()->getCfgSubnets4();
+    Subnet4Ptr subnet;
+    Pool4Ptr pool;
+    subnet.reset(new Subnet4(start_address, 24, 1, 2, 3, 1));
+    pool.reset(new Pool4(start_address, end_address));
+    subnet->addPool(pool);
+    AllocatorPtr sflq_allocator(new SharedFlqAllocator(Lease::TYPE_V4, subnet));
+    subnet->setAllocator(Lease::TYPE_V4, sflq_allocator);
+    cfg->add(subnet);
+
+    // Should create the SFLQ pool for the subnet.
+    cfg->initAllocatorsAfterConfigure();
+
+    // Defines a list of lease operations.
+    enum LeaseOp {
+        ADD,
+        UPDATE,
+        DELETE
+    };
+
+    // Describes a lease operation and the expected outcomes.
+    struct Scenario {
+        int lineno_;
+        LeaseOp operation_;
+        uint32_t state_;
+        bool expired_;
+        bool should_exist_;
+        bool can_pick_;
+    };
+
+    // Mnemonic constants for readability.
+    constexpr bool expired = true;
+    constexpr bool should_exist = true;
+    constexpr bool can_pick = true;
+
+    std::list<Scenario> scenarios = {
+        // Add the lease
+        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+         !expired, should_exist, !can_pick },
+
+        // Update to declined state.
+        {__LINE__, UPDATE, Lease::STATE_DECLINED, 
+         !expired, should_exist, !can_pick },
+
+        // Delete the lease. 
+        {__LINE__, DELETE, Lease::STATE_DEFAULT, 
+         !expired, !should_exist, can_pick },
+#if 0
+        // @todo This hinges on #4447 
+        // Add an expired lease. 
+        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+         !expired, should_exist, can_pick },
+#endif
+        // Add a reclaimed lease.
+        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED, 
+         !expired, should_exist, can_pick },
+
+        // Update to default.
+        {__LINE__, UPDATE, Lease::STATE_DEFAULT, 
+         !expired, should_exist, !can_pick },
+
+        // Update to reclaimed.
+        {__LINE__, UPDATE, Lease::STATE_EXPIRED_RECLAIMED,
+         !expired, should_exist, can_pick },
+    };
+
+    // Iterate over the scenarios.
+    Lease4Ptr preop_lease = initializeLease4(start_address.toText());
+    for ( auto const& scenario : scenarios ){
+        std::ostringstream os;
+        os << "scenario at line: " << scenario.lineno_;
+        SCOPED_TRACE(os.str());
+
+        // Prep the input lease.
+        preop_lease->state_ = scenario.state_;  
+        time_t current_time = time(NULL);
+        preop_lease->cltt_ = (scenario.expired_ ? 
+                              current_time - 1000 : current_time + 1000);
+
+        // Carry out the lease operation.
+        switch (scenario.operation_) {
+        case ADD: {
+            bool ret;
+            ASSERT_NO_THROW_LOG(ret = lmptr_->addLease(preop_lease));
+            ASSERT_TRUE(ret);
+            break;
+        }
+        case UPDATE:
+            ASSERT_NO_THROW_LOG(lmptr_->updateLease4(preop_lease));
+            break;
+        case DELETE:
+            ASSERT_NO_THROW_LOG(lmptr_->deleteLease(preop_lease));
+            break;
+        };
+
+        // Attempt to the fetch the lease and test accordingly.
+        Lease4Ptr returned = lmptr_->getLease4(preop_lease->addr_);
+        if (scenario.should_exist_) {
+            ASSERT_TRUE(returned);
+            detailCompareLease(preop_lease, returned);
+        } else {
+            ASSERT_FALSE(returned);
+        }
+
+        // Ask for a free lease and verifly accordingly.
+        IOAddress picked = IOAddress::IPV4_ZERO_ADDRESS();
+        ASSERT_NO_THROW_LOG(picked = lmptr_->sflqPickFreeLease4(start_address, end_address));
+        if (scenario.can_pick_) {
+            ASSERT_EQ(picked, start_address);
+        } else {
+            ASSERT_EQ(picked, IOAddress::IPV4_ZERO_ADDRESS());
+        }
+    }
+}
+
+void
+GenericLeaseMgrTest::testSflqCreateAndPick6(bool exp_not_implemented /* = false */) {
     IOAddress start_address("3001::");
     IOAddress end_address("3001::3");
     IOAddress picked_address("::");
@@ -5836,6 +5957,128 @@ GenericLeaseMgrTest::testSFLQ6(bool exp_not_implemented /* = false */) {
         ASSERT_EQ(picked.size(), 4);
     }
 }
+
+// will need a PD and an NA version
+void
+GenericLeaseMgrTest::testSflqLeaseOps6() {
+    // Create a subnet with a one address pool for simplicity.
+    IOAddress start_address("2001:db8::");
+    IOAddress end_address("2001:db8::");
+    CfgSubnets6Ptr cfg = CfgMgr::instance().getStagingCfg()->getCfgSubnets6();
+    Subnet6Ptr subnet;
+    Pool6Ptr pool;
+    subnet.reset(new Subnet6(start_address, 64, 1, 2, 3, 4, 1));
+    pool.reset(new Pool6(Lease::TYPE_NA, start_address, end_address));
+    subnet->addPool(pool);
+    AllocatorPtr sflq_allocator(new SharedFlqAllocator(Lease::TYPE_NA, subnet));
+    subnet->setAllocator(Lease::TYPE_NA, sflq_allocator);
+    cfg->add(subnet);
+
+    // Should create the SFLQ pool for the subnet.
+    cfg->initAllocatorsAfterConfigure();
+
+    // Defines a list of lease operations.
+    enum LeaseOp {
+        ADD,
+        UPDATE,
+        DELETE
+    };
+
+    // Describes a lease operation and the expected outcomes.
+    struct Scenario {
+        int lineno_;
+        LeaseOp operation_;
+        uint32_t state_;
+        bool expired_;
+        bool should_exist_;
+        bool can_pick_;
+    };
+
+    // Mnemonic constants for readability.
+    constexpr bool expired = true;
+    constexpr bool should_exist = true;
+    constexpr bool can_pick = true;
+
+    std::list<Scenario> scenarios = {
+        // Add the lease
+        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+         !expired, should_exist, !can_pick },
+
+        // Update to declined state.
+        {__LINE__, UPDATE, Lease::STATE_DECLINED, 
+         !expired, should_exist, !can_pick },
+
+        // Delete the lease. 
+        {__LINE__, DELETE, Lease::STATE_DEFAULT, 
+         !expired, !should_exist, can_pick },
+#if 0
+        // @todo This hinges on #4447 
+        // Add an expired lease. 
+        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+         !expired, should_exist, can_pick },
+#endif
+        // Add a reclaimed lease.
+        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED, 
+         !expired, should_exist, can_pick },
+
+        // Update to default.
+        {__LINE__, UPDATE, Lease::STATE_DEFAULT, 
+         !expired, should_exist, !can_pick },
+
+        // Update to reclaimed.
+        {__LINE__, UPDATE, Lease::STATE_EXPIRED_RECLAIMED,
+         !expired, should_exist, can_pick },
+    };
+
+    // Iterate over the scenarios.
+    Lease6Ptr preop_lease = initializeLease6(start_address.toText());
+    for ( auto const& scenario : scenarios ){
+        std::ostringstream os;
+        os << "scenario at line: " << scenario.lineno_;
+        SCOPED_TRACE(os.str());
+
+        // Prep the input lease.
+        preop_lease->state_ = scenario.state_;  
+        time_t current_time = time(NULL);
+        preop_lease->cltt_ = (scenario.expired_ ? 
+                              current_time - 1000 : current_time + 1000);
+
+        // Carry out the lease operation.
+        switch (scenario.operation_) {
+        case ADD: {
+            bool ret;
+            ASSERT_NO_THROW_LOG(ret = lmptr_->addLease(preop_lease));
+            ASSERT_TRUE(ret);
+            break;
+        }
+        case UPDATE:
+            ASSERT_NO_THROW_LOG(lmptr_->updateLease6(preop_lease));
+            break;
+        case DELETE:
+            ASSERT_NO_THROW_LOG(lmptr_->deleteLease(preop_lease));
+            break;
+        };
+
+        // Attempt to the fetch the lease and test accordingly.
+        Lease6Ptr returned = lmptr_->getLease6(Lease::TYPE_NA, preop_lease->addr_);
+        if (scenario.should_exist_) {
+            ASSERT_TRUE(returned);
+            detailCompareLease(preop_lease, returned);
+        } else {
+            ASSERT_FALSE(returned);
+        }
+
+        // Ask for a free lease and verifly accordingly.
+        IOAddress picked = IOAddress::IPV6_ZERO_ADDRESS();
+        ASSERT_NO_THROW_LOG(picked = lmptr_->sflqPickFreeLease6(start_address, end_address));
+        if (scenario.can_pick_) {
+            ASSERT_EQ(picked, start_address);
+        } else {
+            ASSERT_EQ(picked, IOAddress::IPV6_ZERO_ADDRESS());
+        }
+    }
+}
+
 
 }  // namespace test
 }  // namespace dhcp
