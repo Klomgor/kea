@@ -6898,8 +6898,7 @@ BEGIN
     INSERT INTO free_lease4 (address)
         SELECT avail FROM generate_series(p_start_address, p_end_address, 1) AS avail
             LEFT JOIN lease4 on avail = lease4.address
-            WHERE (lease4.address IS NULL OR lease4.state = 2
-                   OR (expire <= now() AND valid_lifetime != x'FFFFFFFF'::bigint))
+            WHERE (lease4.address IS NULL OR lease4.state = 2)
             ON CONFLICT DO NOTHING;
 
     -- Update the modification time in the flq_pool row.
@@ -7254,9 +7253,7 @@ BEGIN
                 SELECT p.address, p.bin_address
                 FROM prefixes p
                 LEFT JOIN lease6 l
-                    ON l.address = p.address
-                   AND l.state != 2
-                   AND (l.expire > current_ts OR l.valid_lifetime = x'FFFFFFFF'::bigint)
+                    ON l.address = p.address AND l.state != 2
                 WHERE l.address IS NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1

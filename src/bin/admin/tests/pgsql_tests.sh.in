@@ -3294,9 +3294,9 @@ pgsql_sflqCreateFlqPool4() {
     run_statement "select leases4" "$sql" "4"
 
     sql="select count(address) from free_lease4 where ('0.0.0.0'::inet + address) in\
-         ('127.0.0.0','127.0.0.2','127.0.0.4','127.0.0.5',\
+         ('127.0.0.0','127.0.0.2','127.0.0.4',\
           '127.0.0.6','127.0.0.7','127.0.0.8')"
-    run_statement "select free_leases4" "$sql" "7"
+    run_statement "select free_leases4" "$sql" "6"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -3456,9 +3456,9 @@ pgsql_sflqCreateFlqPool6() {
     run_statement "select leases4" "$sql" "4"
 
     sql="select count(address) from free_lease6 where address in\
-         ('3001::','3001::2','3001::4','3001::5',\
+         ('3001::','3001::2','3001::4',\
           '3001::6','3001::7','3001::8')"
-    run_statement "select free_leases6" "$sql" "7"
+    run_statement "select free_leases6" "$sql" "6"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -3659,11 +3659,11 @@ pgsql_sflqInsertLease4() {
                                NULL, 0::bigint, NULL, NULL, NULL, 0::bigint)"
     run_statement "sflqInsertLease4 $lease_address" "$sql" "1"
 
-    # Verify lease is inserted into lease4 but not removed from free_lease4
+    # Verify lease is inserted into lease4 and removed from free_lease4
     sql="select count(address) from lease4 where address = $bigint_address;"
     run_statement "check lease4 4" "$sql" "1"
     sql="select count(address) from free_lease4 where address = $bigint_address;"
-    run_statement "check free_lease4 4" "$sql"  "1"
+    run_statement "check free_lease4 4" "$sql"  "0"
 
     # Let's wipe the whole database
     #pgsql_wipe
@@ -3761,11 +3761,11 @@ pgsql_sflqUpdateLease4() {
                                $bigint_address, '$expired'::timestamp)";
     run_statement "sflqUpdateLease4 3" "$sql" "1"
 
-    # Verify lease is updated in lease4 and added to free_lease4
+    # Verify lease is updated in lease4 but not added to free_lease4
     sql="select count(address) from lease4 where address = $bigint_address and state = 0;"
     run_statement "check lease4 4" "$sql" "1"
     sql="select count(address) from free_lease4 where address = $bigint_address;"
-    run_statement "check free_lease4 4" "$sql"  "1"
+    run_statement "check free_lease4 4" "$sql"  "0"
 
     # Let's wipe the whole database
 #    pgsql_wipe
@@ -3930,7 +3930,7 @@ pgsql_sflqInsertLease6() {
     run_statement "check free_lease6 3" "$sql" "1"
 
     # Insert an expired lease for 3001::4
-    in_address="'3001::34'"
+    in_address="'3001::4'"
     bin_address="inetToBytea('3001::4'::inet)"
     state="0"
     sql="select sflqInsertLease6($in_address::inet, $duid, 3600::bigint, '$expired'::timestamp,\
@@ -3940,11 +3940,11 @@ pgsql_sflqInsertLease6() {
                                NULL, 0::bigint)"
     run_statement "sflqInsertLease6 $in_address" "$sql" "1"
 
-    # Verify lease is inserted into lease6 but not removed from free_lease6
+    # Verify lease is inserted into lease6 and removed from free_lease6
     sql="select count(address) from lease6 where address = $in_address::inet;"
     run_statement "check lease6 4" "$sql" "1"
     sql="select count(address) from free_lease6 where bin_address = $bin_address;"
-    run_statement "check free_lease6 4" "$sql" "1"
+    run_statement "check free_lease6 4" "$sql" "0"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -4054,11 +4054,11 @@ pgsql_sflqUpdateLease6() {
                                NULL, 0::bigint, $in_address::inet, '$expired'::timestamp)"
     run_statement "sflqUpdateLease6 $in_address" "$sql" "1"
 
-    # Verify lease is updated in lease6 and added to free_lease6
+    # Verify lease is updated in lease6 but not added to free_lease6
     sql="select count(address) from lease6 where address = $in_address::inet and state = 0;"
     run_statement "check lease6 4" "$sql" "1"
     sql="select count(address) from free_lease6 where bin_address = $bin_address;"
-    run_statement "check free_lease6 4" "$sql" "1"
+    run_statement "check free_lease6 4" "$sql" "0"
 
     # Let's wipe the whole database
     pgsql_wipe

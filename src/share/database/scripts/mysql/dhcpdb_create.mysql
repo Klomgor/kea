@@ -6801,8 +6801,7 @@ BEGIN
             )
             SELECT avail FROM addresses
                 LEFT JOIN lease4 on avail = lease4.address
-                WHERE (lease4.address IS NULL OR lease4.state = 2
-                       OR (expire <= now() AND valid_lifetime != 0xFFFFFFFF))
+                WHERE (lease4.address IS NULL OR lease4.state = 2)
             ON DUPLICATE KEY UPDATE free_lease4.address = avail;
 
         IF next_start_address + loop_limit <= 4294967295 THEN
@@ -6969,9 +6968,7 @@ BEGIN
         FROM _flq6_candidates c
         WHERE NOT EXISTS (
             SELECT 1 FROM lease6 l
-            WHERE l.address = c.address
-              AND l.state != 2
-              AND (l.expire > now() OR l.valid_lifetime = 0xFFFFFFFF)
+            WHERE l.address = c.address AND l.state != 2
         )
         ON DUPLICATE KEY UPDATE free_lease6.address = c.address;
 

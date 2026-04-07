@@ -4130,9 +4130,9 @@ mysql_sflqCreateFlqPool4() {
     run_statement "select leases4" "$sql" "4"
 
     sql="select count(address) from free_lease4 where inet_ntoa(address) in\
-         ('127.0.0.0','127.0.0.2','127.0.0.4','127.0.0.5',\
+         ('127.0.0.0','127.0.0.2','127.0.0.4',\
           '127.0.0.6','127.0.0.7','127.0.0.8')"
-    run_statement "select free_leases4" "$sql" "7"
+    run_statement "select free_leases4" "$sql" "6"
 
     # Create pool large enough to test recursion limit.
     start_address="inet_aton('10.100.0.0')"
@@ -4298,9 +4298,9 @@ mysql_sflqCreateFlqPool6() {
     run_statement "select leases4" "$sql" "4"
 
     sql="select count(address) from free_lease6 where address in\
-         ('3001::','3001::2','3001::4','3001::5',\
+         ('3001::','3001::2','3001::4',\
           '3001::6','3001::7','3001::8')"
-    run_statement "select free_leases6" "$sql" "7"
+    run_statement "select free_leases6" "$sql" "6"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4484,11 +4484,11 @@ mysql_sflqInsertLease4() {
 
     run_statement "sflqInsertLease4 $in_address" "$sql" "1"
 
-    # Verify lease is inserted into lease4 but not removed from free_lease4
+    # Verify lease is inserted into lease4 and removed from free_lease4
     sql="select count(address) from lease4 where address = inet_aton(${in_address});"
     run_statement "check lease4 4" "$sql" "1"
     sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
-    run_statement "check free_lease4 4" "$sql"  "1"
+    run_statement "check free_lease4 4" "$sql"  "0"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4577,11 +4577,11 @@ mysql_sflqUpdateLease4() {
                                  timestamp('$expired'))";
     run_statement "sflqUpdateLease4 update expired $in_address" "$sql" "1"
 
-    # Verify lease is updated in lease4 and added to free_lease4
+    # Verify lease is updated in lease4 but not added to free_lease4
     sql="select count(address) from lease4 where address = inet_aton(${in_address}) and state = 0;"
     run_statement "check lease4 4" "$sql" "1"
     sql="select count(address) from free_lease4 where address = inet_aton(${in_address});"
-    run_statement "check free_lease4 4" "$sql"  "1"
+    run_statement "check free_lease4 4" "$sql"  "0"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4734,7 +4734,7 @@ mysql_sflqInsertLease6() {
     sql="select count(address) from free_lease6 where address = $in_address;"
     run_statement "check free_lease6 3" "$sql" "1"
 
-    # Insert an expired lease for 127.0.0.4
+    # Insert an expired lease 3001::4
     in_address="'3001::4'"
     bin_address="inet6_aton('3001::4')"
     state="0"
@@ -4743,11 +4743,11 @@ mysql_sflqInsertLease6() {
                                  NULL, NULL, 0, 0, $state, NULL, 0)"
     run_statement "sflqInsertLease6 $in_address" "$sql" "1"
 
-    # Verify lease is inserted into lease6 but not removed from free_lease6
+    # Verify lease is inserted into lease6 and removed from free_lease6
     sql="select count(address) from lease6 where address = $bin_address;"
     run_statement "check lease6 4" "$sql" "1"
     sql="select count(address) from free_lease6 where address = $in_address;"
-    run_statement "check free_lease6 4" "$sql" "1"
+    run_statement "check free_lease6 4" "$sql" "0"
 
     # Let's wipe the whole database
     mysql_wipe
@@ -4851,11 +4851,11 @@ mysql_sflqUpdateLease6() {
                                  $bin_address, timestamp('$expired'))"
     run_statement "sflqUpdateLease6 $in_address" "$sql" "1"
 
-    # Verify lease is updated in lease6 and added to free_lease6
+    # Verify lease is updated in lease6 but not added to free_lease6
     sql="select count(address) from lease6 where address = $bin_address and state = 0;"
     run_statement "check lease6 4" "$sql" "1"
     sql="select count(address) from free_lease6 where address = $in_address;"
-    run_statement "check free_lease6 4" "$sql" "1"
+    run_statement "check free_lease6 4" "$sql" "0"
 
     # Let's wipe the whole database
     mysql_wipe
