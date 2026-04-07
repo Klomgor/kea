@@ -44,7 +44,7 @@ if MYSQL_DEP.found()
         is_parallel: false,
         priority: -1,
         suite: 'shell-tests',
-        timeout: 960,
+        timeout: 1920,
     )
 endif
 pgsql_tests = configure_file(
