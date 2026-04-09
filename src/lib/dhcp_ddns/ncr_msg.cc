@@ -309,6 +309,13 @@ NameChangeRequest::fromFormat(const NameChangeFormat format,
             // Read error accessing data in InputBuffer.
             isc_throw(NcrMessageError, "fromFormat: buffer read error: "
                       << ex.what());
+        } catch (const std::exception& ex) {
+            // known std error.
+            isc_throw(NcrMessageError, "fromFormat: buffer read error: "
+                      << ex.what());
+        } catch (...) {
+            // unknown error.
+            isc_throw(NcrMessageError, "fromFormat: buffer read error: unknown error");
         }
 
         break;
