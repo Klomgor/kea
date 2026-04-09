@@ -635,6 +635,24 @@ BEGIN
 END $$
 DELIMITER ;
 
+-- Procedure to create an affected rows count of 1.
+-- Used after udpate and delete lease operations.
+DROP TEMPORARY TABLE IF EXISTS sflq_dummy_row_count;
+DROP PROCEDURE IF EXISTS sflqFakeRowCount;
+DELIMITER $$
+CREATE PROCEDURE sflqFakeRowCount()
+BEGIN
+    IF (@sflq_dummy_exists IS NOT NULL)
+    THEN
+        UPDATE sflq_dummy_row_count SET dummy_val = NOT dummy_val;
+    ELSE
+        SET @sflq_dummy_exists = 1;
+        CREATE TEMPORARY TABLE sflq_dummy_row_count ( dummy_val TINYINT );
+        INSERT INTO sflq_dummy_row_count (dummy_val) VALUES (0);
+    END IF;
+END $$
+DELIMITER ;
+
 -- Procedure to insert a v4 lease and update SFLQ data.
 DROP PROCEDURE IF EXISTS sflqInsertLease4;
 DELIMITER $$
@@ -654,6 +672,8 @@ CREATE PROCEDURE sflqInsertLease4(
     IN p_remote_id VARBINARY(255),
     IN p_pool_id INT UNSIGNED)
 BEGIN
+    START TRANSACTION;
+
     INSERT INTO lease4 (address, hwaddr, client_id, valid_lifetime, expire,
                         subnet_id, fqdn_fwd, fqdn_rev, hostname, state,
                         user_context, relay_id, remote_id, pool_id)
@@ -673,6 +693,8 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
+
+    COMMIT;
 END $$
 DELIMITER ;
 
@@ -693,15 +715,24 @@ CREATE PROCEDURE sflqUpdateLease4(
     IN p_user_context TEXT,
     IN p_relay_id VARBINARY(255),
     IN p_remote_id VARBINARY(255),
-    IN p_pool_id INT UNSIGNED)
+    IN p_pool_id INT UNSIGNED,
+    IN p_where_address INT UNSIGNED,
+    IN p_where_expire TIMESTAMP)
 BEGIN
+    DECLARE lease_row_count INT;
+
+    START TRANSACTION;
+
     UPDATE lease4 SET address = p_address, hwaddr = p_hwaddr, client_id = p_client_id,
                       valid_lifetime = p_valid_lifetime, expire = p_expire,
                       subnet_id = p_subnet_id, fqdn_fwd = p_fqdn_fwd,
                       fqdn_rev = p_fqdn_rev, hostname = p_hostname, state = p_state,
                       user_context = p_user_context, relay_id = p_relay_id,
                       remote_id = p_remote_id, pool_id = p_pool_id
-        WHERE (address = p_address and expire = p_expire);
+        WHERE (address = p_where_address and expire = p_where_expire);
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- Update SFLQ data.
     -- If it is expired or expired-reclaimed add it to the free lease queue
@@ -710,10 +741,19 @@ BEGIN
     THEN
         -- Insert into free queue. Ignore duplicates.
         INSERT INTO free_lease4 (address) VALUES (p_address)
-        ON DUPLICATE KEY UPDATE address = p_address;
+            ON DUPLICATE KEY UPDATE address = p_address;
     ELSE
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease4 WHERE address = p_address;
+    END IF;
+
+    COMMIT;
+
+    -- If lease was updated but SFLQ logic changed no rows
+    -- force affected row count back to 1.
+    IF (lease_row_count > 0)
+    THEN
+        CALL sflqFakeRowCount();
     END IF;
 END $$
 DELIMITER ;
@@ -725,17 +765,32 @@ CREATE PROCEDURE sflqDeleteLease4(
     IN p_address INT UNSIGNED,
     IN p_expire TIMESTAMP)
 BEGIN
+    DECLARE lease_row_count INT;
+
+    START TRANSACTION;
+
     -- Delete the lease from lease4.
     DELETE FROM lease4 WHERE address = p_address AND expire = p_expire;
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- If we didn't delete it either it was already gone or expire
     -- didn't match. In case of the former it should already be in
     -- the flq and in the latter, it should not be.
     IF (row_count() > 0)
     THEN
-        -- Insert the lease into the free queue. Ignore duplicates.
         INSERT INTO free_lease4 (address) VALUES (p_address)
         ON DUPLICATE KEY UPDATE address = p_address;
+    END IF;
+
+    COMMIT;
+
+    -- If the lease was deleted but SFLQ logic changed no rows
+    -- force affected row count back to 1.
+    IF (lease_row_count > 0)
+    THEN
+        CALL sflqFakeRowCount();
     END IF;
 END $$
 DELIMITER ;
@@ -763,6 +818,8 @@ CREATE PROCEDURE sflqInsertLease6(
     IN p_user_context TEXT,
     IN p_pool_id INT UNSIGNED)
 BEGIN
+    START TRANSACTION;
+
     INSERT INTO lease6 (address, duid, valid_lifetime, expire, subnet_id,
                         pref_lifetime, lease_type, iaid, prefix_len,
                         fqdn_fwd, fqdn_rev, hostname, hwaddr, hwtype,
@@ -785,6 +842,8 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE bin_address = p_address;
     END IF;
+
+    COMMIT;
 END $$
 DELIMITER ;
 
@@ -809,15 +868,24 @@ CREATE PROCEDURE sflqUpdateLease6(
     IN p_hwaddr_source INT UNSIGNED,
     IN p_state INT UNSIGNED,
     IN p_user_context TEXT,
-    IN p_pool_id INT UNSIGNED)
+    IN p_pool_id INT UNSIGNED,
+    IN p_where_address BINARY(16),
+    IN p_where_expire TIMESTAMP)
 BEGIN
+    DECLARE lease_row_count INT;
+
+    START TRANSACTION;
+
     UPDATE lease6 SET address = p_address, duid = p_duid, valid_lifetime = p_valid_lifetime,
                       expire = p_expire, subnet_id = p_subnet_id, pref_lifetime = p_pref_lifetime,
                       lease_type = p_lease_type, iaid = p_iaid, prefix_len = p_prefix_len,
                       fqdn_fwd = p_fqdn_fwd, fqdn_rev = p_fqdn_rev, hostname = p_hostname,
                       hwaddr = p_hwaddr, hwtype = p_hwtype, hwaddr_source = p_hwaddr_source,
                       state = p_state, user_context = p_user_context, pool_id = p_pool_id
-        WHERE (address = p_address and expire = p_expire);
+        WHERE (address = p_where_address and expire = p_where_expire);
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- Update SFLQ data.
     -- If it is expired or expired-reclaimed add it to the free lease queue
@@ -832,6 +900,15 @@ BEGIN
         -- Delete it from the free queue. Ignore nothing deleted.
         DELETE FROM free_lease6 WHERE bin_address = p_address;
     END IF;
+
+    COMMIT;
+
+    -- If lease was updated but SFLQ logic changed no rows
+    -- force affected row count back to 1.
+    IF (lease_row_count > 0)
+    THEN
+        CALL sflqFakeRowCount();
+    END IF;
 END $$
 DELIMITER ;
 
@@ -842,8 +919,15 @@ CREATE PROCEDURE sflqDeleteLease6(
     IN p_address BINARY(16),
     IN p_expire TIMESTAMP)
 BEGIN
+    DECLARE lease_row_count INT;
+
+    START TRANSACTION;
+
     -- Delete the lease from lease4.
     DELETE FROM lease6 WHERE address = p_address AND expire = p_expire;
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- If we didn't delete it either it was already gone or expire
     -- didn't match. In case of the former it should already be in
@@ -854,6 +938,15 @@ BEGIN
         INSERT INTO free_lease6 (address, bin_address)
             VALUES (INET6_NTOA(p_address), p_address)
         ON DUPLICATE KEY UPDATE bin_address = p_address;
+    END IF;
+
+    COMMIT;
+
+    -- If the lease was deleted but SFLQ logic changed no rows
+    -- force affected row count back to 1.
+    IF (lease_row_count > 0)
+    THEN
+        CALL sflqFakeRowCount();
     END IF;
 END $$
 DELIMITER ;

@@ -567,14 +567,14 @@ tagged_statements = { {
                                           "?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_UPDATE_LEASE4,
                     "CALL sflqUpdateLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                                          "?, ?, ?, ?, ?)"},
+                                          "?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_DELETE_LEASE4,
                     "CALL sflqDeleteLease4(?,?)"},
     {MySqlLeaseMgr::SFLQ_INSERT_LEASE6,
                     "CALL sflqInsertLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
                                           "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_UPDATE_LEASE6,
-                    "CALL sflqUpdateLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                    "CALL sflqUpdateLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
                                           "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_DELETE_LEASE6,
                     "CALL sflqDeleteLease6(?, ?)"},

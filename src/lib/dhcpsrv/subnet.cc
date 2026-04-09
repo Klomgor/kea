@@ -16,6 +16,8 @@
 #include <dhcpsrv/iterative_allocator.h>
 #include <dhcpsrv/random_allocation_state.h>
 #include <dhcpsrv/random_allocator.h>
+#include <dhcpsrv/sflq_allocation_state.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <dhcpsrv/shared_network.h>
 #include <dhcpsrv/subnet.h>
 #include <util/multi_threading_mgr.h>
@@ -776,7 +778,13 @@ Subnet4::createAllocators() {
         for (auto const& pool : pools_) {
             pool->setAllocationState(PoolFreeLeaseQueueAllocationState::create(pool));
         }
-
+    } else if (allocator_type == "shared-flq") {
+        setAllocator(Lease::TYPE_V4,
+                     boost::make_shared<SharedFlqAllocator>
+                     (Lease::TYPE_V4, shared_from_this()));
+        setAllocationState(Lease::TYPE_V4,
+                           boost::make_shared<SubnetSflqAllocationState>());
+        // Does not use pool level allocation states.
     } else {
         setAllocator(Lease::TYPE_V4,
                      boost::make_shared<IterativeAllocator>
@@ -867,7 +875,11 @@ Subnet6::createAllocators() {
                      boost::make_shared<FreeLeaseQueueAllocator>
                      (Lease::TYPE_PD, shared_from_this()));
         setAllocationState(Lease::TYPE_PD, SubnetAllocationStatePtr());
-
+    } else if (allocator_type == "shared-flq") {
+        setAllocator(Lease::TYPE_PD,
+                     boost::make_shared<SharedFlqAllocator>
+                     (Lease::TYPE_PD, shared_from_this()));
+        setAllocationState(Lease::TYPE_PD, SubnetAllocationStatePtr());
     } else {
         setAllocator(Lease::TYPE_PD,
                      boost::make_shared<IterativeAllocator>

@@ -3788,7 +3788,7 @@ TEST_F(ParseConfigTest, invalidSubnetAllocator4) {
     ASSERT_EQ(comment->getType(), Element::string);
     EXPECT_EQ(1, rcode);
     std::string expected = "Configuration parsing failed: ";
-    expected += "supported allocators are: iterative, random and flq";
+    expected += "supported allocators are: iterative, random, flq and shared-flq";
     EXPECT_EQ(expected, comment->stringValue());
 }
 
@@ -3872,7 +3872,7 @@ TEST_F(ParseConfigTest, invalidSubnetAllocator6) {
     ASSERT_EQ(comment->getType(), Element::string);
     EXPECT_EQ(1, rcode);
     std::string expected = "Configuration parsing failed: ";
-    expected += "supported allocators are: iterative, random and flq";
+    expected += "supported allocators are: iterative, random, flq and shared-flq";
     EXPECT_EQ(expected, comment->stringValue());
 }
 

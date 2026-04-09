@@ -8,6 +8,7 @@
 #define SFLQ_ALLOCATOR_H
 
 #include <dhcpsrv/allocator.h>
+#include <dhcpsrv/sflq_allocation_state.h>
 #include <dhcpsrv/lease.h>
 #include <cstdint>
 
@@ -72,6 +73,11 @@ public:
     /// @return True if at least one subnet in the current configuration
     /// is using Shared FLQ allocation.
     static bool inUse();
+
+    /// @brief Returns the allocation state for the subnet pool_type;
+    ///
+    /// @return The allocation state.
+    SubnetSflqAllocationStatePtr getSubnetState() const;
 
 private:
 

@@ -109,6 +109,7 @@ SharedFlqAllocator::pickAddressInternal(const ClientClasses& client_classes,
                               .sflqPickFreeLease4(pool->getFirstAddress(),
                                                   pool->getLastAddress());
             if (!free_lease.isV4Zero()) {
+                getSubnetState()->setLastAllocatedTime();
                 return (free_lease);
             }
 
@@ -120,6 +121,7 @@ SharedFlqAllocator::pickAddressInternal(const ClientClasses& client_classes,
                               .sflqPickFreeLease6(pool->getFirstAddress(),
                                                   pool->getLastAddress());
             if (!free_lease.isV6Zero()) {
+                getSubnetState()->setLastAllocatedTime();
                 return (free_lease);
             }
 
@@ -182,6 +184,7 @@ SharedFlqAllocator::pickPrefixInternal(const ClientClasses& client_classes,
                               .sflqPickFreeLease6(pool->getFirstAddress(),
                                                   pool->getLastAddress());
             if (!free_lease.isV6Zero()) {
+                getSubnetState()->setLastAllocatedTime();
                 return (free_lease);
             }
 
@@ -204,6 +207,18 @@ SharedFlqAllocator::getRandomNumber(uint64_t limit) {
     }
     std::uniform_int_distribution<uint64_t> dist(0, limit);
     return (dist(generator_));
+}
+
+SubnetSflqAllocationStatePtr
+SharedFlqAllocator::getSubnetState() const {
+    auto subnet = subnet_.lock();
+    if (!subnet->getAllocationState(pool_type_)) {
+        subnet->setAllocationState(Lease::TYPE_V4,
+                                   boost::make_shared<SubnetSflqAllocationState>());
+    }
+
+    return (boost::dynamic_pointer_cast<SubnetSflqAllocationState>
+                                       (subnet->getAllocationState(pool_type_)));
 }
 
 } // end of namespace isc::dhcp
