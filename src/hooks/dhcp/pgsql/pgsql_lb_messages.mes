@@ -301,7 +301,7 @@ This debug message is issued when the server upgrades IPv6 lease extended info.
 The page number and started address, and the count of already updated leases
 are displayed.
 
-% PGSQL_LB_SFLQ_CREATE_POOL4 creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4
+% PGSQL_LB_SFLQ_CREATE_POOL4 creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4, capacity %5
 Logged at debug log level 50.
 This debug message is issued when the server asks the lease back end to
 (re)create the shared free lease data for the pool described in the arguments.
@@ -311,7 +311,7 @@ Logged at debug log level 50.
 This debug message is issued when the server asks the lease back end for
 a free address from the pool described in the arguments.
 
-% PGSQL_LB_SFLQ_CREATE_POOL6 creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6
+% PGSQL_LB_SFLQ_CREATE_POOL6 creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6, capacity %7
 Logged at debug log level 50.
 This debug message is issued when the server asks the lease back end to
 (re)create the shared free lease data for the pool described in the arguments.

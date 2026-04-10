@@ -61,7 +61,6 @@ SharedFlqAllocator::initAfterConfigureInternal() {
                                                            subnet->getID(), false);
             break;
         case Lease::TYPE_NA:
-            /// @todo guard against large ranges?
             LeaseMgrFactory::instance().sflqCreateFlqPool6(pool->getFirstAddress(),
                                                            pool->getLastAddress(),
                                                            Lease::TYPE_NA, 128,

@@ -4919,11 +4919,20 @@ MySqlLeaseMgr::byRemoteId6size() const {
 bool
 MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address,
                                   SubnetID subnet_id, bool recreate) {
+    auto capacity = addrsInRange(start_address, end_address);
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_CREATE_POOL4)
         .arg(start_address.toText())
         .arg(end_address.toText())
         .arg(subnet_id)
-        .arg(recreate);
+        .arg(recreate)
+        .arg(capacity);
+
+    /// @todo 16M? this is arbitrary number for now.
+    if (capacity > 16777216 ) {
+        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool4 "
+                            "- pool capcity " << capacity << " is too large" 
+                            " for shared-flq allocator");
+    }
 
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);
@@ -5025,13 +5034,29 @@ bool
 MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address,
                                   Lease::Type lease_type, uint8_t delegated_len,
                                   SubnetID subnet_id, bool recreate) {
+    uint128_t capacity;
+    if (lease_type == Lease::TYPE_PD) {
+        auto prefix_len = prefixLengthFromRange(start_address, end_address);
+        capacity = prefixesInRange(prefix_len, delegated_len);
+    } else {
+        capacity = addrsInRange(start_address, end_address);
+    }
+
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_SFLQ_CREATE_POOL6)
         .arg(start_address.toText())
         .arg(end_address.toText())
         .arg(lease_type)
-        .arg(delegated_len)
+        .arg(static_cast<uint16_t>(delegated_len))
         .arg(subnet_id)
-        .arg(recreate);
+        .arg(recreate)
+        .arg(capacity);
+
+    // @todo 16M? this is arbitrary number for now.
+    if (capacity > 16777216 ) {
+        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool6 "
+                            "- pool capcity " << capacity << " is too large" 
+                            " for shared-flq allocator");
+    }
 
     // Get a context.
     MySqlLeaseContextAlloc get_context(*this);

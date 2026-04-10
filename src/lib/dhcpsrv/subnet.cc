@@ -875,11 +875,13 @@ Subnet6::createAllocators() {
                      boost::make_shared<FreeLeaseQueueAllocator>
                      (Lease::TYPE_PD, shared_from_this()));
         setAllocationState(Lease::TYPE_PD, SubnetAllocationStatePtr());
-    } else if (allocator_type == "shared-flq") {
+    } else if (pd_allocator_type == "shared-flq") {
         setAllocator(Lease::TYPE_PD,
                      boost::make_shared<SharedFlqAllocator>
                      (Lease::TYPE_PD, shared_from_this()));
-        setAllocationState(Lease::TYPE_PD, SubnetAllocationStatePtr());
+        setAllocationState(Lease::TYPE_PD,
+                           boost::make_shared<SubnetSflqAllocationState>());
+        // Does not use pool level allocation states.
     } else {
         setAllocator(Lease::TYPE_PD,
                      boost::make_shared<IterativeAllocator>
