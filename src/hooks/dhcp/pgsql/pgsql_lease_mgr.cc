@@ -715,13 +715,12 @@ PgSqlTaggedStatement tagged_statements[] = {
       "SELECT sflqInsertLease4($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)" },
 
     // SFLQ_UPDATE_LEASE4
-    // Code sets all 16 bindinggs, we only need first 14.
     { 16, { OID_INT8, OID_BYTEA, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8,
             OID_BOOL, OID_BOOL, OID_VARCHAR, OID_INT8, OID_TEXT, OID_BYTEA,
             OID_BYTEA, OID_INT8, OID_INT8, OID_TIMESTAMP },
 
       "slfqUpdateLease4",
-      "SELECT sflqUpdateLease4($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)" },
+      "SELECT sflqUpdateLease4($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)" },
 
     // SLQ_DELETE_LEASE4
     { 2, { OID_INT8, OID_TIMESTAMP },
@@ -738,14 +737,14 @@ PgSqlTaggedStatement tagged_statements[] = {
                               "$10, $11, $12, $13, $14, $15, $16, $17, $18)" },
 
     // SFLQ_UPDATE_LEASE6
-    // Code sets all 20 bindinggs, we only need first 18.
     { 20, { OID_VARCHAR, OID_BYTEA, OID_INT8, OID_TIMESTAMP, OID_INT8, OID_INT8,
             OID_INT2, OID_INT4, OID_INT2, OID_BOOL, OID_BOOL, OID_VARCHAR,
             OID_BYTEA, OID_INT2, OID_INT2,
             OID_INT8, OID_TEXT, OID_INT8, OID_TEXT, OID_TIMESTAMP },
       "slfqUpdateLease6",
       "SELECT sflqUpdateLease6(cast($1 as inet), $2, $3, $4, $5, $6, $7, $8, $9, "
-                              "$10, $11, $12, $13, $14, $15, $16, $17, $18)" },
+                              "$10, $11, $12, $13, $14, $15, $16, $17, $18, "
+                              "cast($19 as inet), $20)" },
 
     // SFLQ_DELETE_LEASE6
     { 2, { OID_VARCHAR, OID_TIMESTAMP },

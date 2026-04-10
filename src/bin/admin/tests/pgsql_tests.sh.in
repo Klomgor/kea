@@ -3673,7 +3673,7 @@ pgsql_sflqInsertLease4() {
 
 # Verifies sflqUpdateLease4 function
 pgsql_sflqUpdateLease4() {
-    test_start "pgsql.pgsql_sflQUpdateLease4"
+    test_start "pgsql.pgsql_sflqUpdateLease4"
 
     # Let's wipe the whole database
     pgsql_wipe
@@ -3717,7 +3717,8 @@ pgsql_sflqUpdateLease4() {
     # Update the lease to declined
     sql="select sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
                                1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
-                               1::bigint, NULL, NULL, NULL, 0::bigint)";
+                               1::bigint, NULL, NULL, NULL, 0::bigint,\
+                               $bigint_address, '$future'::timestamp)";
     run_statement "sflqUpdateLease4 1" "$sql"
 
     # Verify lease is updated lease4 and but not present free_lease4
@@ -3729,7 +3730,8 @@ pgsql_sflqUpdateLease4() {
     # Update the lease to be reclaimed.
     sql="select sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$future'::timestamp,\
                                1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
-                               2::bigint, NULL, NULL, NULL, 0::bigint)";
+                               2::bigint, NULL, NULL, NULL, 0::bigint,\
+                               $bigint_address, '$future'::timestamp)";
     run_statement "sflqUpdateLease4 2" "$sql"
 
     # Verify lease is updated in lease4 and added to free_lease4
@@ -3755,8 +3757,9 @@ pgsql_sflqUpdateLease4() {
     # Update the expired lease.
     sql="select sflqUpdateLease4($bigint_address, NULL, NULL, 3600::bigint, '$expired'::timestamp,\
                                1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
-                               0::bigint, NULL, NULL, NULL, 0::bigint)";
-    run_statement "sflqUpdateLease4 3" "$sql"
+                               0::bigint, NULL, NULL, NULL, 0::bigint,\
+                               $bigint_address, '$expired'::timestamp)";
+    run_statement "sflqUpdateLease4 4" "$sql"
 
     # Verify lease is updated in lease4 and added to free_lease4
     sql="select count(address) from lease4 where address = $bigint_address and state = 0;"
@@ -4008,7 +4011,7 @@ pgsql_sflqUpdateLease6() {
                                $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
                                $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
                                NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
-                               NULL, 0::bigint)"
+                               NULL, 0::bigint, $in_address::inet, '$future'::timestamp)"
     run_statement "sflqUpdateLease6 $in_address" "$sql"
 
     # Verify lease is updated in lease6 and but not present in free_lease6
@@ -4023,7 +4026,7 @@ pgsql_sflqUpdateLease6() {
                                $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
                                $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
                                NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
-                               NULL, 0::bigint)"
+                               NULL, 0::bigint, $in_address::inet, '$future'::timestamp)"
     run_statement "sflqUpdateLease6 $in_address" "$sql"
 
     # Verify lease is updated in lease6 and added to free_lease6
@@ -4048,7 +4051,7 @@ pgsql_sflqUpdateLease6() {
                                $subnet_id::bigint, 3600::bigint, $ltype::smallint, \
                                $iaid::integer, 128::smallint, 'f'::boolean, 'f'::boolean,\
                                NULL, NULL, 0::smallint, 0::smallint, $state::bigint, \
-                               NULL, 0::bigint)"
+                               NULL, 0::bigint, $in_address::inet, '$expired'::timestamp)"
     run_statement "sflqUpdateLease6 $in_address" "$sql"
 
     # Verify lease is updated in lease6 and added to free_lease6
