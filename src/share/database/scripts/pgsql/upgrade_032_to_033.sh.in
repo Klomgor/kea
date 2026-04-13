@@ -729,9 +729,9 @@ BEGIN
     IF (lease_row_count > 0)
     THEN
         -- Update SFLQ data.
-        -- If it is expired or expired-reclaimed delete add it to the
+        -- If it is expired-reclaimed delete add it to the
         -- free queue otherwise delete it from the free queue.
-        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
+        IF (p_state = 2)
         THEN
             -- Insert into free queue. Ignore duplicates.
             INSERT INTO free_lease4 (address) VALUES (p_address)
@@ -813,9 +813,9 @@ BEGIN
     IF (lease_row_count > 0)
     THEN
         -- Update SFLQ data.
-        -- If it is expired or expired-reclaimed delete add it to the
+        -- If it is expired-reclaimed delete add it to the
         -- free queue otherwise delete it from the free queue.
-        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
+        IF (p_state = 2)
         THEN
             -- Insert into free queue. Ignore duplicates.
             INSERT INTO free_lease6 (address, bin_address)
