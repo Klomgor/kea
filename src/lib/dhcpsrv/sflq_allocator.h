@@ -83,19 +83,12 @@ private:
 
     /// @brief Performs allocator initialization after server's reconfiguration.
     ///
-    /// The allocator installs the callbacks in the lease manager to keep track of
-    /// the lease allocations and maintain the free leases queue.
+    /// The allocator calls the appropriate lease back end function
+    /// (sflqCreateFlqPool4 or sflqCreateFlqPool6) to create the SFLQ pools
+    /// for each pool in the subnet.
     virtual void initAfterConfigureInternal();
 
-    /// @brief Populates the queue of free addresses (IPv4 and IPv6).
-    ///
-    /// Instructs lease the lease back end to (re)create SFLQ data for
-    /// each pool in a subnet.
-    ///
-    /// @param pools collection of pools in the subnet.
-    void populateFreeAddressLeases(const PoolCollection& pools);
-
-    /// @brief Returns next available address from the queue.
+    /// @brief Returns next available address from the pool.
     ///
     /// Internal thread-unsafe implementation of the @c pickAddress.
     ///
@@ -103,12 +96,12 @@ private:
     /// @param duid client DUID (ignored).
     /// @param hint client hint (ignored).
     ///
-    /// @return next offered address.
+    /// @return next available address or the protocol-appropriate zero address.
     virtual asiolink::IOAddress pickAddressInternal(const ClientClasses& client_classes,
                                                     const IdentifierBaseTypePtr& duid,
                                                     const asiolink::IOAddress& hint);
 
-    /// @brief Returns next available delegated prefix from the queue.
+    /// @brief Returns next available delegated prefix from the pool.
     ///
     /// Internal thread-unsafe implementation of the @c pickPrefix.
     ///
@@ -122,7 +115,7 @@ private:
     ///        provided. The 0 value means that there is no hint and that any
     ///        pool will suffice.
     ///
-    /// @return the next prefix.
+    /// @return the next prefix or v6 zero address (i.e. '::').
     virtual isc::asiolink::IOAddress
     pickPrefixInternal(const ClientClasses& client_classes,
                        Pool6Ptr& pool,

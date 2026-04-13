@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2026 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -33,25 +33,11 @@ typedef boost::shared_ptr<SubnetSflqAllocationState> SubnetSflqAllocationStatePt
 class SubnetSflqAllocationState : public SubnetAllocationState {
 public:
 
-#if 0
-    /// @brief Factory function creating the state instance from subnet.
-    ///
-    /// @param subnet instance of the subnet for which the allocation
-    /// state should be instantiated.
-    /// @return new allocation state instance.
-    static SubnetSflqAllocationStatePtr create(const SubnetPtr& subnet);
-#endif
-
     /// @brief Constructor.
-    ///
-#if 0
-    /// @param prefix subnet prefix.
-    /// @param prefix_length subnet prefix length.
-    SubnetSflqAllocationState(const asiolink::IOAddress& prefix,
-                              const uint8_t prefix_length);
-#else
     SubnetSflqAllocationState();
-#endif
+
+    /// @brief Destructor.
+    virtual ~SubnetSflqAllocationState() {};
 
     /// @brief Set last allocated time.
     ///

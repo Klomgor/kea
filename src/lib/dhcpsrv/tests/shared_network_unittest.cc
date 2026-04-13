@@ -13,6 +13,7 @@
 #include <dhcpsrv/subnet.h>
 #include <dhcpsrv/subnet_id.h>
 #include <dhcpsrv/iterative_allocation_state.h>
+#include <dhcpsrv/sflq_allocation_state.h>
 #include <util/triplet.h>
 #include <exceptions/exceptions.h>
 #include <testutils/test_to_element.h>
@@ -1600,6 +1601,245 @@ TEST(SharedNetworkFetcherTest, getSharedNetwork6ByName) {
     network = SharedNetworkFetcher6::get(collection, "network2");
     ASSERT_TRUE(network);
     EXPECT_EQ("network2", network->getName());
+}
+
+// This test verifies that the v4 preferred subnet is returned based
+// on the timestamp when the subnet was last used and allowed
+// client classes when SFLQ allocation is used.
+TEST(SharedNetwork4Test, sflqGetPreferredSubnet) {
+    SharedNetwork4Ptr network(new SharedNetwork4("frog"));
+
+    // Create five subnets.
+    auto subnet1 = Subnet4::create(IOAddress("10.0.0.0"), 8, 10, 20, 30,
+                                   SubnetID(1));
+    auto subnet2 = Subnet4::create(IOAddress("192.0.2.0"), 24, 10, 20, 30,
+                                   SubnetID(2));
+    auto subnet3 = Subnet4::create(IOAddress("172.16.25.0"), 24, 10, 20, 30,
+                                   SubnetID(3));
+    auto subnet4 = Subnet4::create(IOAddress("172.16.28.0"), 24, 10, 20, 30,
+                                   SubnetID(4));
+    auto subnet5 = Subnet4::create(IOAddress("172.16.30.0"), 24, 10, 20, 30,
+                                   SubnetID(5));
+
+    auto state1 = SubnetSflqAllocationStatePtr(new SubnetSflqAllocationState());
+    auto state2 = SubnetSflqAllocationStatePtr(new SubnetSflqAllocationState());
+    auto state3 = SubnetSflqAllocationStatePtr(new SubnetSflqAllocationState());
+    auto state4 = SubnetSflqAllocationStatePtr(new SubnetSflqAllocationState());
+    auto state5 = SubnetSflqAllocationStatePtr(new SubnetSflqAllocationState());
+
+    subnet1->setAllocationState(Lease::TYPE_V4, state1);
+    subnet2->setAllocationState(Lease::TYPE_V4, state2);
+    subnet3->setAllocationState(Lease::TYPE_V4, state3);
+    subnet4->setAllocationState(Lease::TYPE_V4, state4);
+    subnet5->setAllocationState(Lease::TYPE_V4, state5);
+
+    // Associate first two subnets with classes.
+    subnet1->allowClientClass("class1");
+    subnet2->allowClientClass("class1");
+
+    std::vector<Subnet4Ptr> subnets;
+    subnets.push_back(subnet1);
+    subnets.push_back(subnet2);
+    subnets.push_back(subnet3);
+    subnets.push_back(subnet4);
+    subnets.push_back(subnet5);
+
+    // Subnets have unique IDs so they should successfully be added to the
+    // network.
+    for (unsigned i = 0; i < subnets.size(); ++i) {
+        ASSERT_NO_THROW(network->add(subnets[i]))
+            << "failed to add subnet with id " << subnets[i]->getID()
+            << " to shared network";
+    }
+
+    ConstSubnet4Ptr preferred;
+
+    // Initially, for every subnet we should get the same subnet as the preferred
+    // one, because none of them have been used.
+    for (unsigned i = 0; i < subnets.size(); ++i) {
+        preferred = network->getPreferredSubnet(subnets[i]);
+        EXPECT_EQ(subnets[i]->getID(), preferred->getID());
+    }
+
+    // Allocating an address from subnet2 updates the last allocated timestamp
+    // for this subnet, which makes this subnet preferred over subnet1.
+    state2->setLastAllocatedTime();
+    preferred = network->getPreferredSubnet(subnet1);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // If selected is subnet2, the same is returned.
+    preferred = network->getPreferredSubnet(subnet2);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // Even though the subnet1 has been most recently used, the preferred
+    // subnet is subnet3 in this case, because of the client class
+    // mismatch.
+    preferred = network->getPreferredSubnet(subnet3);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
+
+    // Same for subnet4.
+    preferred = network->getPreferredSubnet(subnet4);
+    EXPECT_EQ(subnet4->getID(), preferred->getID());
+
+    // Same for subnet5.
+    preferred = network->getPreferredSubnet(subnet5);
+    EXPECT_EQ(subnet5->getID(), preferred->getID());
+
+    // Allocate an address from the subnet3. This makes it preferred to
+    // subnet4 and subnet5.
+    state3->setLastAllocatedTime();
+
+    // If the selected is subnet1, the preferred subnet is subnet2, because
+    // it has the same set of classes as subnet1. The subnet3 can't be
+    // preferred here because of the client class mismatch.
+    preferred = network->getPreferredSubnet(subnet1);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // If we select subnet4, the preferred subnet is subnet3 because
+    // it was used more recently.
+    preferred = network->getPreferredSubnet(subnet4);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
+
+    // Repeat the test for subnet3 being a selected subnet.
+    preferred = network->getPreferredSubnet(subnet3);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
+
+    // Allocate an address from remaining subnets and make sure that the
+    // allocation from the subnet4 is slightly more recent. Both are
+    // more recent than subnet3b.
+    auto now = boost::posix_time::microsec_clock::universal_time();
+    state4->setLastAllocatedTime(now + boost::posix_time::seconds(2));
+    state4->setLastAllocatedTime(now + boost::posix_time::seconds(1));
+
+    // The subnet4 should now be preferred.
+    preferred = network->getPreferredSubnet(subnet3);
+    EXPECT_EQ(subnet4->getID(), preferred->getID());
+}
+
+// This test verifies that the v4 preferred subnet is returned based
+// on the timestamp when the subnet was last used and allowed
+// client classes when SFLQ allocation is used.
+// @todo Note that this test uses SFLQ for TYPE_NA pools. While this
+// is currently not allowed through configuration, the underlying
+// logic supports it. This test includes SFLQ for TYPE_NA in
+// the event that it utlimately is supported.
+TEST(SharedNetwork6Test, sflqGetPreferredSubnet) {
+    SharedNetwork6Ptr network(new SharedNetwork6("frog"));
+
+    // Create four subnets.
+    auto subnet1 = Subnet6::create(IOAddress("2001:db8:1::"), 64, 10, 20, 30,
+                                   40, SubnetID(1));
+    auto subnet2 = Subnet6::create(IOAddress("3000::"), 16, 10, 20, 30, 40,
+                                   SubnetID(2));
+    auto subnet3 = Subnet6::create(IOAddress("2001:db8:2::"), 64, 10, 20, 30,
+                                   40, SubnetID(3));
+    auto subnet4 = Subnet6::create(IOAddress("3000:1::"), 64, 10, 20, 30,
+                                   40, SubnetID(4));
+
+    // Associate first two subnets with classes.
+    subnet1->allowClientClass("class1");
+    subnet2->allowClientClass("class1");
+
+    std::vector<Subnet6Ptr> subnets;
+    subnets.push_back(subnet1);
+    subnets.push_back(subnet2);
+    subnets.push_back(subnet3);
+    subnets.push_back(subnet4);
+
+    // Set allocation state for NA and PD to SFLQ.
+    subnet1->setAllocationState(Lease::TYPE_NA, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet2->setAllocationState(Lease::TYPE_NA, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet3->setAllocationState(Lease::TYPE_NA, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet4->setAllocationState(Lease::TYPE_NA, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet1->setAllocationState(Lease::TYPE_PD, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet2->setAllocationState(Lease::TYPE_PD, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet3->setAllocationState(Lease::TYPE_PD, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+    subnet4->setAllocationState(Lease::TYPE_PD, SubnetSflqAllocationStatePtr(
+                                                new SubnetSflqAllocationState()));
+
+    // Subnets have unique IDs so they should successfully be added to the
+    // network.
+    for (unsigned i = 0; i < subnets.size(); ++i) {
+        ASSERT_NO_THROW(network->add(subnets[i]))
+            << "failed to add subnet with id " << subnets[i]->getID()
+            << " to shared network";
+    }
+
+    ConstSubnet6Ptr preferred;
+
+    // Initially, for every subnet we should get the same subnet as the preferred
+    // one, because none of them have been used.
+    for (unsigned i = 0; i < subnets.size(); ++i) {
+        preferred = network->getPreferredSubnet(subnets[i], Lease::TYPE_NA);
+        EXPECT_EQ(subnets[i]->getID(), preferred->getID());
+        preferred = network->getPreferredSubnet(subnets[i], Lease::TYPE_TA);
+        EXPECT_EQ(subnets[i]->getID(), preferred->getID());
+        preferred = network->getPreferredSubnet(subnets[i], Lease::TYPE_PD);
+        EXPECT_EQ(subnets[i]->getID(), preferred->getID());
+    }
+
+    // Allocating an address from subnet2 updates the last allocated timestamp
+    // for this subnet, which makes this subnet preferred over subnet1
+    auto state = boost::dynamic_pointer_cast<SubnetSflqAllocationState>
+        (subnet2->getAllocationState(Lease::TYPE_NA));
+    state->setLastAllocatedTime();
+    preferred = network->getPreferredSubnet(subnet1, Lease::TYPE_NA);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // If selected is subnet2, the same is returned.
+    preferred = network->getPreferredSubnet(subnet2, Lease::TYPE_NA);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // The preferred subnet is dependent on the lease type. For the PD
+    // we should get the same subnet as selected.
+    preferred = network->getPreferredSubnet(subnet1, Lease::TYPE_PD);
+    EXPECT_EQ(subnet1->getID(), preferred->getID());
+
+    // Although, if we pick a prefix from the subnet2, we should get the
+    // subnet2 as preferred instead.
+    auto pd_state = boost::dynamic_pointer_cast<SubnetSflqAllocationState>
+                    (subnet2->getAllocationState(Lease::TYPE_PD));
+    pd_state->setLastAllocatedTime();
+    preferred = network->getPreferredSubnet(subnet1, Lease::TYPE_PD);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // Even though the subnet1 has been most recently used, the preferred
+    // subnet is subnet3 in this case, because of the client class
+    // mismatch.
+    preferred = network->getPreferredSubnet(subnet3, Lease::TYPE_NA);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
+
+    // Same for subnet4.
+    preferred = network->getPreferredSubnet(subnet4, Lease::TYPE_NA);
+    EXPECT_EQ(subnet4->getID(), preferred->getID());
+
+    // Allocate an address from the subnet3. This makes it preferred to
+    // subnet4.
+    state = boost::dynamic_pointer_cast<SubnetSflqAllocationState>
+        (subnet3->getAllocationState(Lease::TYPE_NA));
+    state->setLastAllocatedTime();
+
+    // If the selected is subnet1, the preferred subnet is subnet2, because
+    // it has the same set of classes as subnet1. The subnet3 can't be
+    // preferred here because of the client class mismatch.
+    preferred = network->getPreferredSubnet(subnet1, Lease::TYPE_NA);
+    EXPECT_EQ(subnet2->getID(), preferred->getID());
+
+    // If we select subnet4, the preferred subnet is subnet3 because
+    // it was used more recently.
+    preferred = network->getPreferredSubnet(subnet4, Lease::TYPE_NA);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
+
+    // Repeat the test for subnet3 being a selected subnet.
+    preferred = network->getPreferredSubnet(subnet3, Lease::TYPE_NA);
+    EXPECT_EQ(subnet3->getID(), preferred->getID());
 }
 
 } // end of anonymous namespace

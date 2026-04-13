@@ -20,7 +20,7 @@ SubnetSflqAllocationState::SubnetSflqAllocationState()
 
 void
 SubnetSflqAllocationState::setLastAllocatedTime(boost::posix_time::ptime last_time
-                                            /* = not_a_date_time */) {
+                                                /* = not_a_date_time */) {
     MultiThreadingLock lock(*mutex_);
     if (last_time == boost::posix_time::not_a_date_time) {
         setCurrentAllocatedTimeInternal();
