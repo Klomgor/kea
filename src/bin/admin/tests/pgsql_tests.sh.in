@@ -3759,7 +3759,7 @@ pgsql_sflqUpdateLease4() {
                                1::bigint, 'f'::boolean, 'f'::boolean, NULL,\
                                0::bigint, NULL, NULL, NULL, 0::bigint,\
                                $bigint_address, '$expired'::timestamp)";
-    run_statement "sflqUpdateLease4 4" "$sql"
+    run_statement "sflqUpdateLease4 3" "$sql"
 
     # Verify lease is updated in lease4 and added to free_lease4
     sql="select count(address) from lease4 where address = $bigint_address and state = 0;"

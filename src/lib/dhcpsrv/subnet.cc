@@ -850,7 +850,12 @@ Subnet6::createAllocators() {
 
     } else if (allocator_type == "flq") {
         isc_throw(BadValue, "Free Lease Queue allocator is not supported for IPv6 address pools");
-
+    } else if (allocator_type == "shared-flq") {
+        setAllocator(Lease::TYPE_NA,
+                     boost::make_shared<SharedFlqAllocator>
+                     (Lease::TYPE_NA, shared_from_this()));
+        setAllocationState(Lease::TYPE_NA,
+                           boost::make_shared<SubnetSflqAllocationState>());
     } else {
         setAllocator(Lease::TYPE_NA,
                      boost::make_shared<IterativeAllocator>

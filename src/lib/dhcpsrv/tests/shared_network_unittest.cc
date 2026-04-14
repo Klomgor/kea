@@ -1706,7 +1706,7 @@ TEST(SharedNetwork4Test, sflqGetPreferredSubnet) {
 
     // Allocate an address from remaining subnets and make sure that the
     // allocation from the subnet4 is slightly more recent. Both are
-    // more recent than subnet3b.
+    // more recent than subnet3.
     auto now = boost::posix_time::microsec_clock::universal_time();
     state4->setLastAllocatedTime(now + boost::posix_time::seconds(2));
     state4->setLastAllocatedTime(now + boost::posix_time::seconds(1));
@@ -1719,10 +1719,6 @@ TEST(SharedNetwork4Test, sflqGetPreferredSubnet) {
 // This test verifies that the v4 preferred subnet is returned based
 // on the timestamp when the subnet was last used and allowed
 // client classes when SFLQ allocation is used.
-// @todo Note that this test uses SFLQ for TYPE_NA pools. While this
-// is currently not allowed through configuration, the underlying
-// logic supports it. This test includes SFLQ for TYPE_NA in
-// the event that it utlimately is supported.
 TEST(SharedNetwork6Test, sflqGetPreferredSubnet) {
     SharedNetwork6Ptr network(new SharedNetwork6("frog"));
 

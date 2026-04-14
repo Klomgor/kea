@@ -4497,7 +4497,7 @@ mysql_sflqInsertLease4() {
 }
 
 mysql_sflqUpdateLease4() {
-    test_start "mysql.mysql_sflQUpdateLease4"
+    test_start "mysql.mysql_sflqUpdateLease4"
 
     # Let's wipe the whole database
     mysql_wipe

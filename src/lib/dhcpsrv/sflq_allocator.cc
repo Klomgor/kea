@@ -216,8 +216,14 @@ SharedFlqAllocator::getSubnetState() const {
                                    boost::make_shared<SubnetSflqAllocationState>());
     }
 
-    return (boost::dynamic_pointer_cast<SubnetSflqAllocationState>
-                                       (subnet->getAllocationState(pool_type_)));
+    SubnetSflqAllocationStatePtr state;
+    state = boost::dynamic_pointer_cast<SubnetSflqAllocationState>
+                                       (subnet->getAllocationState(pool_type_));
+    if (!state) {
+        isc_throw(Unexpected, "SharedFlqAllocator::getSubnetState - wrong allcoation state type");
+    }
+
+    return (state);
 }
 
 } // end of namespace isc::dhcp

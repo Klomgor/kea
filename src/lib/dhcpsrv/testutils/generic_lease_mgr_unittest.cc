@@ -5900,7 +5900,7 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
             ASSERT_FALSE(returned);
         }
 
-        // Ask for a free lease and verifly accordingly.
+        // Ask for a free lease and verify accordingly.
         IOAddress picked = IOAddress::IPV4_ZERO_ADDRESS();
         ASSERT_NO_THROW_LOG(picked = lmptr_->sflqPickFreeLease4(start_address, end_address));
         if (scenario.can_pick_) {
@@ -5958,9 +5958,8 @@ GenericLeaseMgrTest::testSflqCreateAndPick6(bool exp_not_implemented /* = false 
     }
 }
 
-// will need a PD and an NA version
 void
-GenericLeaseMgrTest::testSflqLeaseOps6() {
+GenericLeaseMgrTest::testSflqLeaseOps6(Lease::Type lease_type) {
     // Create a subnet with a one address pool for simplicity.
     IOAddress start_address("2001:db8::");
     IOAddress end_address("2001:db8::");
@@ -5968,10 +5967,18 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
     Subnet6Ptr subnet;
     Pool6Ptr pool;
     subnet.reset(new Subnet6(start_address, 64, 1, 2, 3, 4, 1));
-    pool.reset(new Pool6(Lease::TYPE_NA, start_address, end_address));
-    subnet->addPool(pool);
-    AllocatorPtr sflq_allocator(new SharedFlqAllocator(Lease::TYPE_NA, subnet));
-    subnet->setAllocator(Lease::TYPE_NA, sflq_allocator);
+
+    if (lease_type == Lease::TYPE_NA) {
+        pool.reset(new Pool6(Lease::TYPE_NA, start_address, end_address));
+        subnet->addPool(pool);
+        subnet->setAllocatorType("shared-flq");
+    } else {
+        pool.reset(new Pool6(Lease::TYPE_PD, start_address, 128, 128));
+        subnet->addPool(pool);
+        subnet->setPdAllocatorType("shared-flq");
+    }
+
+    ASSERT_NO_THROW_LOG(subnet->createAllocators());
     cfg->add(subnet);
 
     // Should create the SFLQ pool for the subnet.
@@ -6032,6 +6039,7 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
 
     // Iterate over the scenarios.
     Lease6Ptr preop_lease = initializeLease6(start_address.toText());
+    preop_lease->type_ = lease_type;
     for ( auto const& scenario : scenarios ){
         std::ostringstream os;
         os << "scenario at line: " << scenario.lineno_;
@@ -6060,7 +6068,7 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
         };
 
         // Attempt to the fetch the lease and test accordingly.
-        Lease6Ptr returned = lmptr_->getLease6(Lease::TYPE_NA, preop_lease->addr_);
+        Lease6Ptr returned = lmptr_->getLease6(lease_type, preop_lease->addr_);
         if (scenario.should_exist_) {
             ASSERT_TRUE(returned);
             detailCompareLease(preop_lease, returned);
@@ -6068,7 +6076,7 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
             ASSERT_FALSE(returned);
         }
 
-        // Ask for a free lease and verifly accordingly.
+        // Ask for a free lease and verify accordingly.
         IOAddress picked = IOAddress::IPV6_ZERO_ADDRESS();
         ASSERT_NO_THROW_LOG(picked = lmptr_->sflqPickFreeLease6(start_address, end_address));
         if (scenario.can_pick_) {

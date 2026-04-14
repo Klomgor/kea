@@ -367,12 +367,6 @@ SharedNetwork6Parser::parse(const data::ConstElementPtr& shared_network_data,
             isc_throw(BadValue, "Free Lease Queue allocator is not supported for IPv6 address pools");
         }
 
-        /// @todo Do we want this or not?  One potential use case would be someone
-        /// using a mapped v4 addresses?  "::xxxx:xxxx" -> "::192.0.2.1"
-        if (network->getAllocatorType() == "shared-flq") {
-            isc_throw(BadValue, "Shared FLQ allocator is not supported for IPv6 address pools");
-        }
-
         // Parse prefix delegation allocator params.
         auto network6 = boost::dynamic_pointer_cast<Network6>(shared_network);
         parsePdAllocatorParams(shared_network_data, network6);

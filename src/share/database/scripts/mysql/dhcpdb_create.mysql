@@ -7055,7 +7055,7 @@ END $$
 DELIMITER ;
 
 -- Procedure to create an affected rows count of 1.
--- Used after udpate and delete lease operations.
+-- Used after update and delete lease operations.
 DROP TEMPORARY TABLE IF EXISTS sflq_dummy_row_count;
 DROP PROCEDURE IF EXISTS sflqFakeRowCount;
 DELIMITER $$

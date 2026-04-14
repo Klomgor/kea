@@ -7359,7 +7359,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Procedure to create an affected rows count of 1.
--- Used after udpate and delete lease operations.
+-- Used after update and delete lease operations.
 CREATE OR REPLACE FUNCTION sflqFakeRowCount()
 RETURNS VOID
 LANGUAGE plpgsql AS $$

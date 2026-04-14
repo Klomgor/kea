@@ -709,7 +709,9 @@ public:
     void testSflqCreateAndPick6(bool exp_not_implemented = false);
 
     /// @brief Checks v6 SFLQ add, update, and delete
-    void testSflqLeaseOps6();
+    ///
+    /// @param lease_type lease type to test (TYPE_NA or TYPE_PD)
+    void testSflqLeaseOps6(Lease::Type lease_type);
 
     /// @brief String forms of IPv4 addresses
     std::vector<std::string> straddress4_;

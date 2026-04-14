@@ -40,6 +40,7 @@ public:
         SharedFlqAllocator::setInUse(false);
     }
 
+    /// @brief Post-test cleanup.
     virtual void TearDown() {
         SharedFlqAllocator::setInUse(false);
     }
@@ -62,6 +63,9 @@ public:
         pool->allowClientClass("ALL");
         pool->allowClientClass("three");
         subnet_->addPool(pool);
+
+        subnet_->setAllocatorType("shared-flq");
+        subnet_->createAllocators();
     }
 
     /// @brief Subnet used in tests.
@@ -77,10 +81,10 @@ TEST_F(SharedFlqAllocatorTest4, getType) {
 // Tests initAfterConfigure() function. It should create
 // an SFLQ pool for each pool in the subnet.
 TEST_F(SharedFlqAllocatorTest4, initAfterConfigure) {
-    SharedFlqAllocator alloc(Lease::TYPE_V4, subnet_);
-
     EXPECT_FALSE(SharedFlqAllocator::inUse());
-    EXPECT_NO_THROW(alloc.initAfterConfigure());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_V4);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
     EXPECT_TRUE(SharedFlqAllocator::inUse());
 
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
@@ -91,12 +95,13 @@ TEST_F(SharedFlqAllocatorTest4, initAfterConfigure) {
     }
 }
 
-// Exercises ShareFlqAllocator::pickAddressInternal() for a V4 subnet.
+// Exercises SharedFlqAllocator::pickAddressInternal() for a V4 subnet.
 TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     IOAddress zero_address = IOAddress::IPV4_ZERO_ADDRESS();
-    SharedFlqAllocator alloc(Lease::TYPE_V4, subnet_);
 
-    EXPECT_NO_THROW(alloc.initAfterConfigure());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_V4);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
 
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
     for (auto pool : subnet_->getPools(Lease::TYPE_V4)) {
@@ -114,9 +119,9 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     for (int i = 0; i < 6; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
-                                              IdentifierBaseTypePtr(),
-                                              zero_address));
+                            alloc->pickAddress(client_classes,
+                                               IdentifierBaseTypePtr(),
+                                               zero_address));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -130,7 +135,7 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("192.0.3.1")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 
     // Verify that only pool 2 addresses are picked for class "two"
@@ -141,9 +146,9 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     for (int i = 0; i < 2; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
-                                              IdentifierBaseTypePtr(),
-                                              zero_address))
+                            alloc->pickAddress(client_classes,
+                                               IdentifierBaseTypePtr(),
+                                               zero_address))
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -153,7 +158,7 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("192.0.2.1")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 
     // Verify that only pool 1 and 3 addresses are picked for classes "one" or "three"
@@ -165,9 +170,9 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     for (int i = 0; i < 4; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
-                                              IdentifierBaseTypePtr(),
-                                              zero_address));
+                            alloc->pickAddress(client_classes,
+                                               IdentifierBaseTypePtr(),
+                                               zero_address));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -179,7 +184,7 @@ TEST_F(SharedFlqAllocatorTest4, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("192.0.3.1")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 }
 
@@ -197,11 +202,18 @@ public:
         ASSERT_TRUE(LeaseMgrFactory::haveInstance());
         ASSERT_EQ(LeaseMgrFactory::instance().getType(), "sflqtest");
         initSubnet6();
+        SharedFlqAllocator::setInUse(false);
+    }
+
+    /// @brief Post-test cleanup.
+    virtual void TearDown() {
+        SharedFlqAllocator::setInUse(false);
     }
 
     /// @brief Initializes the test subnet for V4 tests.
     void initSubnet6() {
         static SubnetID id(1);
+
         subnet_ = Subnet6::create(IOAddress("3001::"), 64, 0, 0, 0, 0 , id);
         PoolPtr pool(new Pool6(Lease::TYPE_NA, IOAddress("3001::10"), IOAddress("3001::11")));
         pool->allowClientClass("ALL");
@@ -248,10 +260,14 @@ public:
         pool.reset(new Pool6(Lease::TYPE_PD, IOAddress("4001:30::"), 124, 128));
         pool->allowClientClass("LENGTH_HINT");
         subnet_->addPool(pool);
+
+        subnet_->setAllocatorType("shared-flq");
+        subnet_->setPdAllocatorType("shared-flq");
+        subnet_->createAllocators();
     }
 
     /// @brief Subnet used in tests.
-    SubnetPtr subnet_;
+    Subnet6Ptr subnet_;
 };
 
 // Test that the allocator returns the correct type.
@@ -269,30 +285,30 @@ TEST_F(SharedFlqAllocatorTest6, getType) {
 
 // Tests initAfterConfigure() for V6/TYPE_NA pools.
 TEST_F(SharedFlqAllocatorTest6, initAfterConfigureNA) {
-    SharedFlqAllocator alloc(Lease::TYPE_NA, subnet_);
-
     EXPECT_FALSE(SharedFlqAllocator::inUse());
-    EXPECT_NO_THROW(alloc.initAfterConfigure());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_NA);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
     EXPECT_TRUE(SharedFlqAllocator::inUse());
 
     // Verify the NA pools.
-    SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
+   SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
 
     for (auto pool : subnet_->getPools(Lease::TYPE_NA)) {
-        auto sflq_pool = slm.findPool(pool->getFirstAddress(), pool->getLastAddress());
+       auto sflq_pool = slm.findPool(pool->getFirstAddress(), pool->getLastAddress());
         ASSERT_TRUE(sflq_pool) << "no sflq pool for: " << pool->toText();
         ASSERT_EQ(sflq_pool->lease_type_, Lease::TYPE_NA);
     }
 }
 
-// Exercises ShareFlqAllocator::pickAddressInternal() for V6/TYPE_NA
+// Exercises SharedFlqAllocator::pickAddressInternal() for V6/TYPE_NA
 // using various class matches.
 TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     IOAddress zero_address = IOAddress::IPV6_ZERO_ADDRESS();
 
-    SharedFlqAllocator alloc(Lease::TYPE_NA, subnet_);
-
-    ASSERT_NO_THROW_LOG(alloc.initAfterConfigure());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_NA);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
 
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
     for (auto pool : subnet_->getPools(Lease::TYPE_NA)) {
@@ -310,9 +326,9 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     for (int i = 0; i < 6; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
-                                              IdentifierBaseTypePtr(),
-                                              zero_address));
+                            alloc->pickAddress(client_classes,
+                                               IdentifierBaseTypePtr(),
+                                               zero_address));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -326,7 +342,7 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("3001::31")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 
     // Verify that only pool 2 addresses are picked for class "two"
@@ -337,7 +353,7 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     for (int i = 0; i < 2; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
+                            alloc->pickAddress(client_classes,
                                               IdentifierBaseTypePtr(),
                                               zero_address))
         ASSERT_NE(picked_address, zero_address);
@@ -349,7 +365,7 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("3001::21")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 
     // Verify that only pool 1 and 3 addresses are picked for classes "one" or "three"
@@ -361,9 +377,9 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     for (int i = 0; i < 4; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickAddress(client_classes,
-                                              IdentifierBaseTypePtr(),
-                                              zero_address));
+                            alloc->pickAddress(client_classes,
+                                               IdentifierBaseTypePtr(),
+                                               zero_address));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -375,15 +391,21 @@ TEST_F(SharedFlqAllocatorTest6, pickAddress) {
     ASSERT_TRUE(picked.count(IOAddress("3001::31")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
+    ASSERT_EQ(alloc->pickAddress(client_classes, IdentifierBaseTypePtr(), zero_address),
               zero_address);
 }
 
 // Tests initAfterConfigure() for V6/TYPE_PD pools.
 TEST_F(SharedFlqAllocatorTest6, initAfterConfigurePD) {
-    SharedFlqAllocator alloc(Lease::TYPE_PD, subnet_);
+    subnet_->setPdAllocatorType("shared-flq");
+    ASSERT_NO_THROW(subnet_->createAllocators());
 
-    ASSERT_NO_THROW_LOG(alloc.initAfterConfigure());
+    EXPECT_FALSE(SharedFlqAllocator::inUse());
+
+    auto alloc = subnet_->getAllocator(Lease::TYPE_PD);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
+    EXPECT_TRUE(SharedFlqAllocator::inUse());
 
     // Verify the PD pools.
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
@@ -395,14 +417,16 @@ TEST_F(SharedFlqAllocatorTest6, initAfterConfigurePD) {
     }
 }
 
-// Exercises ShareFlqAllocator::pickPrefixInternal() V6/TYPE_PD using
+// Exercises SharedFlqAllocator::pickPrefixInternal() V6/TYPE_PD using
 // various class matches.
 TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     IOAddress zero_address = IOAddress::IPV6_ZERO_ADDRESS();
 
-    SharedFlqAllocator alloc(Lease::TYPE_PD, subnet_);
-
-    EXPECT_NO_THROW(alloc.initAfterConfigure());
+    subnet_->setPdAllocatorType("shared-flq");
+    ASSERT_NO_THROW(subnet_->createAllocators());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_PD);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
 
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
 
@@ -423,12 +447,12 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     for (int i = 0; i < 6; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickPrefix(client_classes,
-                                             dummy,
-                                             IdentifierBaseTypePtr(),
-                                             Allocator::PREFIX_LEN_EQUAL,
-                                             zero_address,
-                                             0));
+                            alloc->pickPrefix(client_classes,
+                                              dummy,
+                                              IdentifierBaseTypePtr(),
+                                              Allocator::PREFIX_LEN_EQUAL,
+                                              zero_address,
+                                              0));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -442,8 +466,8 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     ASSERT_TRUE(picked.count(IOAddress("2001::31")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
-                               Allocator::PREFIX_LEN_EQUAL, zero_address, 0),
+    ASSERT_EQ(alloc->pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
+                                Allocator::PREFIX_LEN_EQUAL, zero_address, 0),
                zero_address);
 
     // Verify that only pool 2 addresses are picked for class "two"
@@ -454,12 +478,12 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     for (int i = 0; i < 2; ++i) {
         IOAddress picked_address = zero_address;
         ASSERT_NO_THROW_LOG(picked_address =
-                            alloc.pickPrefix(client_classes,
-                                             dummy,
-                                             IdentifierBaseTypePtr(),
-                                             Allocator::PREFIX_LEN_EQUAL,
-                                             zero_address,
-                                             0));
+                            alloc->pickPrefix(client_classes,
+                                              dummy,
+                                              IdentifierBaseTypePtr(),
+                                              Allocator::PREFIX_LEN_EQUAL,
+                                              zero_address,
+                                              0));
         ASSERT_NE(picked_address, zero_address);
         picked.emplace(picked_address);
     }
@@ -469,8 +493,8 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     ASSERT_TRUE(picked.count(IOAddress("2001::21")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
-                               Allocator::PREFIX_LEN_EQUAL, zero_address, 0),
+    ASSERT_EQ(alloc->pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
+                                Allocator::PREFIX_LEN_EQUAL, zero_address, 0),
                zero_address);
 
     // Verify that only pool 1 and 3 addresses are picked for classes "one" or "three"
@@ -481,7 +505,7 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     client_classes.insert("three");
     for (int i = 0; i < 4; ++i) {
         IOAddress picked_address = zero_address;
-        ASSERT_NO_THROW_LOG(picked_address = alloc.pickPrefix(client_classes,
+        ASSERT_NO_THROW_LOG(picked_address = alloc->pickPrefix(client_classes,
                                                               dummy,
                                                               IdentifierBaseTypePtr(),
                                                               Allocator::PREFIX_LEN_EQUAL,
@@ -498,19 +522,21 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefix) {
     ASSERT_TRUE(picked.count(IOAddress("2001::31")));
 
     // Verify an additional pick returns zero address.
-    ASSERT_EQ(alloc.pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
+    ASSERT_EQ(alloc->pickPrefix(client_classes, dummy, IdentifierBaseTypePtr(),
                                Allocator::PREFIX_LEN_EQUAL, zero_address, 0),
                zero_address);
 }
 
-// Exercises ShareFlqAllocator::pickPrefixInternal() V6/TYPE_PD
+// Exercises SharedFlqAllocator::pickPrefixInternal() V6/TYPE_PD
 // when specifying a prefix length mode and hint.
 TEST_F(SharedFlqAllocatorTest6, pickPrefixLenHint) {
     IOAddress zero_address = IOAddress::IPV6_ZERO_ADDRESS();
 
-    SharedFlqAllocator alloc(Lease::TYPE_PD, subnet_);
-
-    EXPECT_NO_THROW(alloc.initAfterConfigure());
+    subnet_->setPdAllocatorType("shared-flq");
+    ASSERT_NO_THROW(subnet_->createAllocators());
+    auto alloc = subnet_->getAllocator(Lease::TYPE_PD);
+    ASSERT_TRUE(alloc);
+    ASSERT_NO_THROW_LOG(alloc->initAfterConfigure());
 
     SflqTestLeaseMgr& slm = dynamic_cast<SflqTestLeaseMgr&>(LeaseMgrFactory::instance());
 
@@ -525,28 +551,28 @@ TEST_F(SharedFlqAllocatorTest6, pickPrefixLenHint) {
     client_classes.insert("LENGTH_HINT");
 
     IOAddress picked_address = zero_address;
-    ASSERT_NO_THROW_LOG(picked_address = alloc.pickPrefix(client_classes,
-                                                          dummy,
-                                                          IdentifierBaseTypePtr(),
-                                                          Allocator::PREFIX_LEN_EQUAL,
-                                                          zero_address,
-                                                          126));
+    ASSERT_NO_THROW_LOG(picked_address = alloc->pickPrefix(client_classes,
+                                                           dummy,
+                                                           IdentifierBaseTypePtr(),
+                                                           Allocator::PREFIX_LEN_EQUAL,
+                                                           zero_address,
+                                                           126));
     EXPECT_EQ(picked_address, IOAddress("4001:20::"));
 
-    ASSERT_NO_THROW_LOG(picked_address = alloc.pickPrefix(client_classes,
-                                                          dummy,
-                                                          IdentifierBaseTypePtr(),
-                                                          Allocator::PREFIX_LEN_LOWER,
-                                                          zero_address,
-                                                          126));
+    ASSERT_NO_THROW_LOG(picked_address = alloc->pickPrefix(client_classes,
+                                                           dummy,
+                                                           IdentifierBaseTypePtr(),
+                                                           Allocator::PREFIX_LEN_LOWER,
+                                                           zero_address,
+                                                           126));
     EXPECT_EQ(picked_address, IOAddress("4001:10::"));
 
-    ASSERT_NO_THROW_LOG(picked_address = alloc.pickPrefix(client_classes,
-                                                          dummy,
-                                                          IdentifierBaseTypePtr(),
-                                                          Allocator::PREFIX_LEN_HIGHER,
-                                                          zero_address,
-                                                          126));
+    ASSERT_NO_THROW_LOG(picked_address = alloc->pickPrefix(client_classes,
+                                                           dummy,
+                                                           IdentifierBaseTypePtr(),
+                                                           Allocator::PREFIX_LEN_HIGHER,
+                                                           zero_address,
+                                                           126));
     EXPECT_EQ(picked_address, IOAddress("4001:30::"));
 }
 

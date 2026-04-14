@@ -4930,7 +4930,7 @@ MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
     /// @todo 16M? this is arbitrary number for now.
     if (capacity > 16777216 ) {
         isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool4 "
-                            "- pool capcity " << capacity << " is too large"
+                            "- pool capacity " << capacity << " is too large"
                             " for shared-flq allocator");
     }
 
@@ -5054,7 +5054,7 @@ MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
     // @todo 16M? this is arbitrary number for now.
     if (capacity > 16777216 ) {
         isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool6 "
-                            "- pool capcity " << capacity << " is too large"
+                            "- pool capacity " << capacity << " is too large"
                             " for shared-flq allocator");
     }
 

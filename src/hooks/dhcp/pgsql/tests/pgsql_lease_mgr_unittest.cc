@@ -83,9 +83,9 @@ public:
         LeaseMgrFactory::destroy();
 
         // If data wipe enabled, delete transient data otherwise destroy the schema
-        if (getenv("KEA_UNIT_TEST_KEEP_DB_DATA")) {
+        if (getenv("KEA_UNIT_TEST_KEEP_SCHEMA")) {
             // Leaves schema intact for post-test debugging.
-            std::cout << "KEA_UNIT_TEST_KEEP_DB_DATA set" << std::endl;
+            std::cout << "KEA_UNIT_TEST_KEEP_SCHEMA set" << std::endl;
         } else {
             // If data wipe enabled, delete transient data otherwise destroy the schema
             destroyPgSQLSchema();
@@ -1418,8 +1418,12 @@ TEST_F(PgSqlLeaseMgrTest, testSflqCreateAndPick6) {
     testSflqCreateAndPick6();
 }
 
-TEST_F(PgSqlLeaseMgrTest, testSflqLeaseOps6) {
-    testSflqLeaseOps6();
+TEST_F(PgSqlLeaseMgrTest, testSflqLeaseOps6NA) {
+    testSflqLeaseOps6(Lease::TYPE_NA);
+}
+
+TEST_F(PgSqlLeaseMgrTest, testSflqLeaseOps6PD) {
+    testSflqLeaseOps6(Lease::TYPE_PD);
 }
 
 /// @brief Test fixture class for testing @ref CfgDbAccessTest using PostgreSQL
