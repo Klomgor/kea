@@ -816,6 +816,12 @@ public:
     void sanityChecksLifetime(const SrvConfig& target_config,
                               const std::string& name) const;
 
+    /// @brief Conducts sanity check in use of SFLQ allocator
+    ///
+    /// @throw InvalidParameter if lease back end is not MySQL
+    /// or PostgreSQL.
+    void sanityChecksSflqAllocator() const;
+
     /// @brief Conducts sanity checks on global DDNS ttl parameters:
     /// ddns-ttl, ddns-ttl-percent, ddns-ttl-min, ddns-ttl-max
     ///

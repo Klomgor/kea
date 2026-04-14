@@ -204,6 +204,9 @@ public:
         if (networks) {
             sharedNetworksSanityChecks(*networks, global->get("shared-networks"));
         }
+
+        // Sanity check use of SFLQ allocator.
+        cfg->sanityChecksSflqAllocator();
     }
 
     /// @brief Sanity checks for shared networks

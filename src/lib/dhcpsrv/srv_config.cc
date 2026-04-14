@@ -8,6 +8,7 @@
 
 #include <cc/simple_parser.h>
 #include <exceptions/exceptions.h>
+#include <database/database_connection.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/parsers/base_network_parser.h>
 #include <dhcpsrv/parsers/dhcp_parsers.h>
@@ -39,6 +40,7 @@
 using namespace isc::log;
 using namespace isc::data;
 using namespace isc::process;
+using namespace isc::db;
 
 namespace isc {
 namespace dhcp {
@@ -1141,6 +1143,46 @@ SrvConfig::sanityChecksDdnsTtlParameters() const {
             if (ddns_ttl_max < ddns_ttl_min) {
                 isc_throw(BadValue, "ddns-ttl-max: " << ddns_ttl_max
                           << " must be greater than ddns-ttl-min: " <<  ddns_ttl_min);
+            }
+        }
+    }
+}
+
+void
+SrvConfig::sanityChecksSflqAllocator() const {
+    const std::string type = "type";
+
+    // Parse the access string and create a redacted string for logging.
+    auto parameters = DatabaseConnection::parse(cfg_db_access_->getLeaseDbAccessString());
+    std::string redacted = DatabaseConnection::redactedAccessString(parameters);
+
+    // Get the database type and open the corresponding database.
+    DatabaseConnection::ParameterMap::iterator it = parameters.find(type);
+    if (it == parameters.end()) {
+        isc_throw(InvalidParameter, "Database configuration parameters do not "
+                  "contain the 'type' keyword" << redacted);
+    }
+
+    std::string db_type = it->second;
+    bool allowed = (db_type == "mysql" || db_type == "postgresql");
+    if (CfgMgr::instance().getFamily() == AF_INET) {
+        for (auto subnet : *(getCfgSubnets4()->getAll()) ) {
+            if (subnet->getAllocatorType() == "shared-flq") {
+                if (!allowed) {
+                    isc_throw(BadValue, "shared-flq allocator is only supported by MySQL and PosgreSQL backends");
+                }
+
+                // could check pool capacity too?
+            }
+        }
+    } else {
+        for (auto subnet : *(getCfgSubnets6()->getAll()) ) {
+            if (subnet->getAllocatorType() == "shared-flq") {
+                if (!allowed) {
+                    isc_throw(BadValue, "shared-flq allocator is only supported by MySQL and PosgreSQL backends");
+                }
+
+               // could check pool capacity too?
             }
         }
     }

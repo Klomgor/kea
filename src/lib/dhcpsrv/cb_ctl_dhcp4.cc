@@ -87,6 +87,7 @@ CBControlDHCPv4::databaseConfigApply(const BackendSelector& backend_selector,
             // Sanity check it.
             external_cfg->sanityChecksLifetime("valid-lifetime");
             external_cfg->sanityChecksDdnsTtlParameters();
+            external_cfg->sanityChecksSflqAllocator();
 
             // Now that we successfully fetched the new global parameters, let's
             // remove existing ones and merge them into the current configuration.
