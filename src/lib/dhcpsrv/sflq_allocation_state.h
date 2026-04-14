@@ -27,7 +27,7 @@ typedef boost::shared_ptr<SubnetSflqAllocationState> SubnetSflqAllocationStatePt
 /// @brief Subnet allocation state used by the shared-flq allocator.
 ///
 /// It exposes the base class mechanism to store the last allocation time
-/// for various lease types. These times are used by the shared networks to 
+/// for various lease types. These times are used by the shared networks to
 /// find the "preferred" subnet (i.e., a subnet from which the latest lease
 /// was assigned).
 class SubnetSflqAllocationState : public SubnetAllocationState {
@@ -43,7 +43,7 @@ public:
     ///
     /// @param last_time time of last allocation. If not specified
     /// it is set to the current time.
-    void setLastAllocatedTime(boost::posix_time::ptime last_time = 
+    void setLastAllocatedTime(boost::posix_time::ptime last_time =
                               boost::posix_time::not_a_date_time);
 };
 

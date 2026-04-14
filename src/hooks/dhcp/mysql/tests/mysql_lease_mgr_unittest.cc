@@ -1418,43 +1418,43 @@ TEST_F(MySqlLeaseMgrTest, bigStats) {
     testBigStats();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn4SameSubnet) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn4SameSubnet) {
     testUpdateStatsOn4SameSubnet();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn4DifferentSubnet) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn4DifferentSubnet) {
     testUpdateStatsOn4DifferentSubnet();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn6SameSubnet) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn6SameSubnet) {
     testUpdateStatsOn6SameSubnet();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn6SameSubnetPD) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn6SameSubnetPD) {
     testUpdateStatsOn6SameSubnetPD();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnet) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnet) {
     testUpdateStatsOn6DifferentSubnet();
 }
 
-TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) { 
+TEST_F(MySqlLeaseMgrTest, updateStatsOn6DifferentSubnetPD) {
     testUpdateStatsOn6DifferentSubnetPD();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick4) { 
+TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick4) {
     testSflqCreateAndPick4();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps4) { 
+TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps4) {
     testSflqLeaseOps4();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick6) { 
+TEST_F(MySqlLeaseMgrTest, testSflqCreateAndPick6) {
     testSflqCreateAndPick6();
 }
 
-TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps6) { 
+TEST_F(MySqlLeaseMgrTest, testSflqLeaseOps6) {
     testSflqLeaseOps6();
 }
 

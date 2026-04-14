@@ -5833,28 +5833,28 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
 
     std::list<Scenario> scenarios = {
         // Add the lease
-        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+        {__LINE__, ADD, Lease::STATE_DEFAULT,
          !expired, should_exist, !can_pick },
 
         // Update to declined state.
-        {__LINE__, UPDATE, Lease::STATE_DECLINED, 
+        {__LINE__, UPDATE, Lease::STATE_DECLINED,
          !expired, should_exist, !can_pick },
 
-        // Delete the lease. 
-        {__LINE__, DELETE, Lease::STATE_DEFAULT, 
+        // Delete the lease.
+        {__LINE__, DELETE, Lease::STATE_DEFAULT,
          !expired, !should_exist, can_pick },
 #if 0
-        // @todo This hinges on #4447 
-        // Add an expired lease. 
-        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+        // @todo This hinges on #4447
+        // Add an expired lease.
+        {__LINE__, ADD, Lease::STATE_DEFAULT,
          !expired, should_exist, can_pick },
 #endif
         // Add a reclaimed lease.
-        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED, 
+        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED,
          !expired, should_exist, can_pick },
 
         // Update to default.
-        {__LINE__, UPDATE, Lease::STATE_DEFAULT, 
+        {__LINE__, UPDATE, Lease::STATE_DEFAULT,
          !expired, should_exist, !can_pick },
 
         // Update to reclaimed.
@@ -5870,9 +5870,9 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
         SCOPED_TRACE(os.str());
 
         // Prep the input lease.
-        preop_lease->state_ = scenario.state_;  
+        preop_lease->state_ = scenario.state_;
         time_t current_time = time(NULL);
-        preop_lease->cltt_ = (scenario.expired_ ? 
+        preop_lease->cltt_ = (scenario.expired_ ?
                               current_time - 1000 : current_time + 1000);
 
         // Carry out the lease operation.
@@ -6001,28 +6001,28 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
 
     std::list<Scenario> scenarios = {
         // Add the lease
-        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+        {__LINE__, ADD, Lease::STATE_DEFAULT,
          !expired, should_exist, !can_pick },
 
         // Update to declined state.
-        {__LINE__, UPDATE, Lease::STATE_DECLINED, 
+        {__LINE__, UPDATE, Lease::STATE_DECLINED,
          !expired, should_exist, !can_pick },
 
-        // Delete the lease. 
-        {__LINE__, DELETE, Lease::STATE_DEFAULT, 
+        // Delete the lease.
+        {__LINE__, DELETE, Lease::STATE_DEFAULT,
          !expired, !should_exist, can_pick },
 #if 0
-        // @todo This hinges on #4447 
-        // Add an expired lease. 
-        {__LINE__, ADD, Lease::STATE_DEFAULT, 
+        // @todo This hinges on #4447
+        // Add an expired lease.
+        {__LINE__, ADD, Lease::STATE_DEFAULT,
          !expired, should_exist, can_pick },
 #endif
         // Add a reclaimed lease.
-        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED, 
+        {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED,
          !expired, should_exist, can_pick },
 
         // Update to default.
-        {__LINE__, UPDATE, Lease::STATE_DEFAULT, 
+        {__LINE__, UPDATE, Lease::STATE_DEFAULT,
          !expired, should_exist, !can_pick },
 
         // Update to reclaimed.
@@ -6038,9 +6038,9 @@ GenericLeaseMgrTest::testSflqLeaseOps6() {
         SCOPED_TRACE(os.str());
 
         // Prep the input lease.
-        preop_lease->state_ = scenario.state_;  
+        preop_lease->state_ = scenario.state_;
         time_t current_time = time(NULL);
-        preop_lease->cltt_ = (scenario.expired_ ? 
+        preop_lease->cltt_ = (scenario.expired_ ?
                               current_time - 1000 : current_time + 1000);
 
         // Carry out the lease operation.

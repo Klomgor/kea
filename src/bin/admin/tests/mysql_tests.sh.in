@@ -4134,6 +4134,16 @@ mysql_sflqCreateFlqPool4() {
           '127.0.0.6','127.0.0.7','127.0.0.8')"
     run_statement "select free_leases4" "$sql" "7"
 
+    # Create pool large enough to test recursion limit.
+    start_address="inet_aton('10.100.0.0')"
+    end_address="inet_aton('10.100.255.255')"
+    sql="call sflqCreateFlqPool4($start_address, $end_address, 1, false)"
+    run_statement "sflqCreateFlqPool4" "$sql"
+
+    sql="select count(address) from free_lease4 where address >= $start_address and\
+        address <= $end_address"
+    run_statement "sflqCreateFlqPool4" "$sql" "65536"
+
     # Let's wipe the whole database
     mysql_wipe
 
