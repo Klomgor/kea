@@ -27,34 +27,39 @@ import api2doc  # noqa  # pylint: disable=wrong-import-position
 # -- Project information -----------------------------------------------------
 
 project = 'Kea'
-copyright = '2019-2025, Internet Systems Consortium'  # pylint: disable=redefined-builtin
+copyright = '2019-2026, Internet Systems Consortium'  # pylint: disable=redefined-builtin
 author = 'Internet Systems Consortium'
 
-# get current kea version
-meson_build_path = '../../meson.build'
-changelog_path = '../../ChangeLog'
-with open(meson_build_path, encoding='utf-8') as f:
-    version = None
-    for line in f.readlines():
-        m = re.search(r"version: '([0-9.]+)(|-git)',", line)
-        if m is not None:
-            version = m.group(1)
-            break
-if version is None:
-    print('ERROR: Cannot determine Kea version from meson.build.')
-    sys.exit(1)
-release = version
 
-# If the first line of the ChangeLog announces release, it means
-# that this is the final release.
-dash_parts = version.split('-')
-candidate_release = dash_parts[0]
-with open(changelog_path, encoding='utf-8') as changelog_file:
-    first_line = changelog_file.readline()
-    if candidate_release in first_line and "released" in first_line:
-        version = candidate_release
+def get_version():
+    # get current kea version
+    meson_build_path = '../../meson.build'
+    changelog_path = '../../ChangeLog'
+    with open(meson_build_path, encoding='utf-8') as f:
+        version = None
+        for line in f.readlines():
+            m = re.search(r"version: '([0-9.]+)(|-git)',", line)
+            if m is not None:
+                version = ''.join(m.groups())
+                break
+    if version is None or version == '':
+        print('ERROR: Cannot determine Kea version from meson.build.')
+        sys.exit(1)
 
-cloudsmith_series = '-'.join(version.split('.')[0:2])
+    # If the first line of the ChangeLog announces release, it means
+    # that this is the final release.
+    dash_parts = version.split('-')
+    candidate_release = dash_parts[0]
+    with open(changelog_path, encoding='utf-8') as changelog_file:
+        first_line = changelog_file.readline()
+        if candidate_release in first_line and 'released' in first_line:
+            version = candidate_release
+    return version
+
+
+release = get_version()
+
+cloudsmith_series = '-'.join(release.split('.')[0:2])
 
 # now let's replace versions with odd minor number with dev
 if int(cloudsmith_series[-1]) % 2 != 0:
