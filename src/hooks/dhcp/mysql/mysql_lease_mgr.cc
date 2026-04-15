@@ -14,6 +14,7 @@
 #include <dhcpsrv/dhcpsrv_log.h>
 #include <dhcpsrv/lease_mgr_factory.h>
 #include <dhcpsrv/network_state.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <dhcpsrv/timer_mgr.h>
 #include <mysql_lb_log.h>
 #include <mysql_lease_mgr.h>
@@ -4927,11 +4928,11 @@ MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
         .arg(recreate)
         .arg(capacity);
 
-    /// @todo 16M? this is arbitrary number for now.
-    if (capacity > 16777216 ) {
-        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool4 "
-                            "- pool capacity " << capacity << " is too large"
-                            " for shared-flq allocator");
+    if (capacity > SharedFlqAllocator::MAX_V4_POOL_SIZE) {
+        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool4 pool capacity "
+                            << capacity << " exceeeds limit of "
+                            << SharedFlqAllocator::MAX_V4_POOL_SIZE
+                            << " for shared-flq allocator on V6 pool ");
     }
 
     // Get a context.
@@ -5051,11 +5052,11 @@ MySqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
         .arg(recreate)
         .arg(capacity);
 
-    // @todo 16M? this is arbitrary number for now.
-    if (capacity > 16777216 ) {
-        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool6 "
-                            "- pool capacity " << capacity << " is too large"
-                            " for shared-flq allocator");
+    if (capacity > SharedFlqAllocator::MAX_V6_POOL_SIZE) {
+        isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool6 pool capacity "
+                            << capacity << " exceeeds limit of "
+                            << SharedFlqAllocator::MAX_V6_POOL_SIZE
+                            << " for shared-flq allocator on V6 pool ");
     }
 
     // Get a context.

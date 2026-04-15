@@ -25,6 +25,7 @@
 #include <dhcpsrv/lease_mgr_factory.h>
 #include <dhcpsrv/dhcpsrv_log.h>
 #include <dhcpsrv/cfg_hosts_util.h>
+#include <dhcpsrv/sflq_allocator.h>
 #include <process/logging_info.h>
 #include <log/logger_manager.h>
 #include <log/logger_specification.h>
@@ -1172,7 +1173,7 @@ SrvConfig::sanityChecksSflqAllocator() const {
                     isc_throw(BadValue, "shared-flq allocator is only supported by MySQL and PosgreSQL backends");
                 }
 
-                // could check pool capacity too?
+                SharedFlqAllocator::sanityChecksSflqAllocator4(subnet);
             }
         }
     } else {
@@ -1182,7 +1183,7 @@ SrvConfig::sanityChecksSflqAllocator() const {
                     isc_throw(BadValue, "shared-flq allocator is only supported by MySQL and PosgreSQL backends");
                 }
 
-               // could check pool capacity too?
+                SharedFlqAllocator::sanityChecksSflqAllocator6(subnet);
             }
         }
     }

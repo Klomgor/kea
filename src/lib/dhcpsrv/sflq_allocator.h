@@ -79,6 +79,28 @@ public:
     /// @return The allocation state.
     SubnetSflqAllocationStatePtr getSubnetState() const;
 
+    /// @brief Sanity checks the subnet and pool configuration
+    /// for use with SFLQ.
+    ///
+    /// @param subet Subnet to check
+    ///
+    /// @throw BadValue if the capacity exceeds limit.
+    static void sanityChecksSflqAllocator4(Subnet4Ptr subnet);
+
+    /// @brief Sanity checks the subnet and pool configuration
+    /// for use with SFLQ.
+    ///
+    /// @param subet Subnet to check
+    ///
+    /// @throw BadValue if the capacity exceeds limit.
+    static void sanityChecksSflqAllocator6(Subnet6Ptr subnet);
+
+    /// @brief Maximum capacity of a V4 pool suppported by SFLQ.
+    static constexpr size_t MAX_V4_POOL_SIZE = 64000;
+
+    /// @brief Maximum capacity of a V6 pool suppported by SFLQ.
+    static constexpr size_t MAX_V6_POOL_SIZE = 64000;
+
 private:
 
     /// @brief Performs allocator initialization after server's reconfiguration.

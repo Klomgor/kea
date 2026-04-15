@@ -226,5 +226,33 @@ SharedFlqAllocator::getSubnetState() const {
     return (state);
 }
 
+void
+SharedFlqAllocator::sanityChecksSflqAllocator4(Subnet4Ptr subnet) {
+    for (auto const& pool : subnet->getPools(Lease::TYPE_V4)) {
+        auto const& capacity(pool->getCapacity());
+        if (capacity > MAX_V4_POOL_SIZE) {
+            isc_throw(BadValue, "pool capacity " << capacity
+                     << " exceeeds limit of " << MAX_V4_POOL_SIZE
+                     << " for shared-flq allocator on V4 pool "
+                     << pool->toText());
+        }
+    }
+}
+
+void
+SharedFlqAllocator::sanityChecksSflqAllocator6(Subnet6Ptr subnet) {
+    for (auto const lease_type : {Lease::TYPE_NA, Lease::TYPE_PD}) {
+        for (auto const& pool : subnet->getPools(lease_type)) {
+            auto const& capacity(pool->getCapacity());
+            if (capacity > MAX_V6_POOL_SIZE) {
+                isc_throw(BadValue, "pool capacity " << capacity
+                          << " exceeeds limit of " << MAX_V6_POOL_SIZE
+                          << " for shared-flq allocator on V6 pool "
+                          << pool->toText());
+            }
+        }
+    }
+}
+
 } // end of namespace isc::dhcp
 } // end of namespace isc

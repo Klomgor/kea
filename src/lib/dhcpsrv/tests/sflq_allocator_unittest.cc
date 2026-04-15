@@ -69,7 +69,7 @@ public:
     }
 
     /// @brief Subnet used in tests.
-    SubnetPtr subnet_;
+    Subnet4Ptr subnet_;
 };
 
 // Test that the allocator returns the correct type.

@@ -3970,7 +3970,7 @@ TEST_F(ParseConfigTest, invalidSubnetPdAllocator6) {
     ASSERT_EQ(comment->getType(), Element::string);
     EXPECT_EQ(1, rcode);
     std::string expected = "Configuration parsing failed: ";
-    expected += "supported allocators are: iterative, random and flq";
+    expected += "supported allocators are: iterative, random, and shared-flq";
     EXPECT_EQ(expected, comment->stringValue());
 }
 
