@@ -8021,7 +8021,7 @@ to detect configuration errors as soon as possible.
                "cert-required": true,
                "authentication": {
                   "type": "basic",
-                  "realm": "kea-control-agent",
+                  "realm": "kea-dhcpv6-server",
                   "clients": [
                       {
                           "user": "admin",

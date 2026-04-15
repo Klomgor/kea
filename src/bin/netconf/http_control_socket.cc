@@ -39,29 +39,17 @@ HttpControlSocket::HttpControlSocket(CfgControlSocketPtr ctrl_sock)
 
 ConstElementPtr
 HttpControlSocket::configGet(const string& service) {
-    if (service == "ca") {
-        return (sendCommand(createCommand("config-get")));
-    } else {
-        return (sendCommand(createCommand("config-get", service)));
-    }
+    return (sendCommand(createCommand("config-get", service)));
 }
 
 ConstElementPtr
 HttpControlSocket::configTest(ElementPtr config, const string& service) {
-    if (service == "ca") {
-        return (sendCommand(createCommand("config-test", config)));
-    } else {
-        return (sendCommand(createCommand("config-test", config, service)));
-    }
+    return (sendCommand(createCommand("config-test", config, service)));
 }
 
 ConstElementPtr
 HttpControlSocket::configSet(ElementPtr config, const string& service) {
-    if (service == "ca") {
-        return (sendCommand(createCommand("config-set", config)));
-    } else {
-        return (sendCommand(createCommand("config-set", config, service)));
-    }
+    return (sendCommand(createCommand("config-set", config, service)));
 }
 
 ConstElementPtr
@@ -96,7 +84,7 @@ HttpControlSocket::sendCommand(ConstElementPtr command) {
                         // all handlers have been invoked.
                         io_service->stopWork();
                 },
-                HttpClient::RequestTimeout(TIMEOUT_AGENT_FORWARD_COMMAND));
+                HttpClient::RequestTimeout(TIMEOUT_DHCP_SERVER_FORWARD_COMMAND));
 
     // Perform this synchronously.
     io_service->run();

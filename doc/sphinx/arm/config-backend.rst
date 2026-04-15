@@ -136,8 +136,8 @@ Currently, the Kea CB has the following limitations:
 
 - It is only supported for MySQL and PostgreSQL databases.
 
-- It is only supported for the DHCPv4 and DHCPv6 daemons; the Control Agent,
-  D2 daemon, and the NETCONF daemon cannot be configured from the database,
+- It is only supported for the DHCPv4 and DHCPv6 daemons; the D2 daemon,
+  and the NETCONF daemon cannot be configured from the database.
 
 - Only certain DHCP configuration parameters can be set in the
   database: global parameters, option definitions, global options, client

@@ -169,7 +169,7 @@ TEST(ParserTest, keywordNetconf) {
         "    },"
         "    \"hooks-libraries\": ["
         "    {"
-        "        \"library\": \"/opt/local/control-agent-commands.so\","
+        "        \"library\": \"/opt/local/server-commands.so\","
         "        \"parameters\": {"
         "            \"param1\": \"foo\""
         "        }"
@@ -224,7 +224,7 @@ TEST(ParserTest, keywordSubNetconf) {
         "    },"
         "    \"hooks-libraries\": ["
         "    {"
-        "        \"library\": \"/opt/local/control-agent-commands.so\","
+        "        \"library\": \"/opt/local/server-commands.so\","
         "        \"parameters\": {"
         "            \"param1\": \"foo\""
         "        }"
@@ -800,7 +800,7 @@ TEST(ParserTest, mapEntries) {
     loadFile(sample_dir + "simple-dhcp4.json", sample_json);
     loadFile(sample_dir + "simple-dhcp6.json", sample_json);
     KeywordSet sample_keys = {
-        "ca", "d2",
+        "d2",
         "hooks-libraries", "library", "parameters",
         "socket-url"
     };

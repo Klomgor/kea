@@ -48,7 +48,7 @@ extern "C" {
 /// @return 0 upon success, non-zero if the legal file cannot be opened
 int load(LibraryHandle& handle) {
     try {
-        // Make the hook library not loadable by d2 or ca.
+        // Make the hook library not loadable by d2.
         uint16_t family = CfgMgr::instance().getFamily();
         const string& proc_name = Daemon::getProcName();
         if (family == AF_INET) {

@@ -57,8 +57,8 @@ support services from ISC and getting access to the subscriber hooks, please
 fill out our contact form at https://www.isc.org/contact.
 
 Once installed, the services can be managed through the distribution's
-service manager. The services are named: :iscman:`kea-dhcp4`, :iscman:`kea-dhcp6`,
-:iscman:`kea-dhcp-ddns`.
+service manager. The services are named: :iscman:`kea-dhcp4`, :iscman:`kea-dhcp6`
+and :iscman:`kea-dhcp-ddns`.
 
 .. note::
    The real service names on Debian and Ubuntu use slightly different
@@ -66,7 +66,7 @@ service manager. The services are named: :iscman:`kea-dhcp4`, :iscman:`kea-dhcp6
    systemd service alias is used to allow users to refer to them with shorter
    names. Calling ``systemctl enable`` on these services requires
    the real service names, which are: ``isc-kea-dhcp4-server``,
-   ``isc-kea-dhcp6-server``, ``isc-kea-dhcp-ddns-server``.
+   ``isc-kea-dhcp6-server`` and ``isc-kea-dhcp-ddns-server``.
 
 Caveats When Upgrading Kea Packages
 -----------------------------------

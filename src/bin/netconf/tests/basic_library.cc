@@ -7,8 +7,6 @@
 /// @file
 /// @brief Basic callout library
 ///
-/// This is source of a test library for Control Agent.
-///
 /// - Only the "version" framework function is supplied.
 ///
 /// - hookpt_one callout is supplied.

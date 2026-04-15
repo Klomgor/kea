@@ -102,9 +102,6 @@ public:
 /// 3. parse method from the derived class is called
 /// 4. if the configuration was unsuccessful or this is only a check, the
 ///    old context is reinstantiated. If not, the configuration is kept.
-///
-/// See @ref isc::agent::CtrlAgentCfgMgr and @ref isc::agent::CtrlAgentProcess
-/// for example use of this approach.
 class DCfgMgrBase {
 public:
     /// @brief Constructor
@@ -124,7 +121,7 @@ public:
     /// the simple parser paradigm: no intermediate storage, no parser pointers
     /// no distinction between params_map and objects_map, parse order (if needed)
     /// can be enforced in the actual implementation by calling specific
-    /// parsers first. See @ref isc::agent::CtrlAgentCfgMgr::parse for example.
+    /// parsers first.
     ///
     /// If check_only is true, the actual parsing is done to check if the configuration
     /// is sane, but is then reverted.

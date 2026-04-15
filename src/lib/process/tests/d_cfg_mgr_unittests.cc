@@ -242,13 +242,9 @@ TEST_F(DStubCfgMgrTest, paramPosition) {
 }
 
 // This tests if some aspects of simpleParseConfig are behaving properly.
-// Thorough testing is only possible for specific implementations. This
-// is done for control agent (see CtrlAgentControllerTest tests in
-// src/bin/agent/tests/ctrl_agent_controller_unittest.cc for example).
-// Also, shell tests in src/bin/agent/ctrl_agent_process_tests.sh test
-// the whole CA process that uses simpleParseConfig. The alternative
-// would be to implement whole parser that would set the context
-// properly. The ROI for this is not worth the effort.
+// Thorough testing is only possible for specific implementations.
+// The alternative would be to implement whole parser that would set the
+// context properly. The ROI for this is not worth the effort.
 TEST_F(DStubCfgMgrTest, simpleParseConfig) {
     using namespace isc::data;
 

@@ -196,7 +196,7 @@ described in :ref:`tls`.
 The HTTPS configuration parameters are:
 
 -  ``trust-anchor`` - specifies the name of a file or directory where the
-   certification authority certificate of a Kea end entity can be found.
+   certification authority certificate of a Kea entity can be found.
 
 -  ``cert-file`` - specifies the name of the file containing the end-entity
    certificate to use.
@@ -1613,8 +1613,8 @@ as illustrated below:
                              // This specifies the URL of our server instance.
                              // Since the HA+MT uses a direct connection, the
                              // DHCPv4 server open its own socket. Note that it
-                             // must be different than the one used by the CA
-                             // (typically 8000). In this example, 8005 is used.
+                             // must be different than the one used by the control
+                             // socket (typically 8000). In this example, 8005 is used.
                              "url": "http://192.0.2.1:8005/",
                              // This server is primary. The other one must be
                              // secondary.
@@ -1626,8 +1626,8 @@ as illustrated below:
                              // This specifies the URL of our server instance.
                              // Since the HA+MT uses a direct connection, the
                              // DHCPv4 server open its own socket. Note that it
-                             // must be different than the one used by the CA
-                             // (typically 8000). In this example, 8005 is used.
+                             // must be different than the one used by the control
+                             // socket (typically 8000). In this example, 8005 is used.
                              "url": "http://192.0.2.2:8005/",
                              // The partner is a secondary. This server is a
                              // primary as specified in the previous "peers"
@@ -1654,15 +1654,15 @@ four threads for the client.
 .. note::
 
    It is essential to configure the ports correctly. One common mistake is to
-   configure CA to listen on port 8000 and also configure dedicated listeners on
-   port 8000. In such a configuration, the communication will still work over CA,
-   but it will be slow and the DHCP server will fail to bind sockets.
+   configure control socket to listen on port 8000 and also configure dedicated
+   listeners on port 8000. In such a configuration, the communication will still
+   work over control socket (in single-threaded mode), but it will be slow and
+   the DHCP server will fail to bind sockets (in multi-threading mode).
    Administrators should ensure that dedicated listeners use a different port
    (8001 is a suggested alternative); if ports are misconfigured or the ports
-   dedicated to CA are used, the performance bottlenecks caused by the
-   single-threaded nature of CA and the sequential nature of the UNIX socket
-   that connects CA to DHCP servers will nullify any performance gains offered
-   by HA+MT.
+   dedicated to control socket are used, the performance bottlenecks caused by the
+   single-threaded mode of the DHCP server or the sequential nature of the control
+   socket of the DHCP servers will nullify any performance gains offered by HA+MT.
 
 .. _ha-parked-packet-limit:
 
@@ -1951,7 +1951,7 @@ believes that its partner is offline; thus, it is serving all DHCP requests sent
 to the servers. To ensure that the partner is indeed offline, the administrator
 should send the :isccmd:`ha-heartbeat` command to the second server. If sending the
 command fails, e.g. due to an inability to establish a TCP connection to the
-DHCP server,  it is very likely that the server is not running.
+DHCP server, it is very likely that the server is not running.
 
 The ``date-time`` parameter conveys the server's notion of time.
 

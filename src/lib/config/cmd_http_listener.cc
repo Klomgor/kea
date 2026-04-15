@@ -67,8 +67,8 @@ CmdHttpListener::start() {
         // prepared to accept incoming connections.
         http_listener_.reset(new HttpListener(thread_io_service_, address_,
                                               port_, tls_context_, rcf,
-                                              HttpListener::RequestTimeout(TIMEOUT_AGENT_RECEIVE_COMMAND),
-                                              HttpListener::IdleTimeout(TIMEOUT_AGENT_IDLE_CONNECTION_TIMEOUT)));
+                                              HttpListener::RequestTimeout(TIMEOUT_DHCP_SERVER_RECEIVE_COMMAND),
+                                              HttpListener::IdleTimeout(TIMEOUT_DHCP_SERVER_IDLE_CONNECTION_TIMEOUT)));
 
         // Instruct the HTTP listener to actually open socket, install
         // callback and start listening.

@@ -663,33 +663,6 @@ TEST_F(HttpControlSocketTest, configGet) {
     EXPECT_EQ(expected, command->stringValue());
 }
 
-// Verifies that http control sockets handle configGet() for a control agent
-// as expected.
-TEST_F(HttpControlSocketTest, configGetCA) {
-    CfgControlSocketPtr cfg = createCfgControlSocket();
-    ASSERT_TRUE(cfg);
-    HttpControlSocketPtr hcs(new HttpControlSocket(cfg));
-    ASSERT_TRUE(hcs);
-
-    // Run a reflecting server in a thread.
-    createReflectListener();
-    start();
-
-    // Try configGet.
-    ConstElementPtr reflected;
-    EXPECT_NO_THROW_LOG(reflected = hcs->configGet("ca"));
-    stop();
-
-    // Check result.
-    ASSERT_TRUE(reflected);
-    ASSERT_EQ(Element::map, reflected->getType());
-    ConstElementPtr command = reflected->get("received");
-    ASSERT_TRUE(command);
-    ASSERT_EQ(Element::string, command->getType());
-    string expected = "{ \"command\": \"config-get\", \"remote-address\": \"127.0.0.1\" }";
-    EXPECT_EQ(expected, command->stringValue());
-}
-
 // Verifies that http control sockets handle configTest() as expected.
 TEST_F(HttpControlSocketTest, configTest) {
     CfgControlSocketPtr cfg = createCfgControlSocket();
@@ -721,37 +694,6 @@ TEST_F(HttpControlSocketTest, configTest) {
     EXPECT_EQ(expected, command->stringValue());
 }
 
-// Verifies that http control sockets handle configTest() for a control agent
-// as expected.
-TEST_F(HttpControlSocketTest, configTestCA) {
-    CfgControlSocketPtr cfg = createCfgControlSocket();
-    ASSERT_TRUE(cfg);
-    HttpControlSocketPtr hcs(new HttpControlSocket(cfg));
-    ASSERT_TRUE(hcs);
-
-    // Run a reflecting server in a thread.
-    createReflectListener();
-    start();
-
-    // Prepare a config to test.
-    ElementPtr json = Element::fromJSON("{ \"bar\": 1 }");
-
-    // Try configTest.
-    ConstElementPtr reflected;
-    EXPECT_NO_THROW_LOG(reflected = hcs->configTest(json, "ca"));
-    stop();
-
-    // Check result.
-    ASSERT_TRUE(reflected);
-    ASSERT_EQ(Element::map, reflected->getType());
-    ConstElementPtr command = reflected->get("received");
-    ASSERT_TRUE(command);
-    ASSERT_EQ(Element::string, command->getType());
-    string expected = "{ \"arguments\": { \"bar\": 1 }, "
-        "\"command\": \"config-test\", \"remote-address\": \"127.0.0.1\" }";
-    EXPECT_EQ(expected, command->stringValue());
-}
-
 // Verifies that http control sockets handle configSet() as expected.
 TEST_F(HttpControlSocketTest, configSet) {
     CfgControlSocketPtr cfg = createCfgControlSocket();
@@ -780,37 +722,6 @@ TEST_F(HttpControlSocketTest, configSet) {
     string expected = "{ \"arguments\": { \"bar\": 1 }, "
         "\"command\": \"config-set\", "
         "\"remote-address\": \"127.0.0.1\", \"service\": [ \"foo\" ] }";
-    EXPECT_EQ(expected, command->stringValue());
-}
-
-// Verifies that http control sockets handle configSet() for a control agent
-// as expected.
-TEST_F(HttpControlSocketTest, configSetCA) {
-    CfgControlSocketPtr cfg = createCfgControlSocket();
-    ASSERT_TRUE(cfg);
-    HttpControlSocketPtr hcs(new HttpControlSocket(cfg));
-    ASSERT_TRUE(hcs);
-
-    // Run a reflecting server in a thread.
-    createReflectListener();
-    start();
-
-    // Prepare a config to set.
-    ElementPtr json = Element::fromJSON("{ \"bar\": 1 }");
-
-    // Try configSet.
-    ConstElementPtr reflected;
-    EXPECT_NO_THROW_LOG(reflected = hcs->configSet(json, "ca"));
-    stop();
-
-    // Check result.
-    ASSERT_TRUE(reflected);
-    ASSERT_EQ(Element::map, reflected->getType());
-    ConstElementPtr command = reflected->get("received");
-    ASSERT_TRUE(command);
-    ASSERT_EQ(Element::string, command->getType());
-    string expected = "{ \"arguments\": { \"bar\": 1 }, "
-        "\"command\": \"config-set\", \"remote-address\": \"127.0.0.1\" }";
     EXPECT_EQ(expected, command->stringValue());
 }
 

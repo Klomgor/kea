@@ -43,6 +43,7 @@ Here is a summary of the steps in processing a response:
     Since Kea 2.7.2 the RBAC is no longer limited to the Control Agent:
     it can be used by any other server supporting HTTP/HTTPS control
     sockets e.g. DHCPv4, DHCPv6 and DDNS servers.
+    Since Kea 3.1.8 the obsolete Control Agent has been removed.
 
 .. _hooks-RBAC-config:
 
@@ -113,16 +114,16 @@ API Commands
 
 All commands of the REST API are described in files in the source directory
 ``src/share/api``, or in installed Kea
-in ``.../share/kea/api``. :ischooklib:`libdhcp_rbac.so` reads these files to take the name,
-the access right (i.e. ``read`` or ``write``), and the hook name. The access right
-can be modified in the file but changes are only applied after the server or
-agent restarts. Removing command definitions from ``.../share/kea/api`` has
-consequences: if the access control list is based on ``read`` or ``write`` and
-the definition file is missing, the server or agent always rejects such
-a command. If the access controls list is using ``commands`` to specify the
-name of a command and the definition file from ``.../share/kea/api`` of this
-particular command is missing, the Control Agent logs an error on startup
-and exit.
+in ``.../share/kea/api``. :ischooklib:`libdhcp_rbac.so` reads these files to
+take the name, the access right (i.e. ``read`` or ``write``), and the hook
+name. The access right can be modified in the file but changes are only
+applied after the server or agent restarts. Removing command definitions
+from ``.../share/kea/api`` has consequences: if the access control list is
+based on ``read`` or ``write`` and the definition file is missing, the
+server or agent always rejects such a command. If the access controls list
+is using ``commands`` to specify the name of a command and the definition
+file from ``.../share/kea/api`` of this particular command is missing,
+the Kea server logs an error on startup and exit.
 
 
 .. table:: Extra command-definition parameters
@@ -435,7 +436,7 @@ file from ``.../share/kea/api`` and defining it in the ``commands`` global param
     }
 
 With this approach, an administrator can put the configurations of all existing
-commands inside the Control Agent's configuration file.
+commands inside the server's configuration file.
 
 Extensive Example
 ~~~~~~~~~~~~~~~~~

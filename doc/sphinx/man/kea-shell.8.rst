@@ -23,7 +23,7 @@ Description
 
 The ``kea-shell`` provides a REST client for the Kea ``kea-dhcp4``,
 ``kea-dhcp6`` and ``kea-dhcp-ddns`` servers. Previously it was meant
-for the Control Agent (CA) daemon, which is deprecated.
+for the Control Agent (CA) daemon, which is deprecated (removed).
 It takes commands as a command-line parameter that is sent to the Kea server
 with proper JSON encapsulation. Optional arguments may be specified on
 the standard input. The request is sent via HTTP and a response is
@@ -87,12 +87,11 @@ The arguments are as follows:
 
 ``--service``
    (Obsolete) Kea ``kea-dhcp4``, ``kea-dhcp6`` and ``kea-dhcp-ddns`` servers
-   ignore this argument. It was meant for communication with deprecated Control
-   Agent daemon.
-   If used with Kea version < 2.7.2:
-   specifies the service that is the target of a command. If not specified,
-   the Control Agent itself is targeted. May be used more than once
-   to specify multiple targets.
+   ignore this argument. It was meant for communication with deprecated (removed)
+   Control Agent daemon.
+   If used with Kea version prior to 2.7.2: specifies the service that is the
+   target of a command. If not specified, the Control Agent itself is targeted.
+   May be used more than once to specify multiple targets.
 
 ``command``
    Specifies the command to be sent to the server. If not specified,

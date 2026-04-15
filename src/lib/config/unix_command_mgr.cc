@@ -541,7 +541,7 @@ public:
     ///
     /// @param info Configuration information for the unix control socket.
     ///
-    /// @return The file descriptor of the specified unix constrol socket.
+    /// @return The file descriptor of the specified unix control socket.
     int getControlSocketFD(UnixSocketInfoPtr info);
 
     /// @brief Pointer to the IO service used by the server process for running

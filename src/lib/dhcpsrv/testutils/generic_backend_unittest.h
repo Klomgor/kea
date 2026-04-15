@@ -241,8 +241,6 @@ public:
     ///   one for which the configuration is being returned.
     /// - the server is starting up and hasn't yet configured its runtime
     ///   option definitions.
-    /// - the Config Backend implementation is not attached to the DHCP
-    ///   server but to the Control Agent.
     ///
     /// Note that the last case it currently not supported but may be
     /// supported in the future.

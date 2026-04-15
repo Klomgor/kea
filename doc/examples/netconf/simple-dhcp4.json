@@ -77,7 +77,7 @@
         //        "library": "netconf-commands.so",
 
         //        // Some libraries may support parameters. Make sure you
-        //        // type this section carefully, as the CA does not validate
+        //        // type this section carefully, as the server does not validate
         //        // it (because the format is library-specific).
         //        "parameters": {
         //            "param1": "foo"

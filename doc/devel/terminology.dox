@@ -9,9 +9,6 @@
 
 This page explains some common abbreviations and terms:
 
-- CA - Control Agent. That's a separate module that talks with Kea DHCPv4, DHCPv6 (and soon also D2)
-  over control channel and exposes their internal commands using RESTful interface.
-
 - D2 - This is a nickname of DHCP-Dynamic DNS server module. Since using the full name is awkward,
   we often use shortened version of it: D2.
 

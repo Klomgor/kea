@@ -20,13 +20,13 @@ namespace process {
 /// @brief Base class for all configurations
 ///
 /// This is a common base class that represents configurations.
-/// SrvConfig, D2CfgContext, CtrlAgentCfgContext and possibly other
-/// classes holding configurations are derived from this.
+/// SrvConfig, D2CfgContext and possibly other classes holding
+/// configurations are derived from this.
 ///
 /// It should contain only those elements that are applicable to really
 /// every daemon we may have. Before adding anything here, please consider
 /// whether it would be usable by all of the following: DHCP servers,
-/// DDNS update daemon, Control Agent, Netconf daemon, DHCP relay,
+/// DDNS update daemon, Netconf daemon, DHCP relay,
 /// DHCP client.
 ///
 /// This class currently holds information about common server configuration.

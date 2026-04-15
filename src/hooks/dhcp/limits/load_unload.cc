@@ -33,7 +33,7 @@ extern "C" {
 /// @return 0 on success, non-zero otherwise.
 int
 load(isc::hooks::LibraryHandle& handle) {
-    // Make the hook library not loadable by d2 or ca.
+    // Make the hook library not loadable by d2.
     uint16_t family = CfgMgr::instance().getFamily();
     const std::string& proc_name = Daemon::getProcName();
     if (family == AF_INET) {

@@ -33,11 +33,10 @@ cases for them arise.
 
 The library is structured around command handlers. When the library is
 loaded it registers handlers for new commands.  When a command
-is issued (be it directly via control channel or indirectly via REST
-interface from control agent), the code receives a JSON command with
-parameters.  The command is routed the appropriate handler, its parameters
-are parsed and command executed accordingly.  Lastly, a response is
-constructed and shipped back to the client.
+is issued, the code receives a JSON command with parameters.  The command
+is routed the appropriate handler, its parameters are parsed and command
+executed accordingly.  Lastly, a response is constructed and shipped back
+to the client.
 
 This lease statistics commands interact with both the isc::dhcp::StatsMgr
 and the isc::dhcp::LeaseMgr instance.  At the time of writing this text

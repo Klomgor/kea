@@ -235,12 +235,13 @@ private:
     /// If any of the servers in the "hot-standby" or "load-balancing"
     /// state detects that its partner is in the "partner-down" state,
     /// the server transitions to the "waiting" state. Such situation
-    /// may occur if the Control Agent of this server crashes but the
-    /// DHCP daemon continues to run. The partner will transition to
-    /// the "partner-down" state if the failure detection algorithm
-    /// (based on "secs" field or "elapsed time" option monitoring)
-    /// and this server is considered to be offline based solely on
-    /// the fact that it doesn't respond to heartbeats.
+    /// may occur if the obsolete (removed) Control Agent of this
+    /// server crashes but the DHCP daemon continues to run. The
+    /// partner will transition to the "partner-down" state if the
+    /// failure detection algorithm (based on "secs" field or
+    /// "elapsed time" option monitoring) and this server is considered
+    /// to be offline based solely on the fact that it doesn't respond
+    /// to heartbeats.
     void normalStateHandler();
 
     /// @brief Handler for the "in-maintenance" state.

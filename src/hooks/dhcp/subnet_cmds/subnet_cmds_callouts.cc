@@ -789,7 +789,7 @@ int network6_subnet_del(CalloutHandle& handle) {
 /// @return 0 when initialization is successful, 1 otherwise
 int load(LibraryHandle& handle) {
     try {
-        // Make the hook library not loadable by d2 or ca.
+        // Make the hook library not loadable by d2.
         uint16_t family = CfgMgr::instance().getFamily();
         const std::string& proc_name = Daemon::getProcName();
         if (family == AF_INET) {

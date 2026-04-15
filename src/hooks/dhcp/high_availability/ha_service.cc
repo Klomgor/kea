@@ -3198,7 +3198,7 @@ HAService::verifyAsyncResponse(const HttpResponsePtr& response, int& rcode) {
 
     // Body should contain a list of responses from multiple servers.
     if (body->getType() != Element::list) {
-        // Some control agent errors are returned as a map.
+        // Some control socket errors are returned as a map.
         if (body->getType() == Element::map) {
             ElementPtr list = Element::createList();
             ElementPtr answer = Element::createMap();

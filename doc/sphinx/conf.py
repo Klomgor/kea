@@ -234,7 +234,7 @@ man_pages = [
     ('man/kea-dhcp-ddns.8', 'kea-dhcp-ddns', 'DHCP-DDNS process in Kea', author, 8),
     ('man/kea-lfc.8', 'kea-lfc', 'Lease File Cleanup process in Kea', author, 8),
     ('man/kea-netconf.8', 'kea-netconf', 'NETCONF agent for configuring Kea', author, 8),
-    ('man/kea-shell.8', 'kea-shell', 'Text client for control process', author, 8),
+    ('man/kea-shell.8', 'kea-shell', 'Text client for server process control', author, 8),
     ('man/perfdhcp.8', 'perfdhcp', 'DHCP benchmarking tool', author, 8),
 ]
 

@@ -844,7 +844,7 @@ configuration file:
          <prefix>2001:db8::1:0/112</prefix>
        </pool>
        <subnet>2001:db8::/64</subnet>
-     </subnet6>
+     </subnet4>
      <interfaces-config>
        <interfaces>eth1</interfaces>
      </interfaces-config>

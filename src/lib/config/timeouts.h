@@ -16,19 +16,15 @@ namespace config {
 /// unix domain socket.
 constexpr long TIMEOUT_DHCP_SERVER_RECEIVE_COMMAND = 10000;
 
-/// @brief Timeout for the Control Agent to receive command over the
-/// RESTful interface.
-constexpr long TIMEOUT_AGENT_RECEIVE_COMMAND = 10000;
-
 /// @brief Timeout for the idle connection to be closed.
-constexpr long TIMEOUT_AGENT_IDLE_CONNECTION_TIMEOUT = 30000;
+constexpr long TIMEOUT_DHCP_SERVER_IDLE_CONNECTION_TIMEOUT = 30000;
 
-/// @brief Timeout for the Control Agent to forward command to a
+/// @brief Timeout for the DHCP server to forward command to a
 /// Kea server, e.g. DHCP server.
 ///
 /// This value is high to ensure that the server have enough time
 /// to generate large responses, e.g. dump whole lease database.
-constexpr long TIMEOUT_AGENT_FORWARD_COMMAND = 60000;
+constexpr long TIMEOUT_DHCP_SERVER_FORWARD_COMMAND = 60000;
 
 /// @brief Timeout for the HTTP clients awaiting a response to a request.
 ///

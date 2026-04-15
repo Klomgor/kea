@@ -74,7 +74,7 @@ UnixControlSocket::sendCommand(ConstElementPtr command) {
                    // stop IO service when all handlers have been invoked.
                    io_service->stopWork();
                },
-               ClientConnection::Timeout(TIMEOUT_AGENT_FORWARD_COMMAND));
+               ClientConnection::Timeout(TIMEOUT_DHCP_SERVER_FORWARD_COMMAND));
 
     // Perform this synchronously.
     io_service->run();

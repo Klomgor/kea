@@ -66,7 +66,7 @@ To deploy this setup, follow the steps provided in the power user home setup wit
 3. Verify that communication between the hosts works in the opposite direction as well
    (host-2 can connect to host-1), by repeating step 3 from host-2 using host-1's IP address and port.
 
-4. Install  DHCPv4 on host-2, as in steps 1 and 2. The config file for the
+4. Install DHCPv4 on host-2, as in steps 1 and 2. The config file for the
    standby server is very similar to the one on the primary server, other than the definition of
    the ``this-server-name`` field (and possibly the interface names).
 

@@ -228,8 +228,8 @@ Secure Kea Control Channel
 
 .. note::
 
-   This section was about the now obsolete Kea Control Agent but applies
-   to Kea control HTTPS control sockets supported by Kea servers.
+   This section was about the now obsolete (removed) Kea Control Agent but
+   applies to Kea control HTTPS control sockets supported by Kea servers.
 
 The control sockets of Kea servers  natively supports secure
 HTTP connections using TLS. This allows protection against users from
@@ -343,7 +343,7 @@ file-access control on POSIX systems (owner, group, others, read/write).
     path component from ``socket-name``.
 
 Since Kea version 2.7.2 DHCP servers support HTTP/HTTPS control channels,
-since Kea version 3.1.7 the Control Agent has been removed.
+and since Kea version 3.1.8 the Control Agent has been removed.
 
 Since Kea-2.7.6 Kea supports multiple HTTP/HTTPS connections. Both IPv4 and IPv6 addresses can be used.
 Security can be enhanced if configuring HTTPS connections for all daemons.
@@ -519,7 +519,7 @@ Remote Administrative Access
 ----------------------------
 
 DHCP and DDNS servers exposes a RESTful API over HTTP or HTTPS (HTTP over TLS).
-These control channels are ptional features that are disabled by default, but it is very popular. When enabled, it listens on the
+These control channels are optional features that are disabled by default, but it is very popular. When enabled, it listens on the
 loopback address (127.0.0.1 or ::1) by default, unless configured otherwise. See :ref:`tls`
 for information about protecting the TLS traffic. Limiting the incoming connections with a firewall, such as
 iptables, is generally a good idea.

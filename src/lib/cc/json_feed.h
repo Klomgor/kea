@@ -36,10 +36,10 @@ public:
 /// @brief State model for asynchronous read of data in JSON format.
 ///
 /// Kea control channel uses stream sockets for forwarding commands received
-/// by the Kea Control Agent to respective Kea services. The responses may
-/// contain large amounts of data (e.g. lease queries may return thousands
-/// of leases). Such responses rarely fit into a single data buffer and
-/// require multiple calls to receive/read or asynchronous receive/read.
+/// by the respective Kea services. The responses may contain large amounts
+/// of data (e.g. lease queries may return thousands of leases). Such
+/// responses rarely fit into a single data buffer and require multiple
+/// calls to receive/read or asynchronous receive/read.
 ///
 /// A receiver performing multiple reads from a socket must be able to
 /// locate the boundaries of the command within the data stream. The

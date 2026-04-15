@@ -27,14 +27,13 @@ extend it with additional mechanisms.
 The primary purpose of this library is to provide commands that manage leases.
 As such, the whole library is structured around command handlers. When the
 library is loaded it registers a number of handlers for new commands.  When a
-command is issued (be it directly via control channel or indirectly via REST
-interface from control agent), the code receives a JSON command with
-parameters. Those are parsed and then actual operation commences.  This
-operation always interacts with an instantiation of isc::dhcp::LeaseMgr
-instance, which is Kea's way of storing leases. At the time of writing this text
-(Aug. 2017), Kea supports four types of lease managers: memfile, MySQL or
-PostgreSQL. The lease commands provided by this library provide a unified
-interface for those backends.
+command is issued, the code receives a JSON command with parameters.
+Those are parsed and then actual operation commences.  This operation always
+interacts with an instantiation of isc::dhcp::LeaseMgr instance, which is
+Kea's way of storing leases. At the time of writing this text (Aug. 2017),
+Kea supports four types of lease managers: memfile, MySQL or PostgreSQL.
+The lease commands provided by this library provide a unified interface for
+those backends.
 
 As with other hooks, this one also keeps its code in a separate namespace which
 corresponds to the file name of the library: isc::lease_cmds.

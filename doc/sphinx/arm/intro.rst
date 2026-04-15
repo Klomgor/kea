@@ -49,7 +49,7 @@ The following software is included with Kea:
    YANG/NETCONF interface for configuring Kea.
 
 -  :iscman:`kea-shell` — This simple text client uses the REST interface to
-   connect to the Kea Control Agent.
+   connect to the Kea server.
 
 -  :iscman:`perfdhcp` — This is a DHCP benchmarking tool which simulates multiple
    clients to test both DHCPv4 and DHCPv6 server performance.

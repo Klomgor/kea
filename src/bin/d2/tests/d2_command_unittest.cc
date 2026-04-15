@@ -691,8 +691,8 @@ TEST_F(CtrlChannelD2Test, statusGet) {
 
     /// @todo uptime is not available in this test, because the launch()
     /// function is not called. This is not critical to test here,
-    /// because the same logic is tested for CA and in that case the
-    /// uptime is tested.
+    /// because the same logic is tested for control socket and in that
+    /// case the uptime is tested.
 }
 
 // Tests if the server returns its configuration using config-get.

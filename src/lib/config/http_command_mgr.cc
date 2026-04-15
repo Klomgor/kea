@@ -33,8 +33,8 @@ public:
 
     /// @brief Constructor.
     HttpCommandMgrImpl()
-        : io_service_(), timeout_(TIMEOUT_AGENT_RECEIVE_COMMAND),
-          idle_timeout_(TIMEOUT_AGENT_IDLE_CONNECTION_TIMEOUT),
+        : io_service_(), timeout_(TIMEOUT_DHCP_SERVER_RECEIVE_COMMAND),
+          idle_timeout_(TIMEOUT_DHCP_SERVER_IDLE_CONNECTION_TIMEOUT),
           use_external_(true) {
     }
 

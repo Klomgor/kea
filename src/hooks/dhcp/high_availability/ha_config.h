@@ -637,7 +637,7 @@ public:
     ///
     /// When this is true, the server should instantiate an HTTP listener instance
     /// which listens on this server's URL.  If false, this server will rely on
-    /// a kea-control-agent.
+    /// a kea control socket.
     ///
     /// @return true if the server is configured to use its own HTTP listener.
     bool getHttpDedicatedListener() {

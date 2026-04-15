@@ -94,11 +94,6 @@
  *   - @subpage d2TransDetail
  *   - @subpage d2StateModel
  *   - @subpage d2TransExecExample
- * - @subpage controlAgent
- *   - @subpage ctrlAgentHttp
- *   - @subpage ctrlAgentCreatingResponse
- *   - @subpage ctrlAgentCommandMgr
- *   - @subpage CtrlAgentSecurity
  * - @subpage lfc
  *   - @subpage lfcProcessing
  *   - @subpage lfcFiles

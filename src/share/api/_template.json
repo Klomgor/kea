@@ -18,7 +18,7 @@
     // This enumerates the daemons that are able to handle specific commands.
     // Usually this will be a subset of those specified below as there are very
     // few commands that are supported by every daemon.
-    "support": [ "kea-dhcp4", "kea-dhcp6", "dhcp-ddns", "ca", "netconf" ],
+    "support": [ "kea-dhcp4", "kea-dhcp6", "dhcp-ddns", "netconf" ],
 
     // Historical information. May need a bit of digging, but this info can
     // be extracted by looking at older Kea user guides. We have them published

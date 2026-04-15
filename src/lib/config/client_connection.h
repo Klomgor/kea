@@ -21,10 +21,10 @@ class ClientConnectionImpl;
 ///
 /// This class represents a client side connection between the controlling
 /// client and the server exposing control API over a unix domain socket.
-/// In particular, this class is used by the Kea Control Agent to establish
-/// connections with respective Kea services to forward received commands.
+/// In particular, this class is used by the Kea control socket to establish
+/// connections for respective Kea services.
 /// As of Kea 1.2 the servers can handle a single connection at the time.
-/// In the future, we're planning to support multiple simulatenous connections.
+/// In the future, we're planning to support multiple simulatneous connections.
 /// In this case, each connection will be handled by a unique instance of the
 /// @ref ClientConnection class.
 ///

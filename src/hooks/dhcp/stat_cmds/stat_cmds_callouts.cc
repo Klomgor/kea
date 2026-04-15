@@ -51,7 +51,7 @@ int stat_lease6_get(CalloutHandle& handle) {
 /// @param handle library handle
 /// @return 0 when initialization is successful, 1 otherwise
 int load(LibraryHandle& handle) {
-    // Make the hook library not loadable by d2 or ca.
+    // Make the hook library not loadable by d2.
     uint16_t family = CfgMgr::instance().getFamily();
     const std::string& proc_name = Daemon::getProcName();
     if (family == AF_INET) {

@@ -120,7 +120,7 @@ public:
 
         // Reset command manager.
         CommandMgr::instance().deregisterAll();
-        HttpCommandMgr::instance().setConnectionTimeout(TIMEOUT_AGENT_RECEIVE_COMMAND);
+        HttpCommandMgr::instance().setConnectionTimeout(TIMEOUT_DHCP_SERVER_RECEIVE_COMMAND);
         file::PathChecker::enableEnforcement(true);
     }
 
@@ -859,8 +859,8 @@ BaseCtrlChannelD2Test::testStatusGet() {
 
     /// @todo uptime is not available in this test, because the launch()
     /// function is not called. This is not critical to test here,
-    /// because the same logic is tested for CA and in that case the
-    /// uptime is tested.
+    /// because the same logic is tested for control socket and in that
+    /// case the uptime is tested.
 }
 
 TEST_F(HttpCtrlChannelD2Test, statusGet) {

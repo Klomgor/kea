@@ -107,8 +107,9 @@ CmdResponseCreator::createDynamicHttpResponse(HttpRequestPtr request) {
         return (createStockHttpResponse(request, HttpStatusCode::INTERNAL_SERVER_ERROR));
     }
 
-    // Normal Responses coming from the Kea Control Agent must always be wrapped in
-    // a list as they may contain responses from multiple daemons.
+    // Normal Responses coming from the Kea control socket must always be wrapped in
+    // a list as backword compatibility with the deprecated (removed) Control-Agent
+    // which contain responses from multiple daemons.
     // If we're emulating that for backward compatibility, then we need to wrap
     // the answer in a list if it isn't in one already.
     if (emulateAgentResponse() && (response->getType() != Element::list)) {
@@ -151,7 +152,7 @@ CmdResponseCreator::filterCommand(const HttpRequestPtr& request,
               COMMAND_HTTP_LISTENER_COMMAND_REJECTED)
         .arg(command)
         .arg(request->getRemote());
-    // From CtrlAgentResponseCreator::createStockHttpResponseInternal.
+    // From CmdResponseCreator::createStockHttpResponseInternal.
     HttpVersion http_version(request->context()->http_version_major_,
                              request->context()->http_version_minor_);
     if ((http_version < HttpVersion(1, 0)) ||

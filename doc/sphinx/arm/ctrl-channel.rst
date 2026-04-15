@@ -181,9 +181,9 @@ adds a HSTS header declaring that HTTPS (vs HTTP) must be used for one year.
 HTTP Command Response Format
 ============================
 
-For backward compatibility with the obsolete Control Agent responses
-received by HTTP are always wrapped in an array (JSON list) of one
-element.
+For backward compatibility with the obsolete (removed) Control Agent
+responses received by HTTP are always wrapped in an array (JSON list) of
+one element.
 
 For example, the response for a command sent would be structured as follows:
 
@@ -942,12 +942,12 @@ The D2 server supports only a subset of the DHCPv4/DHCPv6 server commands:
 
 .. _ctrl-channel-migration:
 
-Migration from the Control Agent
-================================
+Migration from the obsolete (removed) Control Agent
+===================================================
 
 Since Kea version 2.7.2 DHCP servers support HTTP/HTTPS control channels
 so the Control Agent (CA) is no longer needed, and since Kea version
-3.1.7 it is removed.
+3.1.8, the CA has been removed.
 
 The DHCPv4, DHCPv6, and D2 servers extend the ``control-socket`` entry
 to ``control-sockets`` list. To migrate a CA configuration add an element

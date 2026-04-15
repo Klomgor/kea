@@ -63,7 +63,7 @@ int load(LibraryHandle& handle) {
     int ret_val = 0;
 
     try {
-        // Make the hook library not loadable by d2 or ca.
+        // Make the hook library not loadable by d2.
         bool v6 = (CfgMgr::instance().getFamily() == AF_INET6);
         const std::string& proc_name = Daemon::getProcName();
         const std::string& expected_proc_name =
