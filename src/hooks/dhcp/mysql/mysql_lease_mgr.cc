@@ -4932,7 +4932,7 @@ MySqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
         isc_throw(BadValue, "MySqlLeasMgr::sflqCreateFlqPool4 pool capacity "
                             << capacity << " exceeeds limit of "
                             << SharedFlqAllocator::MAX_V4_POOL_SIZE
-                            << " for shared-flq allocator on V6 pool ");
+                            << " for shared-flq allocator on V4 pool ");
     }
 
     // Get a context.
