@@ -8,5 +8,7 @@ KEA_MSG_COMPILER = executable(
     include_directories: INCLUDES,
     install: true,
     install_dir: BINDIR,
+    install_rpath: INSTALL_RPATH,
+    build_rpath: BUILD_RPATH,
     link_with: LIBS_BUILT_SO_FAR,
 )
