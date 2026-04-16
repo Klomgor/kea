@@ -7358,40 +7358,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Procedure to create an affected rows count of 1.
--- Used after update and delete lease operations.
-CREATE OR REPLACE FUNCTION sflqFakeRowCount()
-RETURNS VOID
-LANGUAGE plpgsql AS $$
-BEGIN
-    IF (get_session_value('kea.sflq_dummy_row_count_exists') IS NOT NULL)
-    THEN
-        UPDATE sflq_dummy_row_count SET dummy_val = NOT dummy_val;
-    ELSE
-        CREATE TEMPORARY TABLE sflq_dummy_row_count ( dummy_val BOOLEAN );
-        PERFORM set_session_value('kea.sflq_dummy_row_count_exists', true);
-        INSERT INTO sflq_dummy_row_count (dummy_val) VALUES (false);
-    END IF;
-END;
-$$;
-
 -- Procedure to insert a v4 lease and update SFLQ data.
 CREATE OR REPLACE FUNCTION sflqInsertLease4(p_address BIGINT,
-                                             p_hwaddr  BYTEA,
-                                             p_client_id BYTEA,
-                                             p_valid_lifetime BIGINT,
-                                             p_expire TIMESTAMP WITH TIME ZONE,
-                                             p_subnet_id BIGINT,
-                                             p_fqdn_fwd BOOLEAN,
-                                             p_fqdn_rev BOOLEAN,
-                                             p_hostname VARCHAR,
-                                             p_state BIGINT,
-                                             p_user_context TEXT,
-                                             p_relay_id BYTEA,
-                                             p_remote_id BYTEA,
-                                             p_pool_id BIGINT)
-RETURNS VOID
+                                            p_hwaddr  BYTEA,
+                                            p_client_id BYTEA,
+                                            p_valid_lifetime BIGINT,
+                                            p_expire TIMESTAMP WITH TIME ZONE,
+                                            p_subnet_id BIGINT,
+                                            p_fqdn_fwd BOOLEAN,
+                                            p_fqdn_rev BOOLEAN,
+                                            p_hostname VARCHAR,
+                                            p_state BIGINT,
+                                            p_user_context TEXT,
+                                            p_relay_id BYTEA,
+                                            p_remote_id BYTEA,
+                                            p_pool_id BIGINT)
+RETURNS INTEGER
 LANGUAGE plpgsql AS $$
+DECLARE
+    lease_row_count INTEGER;
 BEGIN
     INSERT INTO lease4 (address, hwaddr, client_id, valid_lifetime, expire,
                         subnet_id, fqdn_fwd, fqdn_rev, hostname, state,
@@ -7400,18 +7385,26 @@ BEGIN
                   p_subnet_id, p_fqdn_fwd, p_fqdn_rev, p_hostname, p_state,
                   p_user_context, p_relay_id, p_remote_id, p_pool_id);
 
-    -- Update SFLQ data.
-    -- If it is expired or expired-reclaimed delete add it to the
-    -- free queue otherwise delete it from the free queue.
-    IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
+    -- Remember the lease affected row count.
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
+
+    IF (lease_row_count > 0)
     THEN
-        -- Insert into free queue. Ignore duplicates.
-        INSERT INTO free_lease4 (address) VALUES (p_address)
-            ON CONFLICT DO NOTHING;
-    ELSE
-        -- Delete it from the free queue. Ignore nothing deleted.
-        DELETE FROM free_lease4 WHERE address = p_address;
+        -- Update SFLQ data.
+        -- If it is expired or expired-reclaimed delete add it to the
+        -- free queue otherwise delete it from the free queue.
+        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
+        THEN
+            -- Insert into free queue. Ignore duplicates.
+            INSERT INTO free_lease4 (address) VALUES (p_address)
+                ON CONFLICT DO NOTHING;
+        ELSE
+            -- Delete it from the free queue. Ignore nothing deleted.
+            DELETE FROM free_lease4 WHERE address = p_address;
+        END IF;
     END IF;
+
+    RETURN (lease_row_count);
 END;
 $$;
 
@@ -7432,10 +7425,10 @@ CREATE OR REPLACE FUNCTION sflqUpdateLease4(p_address BIGINT,
                                              p_pool_id BIGINT,
                                              p_where_address BIGINT,
                                              p_where_expire TIMESTAMP WITH TIME ZONE)
-RETURNS VOID
+RETURNS INTEGER
 LANGUAGE plpgsql AS $$
 DECLARE
-    row_count INTEGER;
+    lease_row_count INTEGER;
 BEGIN
     UPDATE lease4 SET address = p_address, hwaddr = p_hwaddr, client_id = p_client_id,
                       valid_lifetime = p_valid_lifetime, expire = p_expire,
@@ -7446,9 +7439,9 @@ BEGIN
         WHERE (address = p_where_address and expire = p_where_expire);
 
     -- Remember the lease affected row count.
-    GET DIAGNOSTICS row_count = ROW_COUNT;
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
 
-    IF (row_count > 0)
+    IF (lease_row_count > 0)
     THEN
         -- Update SFLQ data.
         -- If it is expired or expired-reclaimed delete add it to the
@@ -7462,49 +7455,37 @@ BEGIN
             -- Delete it from the free queue. Ignore nothing deleted.
             DELETE FROM free_lease4 WHERE address = p_address;
         END IF;
-
-        GET DIAGNOSTICS row_count = ROW_COUNT;
-        -- If lease was updated but SFLQ logic changed no rows
-        -- force affected row count back to 1.
-        IF (row_count = 0)
-        THEN
-            PERFORM sflqFakeRowCount();
-        END IF;
     END IF;
+
+    RETURN (lease_row_count);
 END;
 $$;
 
 -- Procedure to delete a v4 lease by address and update SFLQ data.
 CREATE OR REPLACE FUNCTION sflqDeleteLease4(p_address BIGINT,
                                              p_expire TIMESTAMP WITH TIME ZONE)
-RETURNS VOID
+RETURNS INTEGER
 LANGUAGE plpgsql AS $$
 DECLARE
-    row_count INTEGER;
+    lease_row_count INTEGER;
 BEGIN
     -- Delete the lease from lease4.
     DELETE FROM lease4 WHERE address = p_address AND expire = p_expire;
 
     -- Remember the lease affected row count.
-    GET DIAGNOSTICS row_count = ROW_COUNT;
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
 
     -- If we didn't delete it either it was already gone or expire
     -- didn't match. In case of the former it should already be in
     -- the flq and in the latter, it should not be.
-    IF (row_count > 0)
+    IF (lease_row_count > 0)
     THEN
         -- Insert into free queue. Ignore duplicates.
         INSERT INTO free_lease4 (address) VALUES (p_address)
             ON CONFLICT DO NOTHING;
-
-        GET DIAGNOSTICS row_count = ROW_COUNT;
-        IF (row_count = 0)
-        THEN
-            -- If the lease was deleted but SFLQ logic changed no rows
-            -- force affected row count back to 1.
-            PERFORM sflqFakeRowCount();
-        END IF;
     END IF;
+
+    RETURN (lease_row_count);
 END;
 $$;
 
@@ -7527,8 +7508,10 @@ CREATE OR REPLACE FUNCTION sflqInsertLease6(p_address INET,
                                              p_state BIGINT,
                                              p_user_context TEXT,
                                              p_pool_id BIGINT)
-RETURNS VOID
+RETURNS INTEGER
 LANGUAGE plpgsql AS $$
+DECLARE
+    lease_row_count INTEGER;
 BEGIN
     INSERT INTO lease6 (address, duid, valid_lifetime, expire, subnet_id,
                         pref_lifetime, lease_type, iaid, prefix_len, fqdn_fwd,
@@ -7539,61 +7522,10 @@ BEGIN
                  p_fqdn_rev, p_hostname, p_hwaddr, p_hwtype, p_hwaddr_source,
                  p_state, p_user_context, p_pool_id);
 
-    -- Update SFLQ data.
-    -- If it is expired or expired-reclaimed delete add it to the
-    -- free queue otherwise delete it from the free queue.
-    IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
-    THEN
-        -- Insert into free queue. Ignore duplicates.
-        INSERT INTO free_lease6 (address, bin_address)
-            VALUES (p_address, inetToBytea(p_address))
-            ON CONFLICT DO NOTHING;
-    ELSE
-        -- Delete it from the free queue. Ignore nothing deleted.
-        DELETE FROM free_lease6 WHERE address = p_address;
-    END IF;
-END;
-$$;
-
--- Procedure to update a v6 lease and update SFLQ data.
-CREATE OR REPLACE FUNCTION sflqUpdateLease6(p_address INET,
-                                             p_duid BYTEA,
-                                             p_valid_lifetime BIGINT,
-                                             p_expire TIMESTAMP WITH TIME ZONE,
-                                             p_subnet_id BIGINT,
-                                             p_pref_lifetime BIGINT,
-                                             p_lease_type SMALLINT,
-                                             p_iaid INTEGER,
-                                             p_prefix_len SMALLINT,
-                                             p_fqdn_fwd BOOLEAN,
-                                             p_fqdn_rev BOOLEAN,
-                                             p_hostname VARCHAR,
-                                             p_hwaddr BYTEA,
-                                             p_hwtype SMALLINT,
-                                             p_hwaddr_source SMALLINT,
-                                             p_state BIGINT,
-                                             p_user_context TEXT,
-                                             p_pool_id BIGINT,
-                                             p_where_address INET,
-                                             p_where_expire TIMESTAMP WITH TIME ZONE)
-RETURNS VOID
-LANGUAGE plpgsql AS $$
-DECLARE
-    row_count INTEGER;
-BEGIN
-    UPDATE lease6
-        SET address = p_address, duid = p_duid, valid_lifetime = p_valid_lifetime,
-            expire = p_expire, subnet_id = p_subnet_id, pref_lifetime = p_pref_lifetime,
-            lease_type = p_lease_type, iaid = p_iaid, prefix_len = p_prefix_len,
-            fqdn_fwd = p_fqdn_fwd, fqdn_rev = p_fqdn_rev, hostname = p_hostname,
-            hwaddr =  p_hwaddr, hwtype = p_hwtype, hwaddr_source = p_hwaddr_source,
-            state = p_state, user_context = p_user_context, pool_id = p_pool_id
-        WHERE (address = p_where_address and expire = p_where_expire);
-
     -- Remember the lease affected row count.
-    GET DIAGNOSTICS row_count = ROW_COUNT;
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
 
-    IF (row_count > 0)
+    IF (lease_row_count > 0)
     THEN
         -- Update SFLQ data.
         -- If it is expired or expired-reclaimed delete add it to the
@@ -7608,50 +7540,97 @@ BEGIN
             -- Delete it from the free queue. Ignore nothing deleted.
             DELETE FROM free_lease6 WHERE address = p_address;
         END IF;
+    END IF;
 
-        GET DIAGNOSTICS row_count = ROW_COUNT;
-        -- If lease was updated but SFLQ logic changed no rows
-        -- force affected row count back to 1.
-        IF (row_count > 0)
+    RETURN (lease_row_count);
+END;
+$$;
+
+-- Procedure to update a v6 lease and update SFLQ data.
+CREATE OR REPLACE FUNCTION sflqUpdateLease6(p_address INET,
+                                            p_duid BYTEA,
+                                            p_valid_lifetime BIGINT,
+                                            p_expire TIMESTAMP WITH TIME ZONE,
+                                            p_subnet_id BIGINT,
+                                            p_pref_lifetime BIGINT,
+                                            p_lease_type SMALLINT,
+                                            p_iaid INTEGER,
+                                            p_prefix_len SMALLINT,
+                                            p_fqdn_fwd BOOLEAN,
+                                            p_fqdn_rev BOOLEAN,
+                                            p_hostname VARCHAR,
+                                            p_hwaddr BYTEA,
+                                            p_hwtype SMALLINT,
+                                            p_hwaddr_source SMALLINT,
+                                            p_state BIGINT,
+                                            p_user_context TEXT,
+                                            p_pool_id BIGINT,
+                                            p_where_address INET,
+                                            p_where_expire TIMESTAMP WITH TIME ZONE)
+RETURNS INTEGER
+LANGUAGE plpgsql AS $$
+DECLARE
+    lease_row_count INTEGER;
+BEGIN
+    UPDATE lease6
+        SET address = p_address, duid = p_duid, valid_lifetime = p_valid_lifetime,
+            expire = p_expire, subnet_id = p_subnet_id, pref_lifetime = p_pref_lifetime,
+            lease_type = p_lease_type, iaid = p_iaid, prefix_len = p_prefix_len,
+            fqdn_fwd = p_fqdn_fwd, fqdn_rev = p_fqdn_rev, hostname = p_hostname,
+            hwaddr =  p_hwaddr, hwtype = p_hwtype, hwaddr_source = p_hwaddr_source,
+            state = p_state, user_context = p_user_context, pool_id = p_pool_id
+        WHERE (address = p_where_address and expire = p_where_expire);
+
+    -- Remember the lease affected row count.
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
+
+    IF (lease_row_count > 0)
+    THEN
+        -- Update SFLQ data.
+        -- If it is expired or expired-reclaimed delete add it to the
+        -- free queue otherwise delete it from the free queue.
+        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != x'FFFFFFFF'::bigint))
         THEN
-            PERFORM sflqFakeRowCount();
+            -- Insert into free queue. Ignore duplicates.
+            INSERT INTO free_lease6 (address, bin_address)
+                VALUES (p_address, inetToBytea(p_address))
+                ON CONFLICT DO NOTHING;
+        ELSE
+            -- Delete it from the free queue. Ignore nothing deleted.
+            DELETE FROM free_lease6 WHERE address = p_address;
         END IF;
     END IF;
+
+    RETURN (lease_row_count);
 END;
 $$;
 
 -- Procedure to delete a v6 lease by address and update SFLQ data.
 CREATE OR REPLACE FUNCTION sflqDeleteLease6(p_address INET,
                                              p_expire TIMESTAMP WITH TIME ZONE)
-RETURNS VOID
+RETURNS INTEGER
 LANGUAGE plpgsql AS $$
 DECLARE
-    row_count INTEGER;
+    lease_row_count INTEGER;
 BEGIN
     -- Delete the lease from lease6.
     DELETE FROM lease6 WHERE address = p_address AND expire = p_expire;
 
     -- Remember the lease affected row count.
-    GET DIAGNOSTICS row_count = ROW_COUNT;
+    GET DIAGNOSTICS lease_row_count = ROW_COUNT;
 
     -- If we didn't delete it either it was already gone or expire
     -- didn't match. In case of the former it should already be in
     -- the flq and in the latter, it should not be.
-    IF (row_count > 0)
+    IF (lease_row_count > 0)
     THEN
         -- Insert into free queue. Ignore duplicates.
         INSERT INTO free_lease6 (address, bin_address)
             VALUES (p_address, inetToBytea(p_address))
             ON CONFLICT DO NOTHING;
-
-        GET DIAGNOSTICS row_count = ROW_COUNT;
-        IF (row_count = 0)
-        THEN
-            -- If the lease was deleted but SFLQ logic changed no rows
-            -- force affected row count back to 1.
-            PERFORM sflqFakeRowCount();
-        END IF;
     END IF;
+
+    RETURN (lease_row_count);
 END;
 $$;
 

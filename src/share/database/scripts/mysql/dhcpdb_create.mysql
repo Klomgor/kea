@@ -7087,17 +7087,20 @@ BEGIN
     -- Remember the lease affected row count.
     SET lease_row_count = row_count();
 
-    -- Update SFLQ data.
-    -- If it is expired or expired-reclaimed add it to the free lease queue
-    -- otherwise delete it from the free lease queue.
-    IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != 0xFFFFFFFF))
+    IF (lease_row_count > 0)
     THEN
-        -- Insert into free queue. Ignore duplicates.
-        INSERT INTO free_lease4 (address) VALUES (p_address)
-        ON DUPLICATE KEY UPDATE address = p_address;
-    ELSE
-        -- Delete it from the free queue. Ignore nothing deleted.
-        DELETE FROM free_lease4 WHERE address = p_address;
+        -- Update SFLQ data.
+        -- If it is expired or expired-reclaimed add it to the free lease queue
+        -- otherwise delete it from the free lease queue.
+        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != 0xFFFFFFFF))
+        THEN
+            -- Insert into free queue. Ignore duplicates.
+            INSERT INTO free_lease4 (address) VALUES (p_address)
+            ON DUPLICATE KEY UPDATE address = p_address;
+        ELSE
+            -- Delete it from the free queue. Ignore nothing deleted.
+            DELETE FROM free_lease4 WHERE address = p_address;
+        END IF;
     END IF;
 
     RETURN (lease_row_count);
@@ -7229,18 +7232,21 @@ BEGIN
     -- Remember the lease affected row count.
     SET lease_row_count = row_count();
 
-    -- Update SFLQ data.
-    -- If it is expired or expired-reclaimed add it to the free lease queue
-    -- otherwise delete it from the free lease queue.
-    IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != 0xFFFFFFFF))
+    IF (lease_row_count > 0)
     THEN
-        -- Insert into free queue. Ignore duplicates.
-        INSERT INTO free_lease6 (address, bin_address)
-            VALUES (INET6_NTOA(p_address), p_address)
-        ON DUPLICATE KEY UPDATE bin_address = p_address;
-    ELSE
-        -- Delete it from the free queue. Ignore nothing deleted.
-        DELETE FROM free_lease6 WHERE bin_address = p_address;
+        -- Update SFLQ data.
+        -- If it is expired or expired-reclaimed add it to the free lease queue
+        -- otherwise delete it from the free lease queue.
+        IF (p_state = 2 OR (p_expire <= now() AND p_valid_lifetime != 0xFFFFFFFF))
+        THEN
+            -- Insert into free queue. Ignore duplicates.
+            INSERT INTO free_lease6 (address, bin_address)
+                VALUES (INET6_NTOA(p_address), p_address)
+            ON DUPLICATE KEY UPDATE bin_address = p_address;
+        ELSE
+            -- Delete it from the free queue. Ignore nothing deleted.
+            DELETE FROM free_lease6 WHERE bin_address = p_address;
+        END IF;
     END IF;
 
     RETURN (lease_row_count);

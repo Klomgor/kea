@@ -832,6 +832,13 @@ public:
     };
 
 private:
+    /// @brief Convenience function to fetch row count from result set
+    ///
+    /// Fetches the row count value returned in a single row, single
+    /// column result set.
+    ///
+    /// @param r  result set from the executed statement.
+    int32_t getRowCount(const db::PgSqlResult& r) const;
 
     /// @brief Add Lease Common Code
     ///
@@ -843,6 +850,8 @@ private:
     /// @param stindex Index of statement being executed
     /// @param bind_array array that has been created for the type
     ///        of lease in question.
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @return true if the lease was added, false if it was not added because
     ///         a lease with that address already exists in the database.
@@ -851,7 +860,8 @@ private:
     ///        failed.
     bool addLeaseCommon(PgSqlLeaseContextPtr& ctx,
                         StatementIndex stindex,
-                        db::PsqlBindArray& bind_array);
+                        db::PsqlBindArray& bind_array,
+                        bool outputs_row_count = false);
 
     /// @brief Get Lease Collection Common Code
     ///
@@ -988,6 +998,8 @@ private:
     /// @param bind_array Array containing lease values and where clause
     /// parameters for the update.
     /// @param lease Pointer to the lease object whose record is being updated.
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @throw NoSuchLease Could not update a lease because no lease matches
     ///        the address given.
@@ -997,7 +1009,8 @@ private:
     void updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
                            StatementIndex stindex,
                            db::PsqlBindArray& bind_array,
-                           const LeasePtr& lease);
+                           const LeasePtr& lease,
+                           bool outputs_row_count = false);
 
     /// @brief Delete lease common code
     ///
@@ -1009,6 +1022,8 @@ private:
     /// @param stindex Index of prepared statement to be executed
     /// @param bind_array Array containing lease values and where clause
     /// parameters for the delete
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @return Number of deleted leases.
     ///
@@ -1016,7 +1031,8 @@ private:
     ///        failed.
     uint64_t deleteLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                StatementIndex stindex,
-                               db::PsqlBindArray& bind_array);
+                               db::PsqlBindArray& bind_array,
+                               bool outputs_row_count = false);
 
     /// @brief Removes all leases matching subnet ID.
     ///

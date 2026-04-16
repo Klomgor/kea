@@ -1868,10 +1868,24 @@ PgSqlLeaseMgr::getDBVersion() {
     return (tmp.str());
 }
 
+int32_t
+PgSqlLeaseMgr::getRowCount(const PgSqlResult& r) const {
+    int result_rows = PQntuples(r);
+    if (result_rows != 1) {
+        isc_throw(Unexpected, "PgSqlLeaseMgr::getRowCount() returned: "
+                  << result_rows << ", should always return 1 row");
+    }
+
+    int32_t affected_rows;
+    PgSqlExchange::getColumnValue(r, 0, 0, affected_rows);
+    return (affected_rows);
+}
+
 bool
 PgSqlLeaseMgr::addLeaseCommon(PgSqlLeaseContextPtr& ctx,
                               StatementIndex stindex,
-                              PsqlBindArray& bind_array) {
+                              PsqlBindArray& bind_array,
+                              bool outputs_row_count /* = false */) {
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,
                                  &bind_array.values_[0],
@@ -1890,6 +1904,11 @@ PgSqlLeaseMgr::addLeaseCommon(PgSqlLeaseContextPtr& ctx,
         ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
     }
 
+    /// @todo not sure Postresql cares - Consume the results even though we don't care.
+    if (outputs_row_count) {
+        getRowCount(r);
+    }
+
     return (true);
 }
 
@@ -1904,8 +1923,13 @@ PgSqlLeaseMgr::addLease(const Lease4Ptr& lease) {
 
     PsqlBindArray bind_array;
     ctx->exchange4_->createBindForSend(lease, bind_array);
-    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE4 : SFLQ_INSERT_LEASE4);
-    auto result = addLeaseCommon(ctx, index, bind_array);
+
+    bool result;
+    if (!useSharedFlqStatement(lease)) {
+        result = addLeaseCommon(ctx, INSERT_LEASE4, bind_array);
+    } else {
+        result = addLeaseCommon(ctx, SFLQ_INSERT_LEASE4, bind_array, true);
+    }
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -1934,8 +1958,12 @@ PgSqlLeaseMgr::addLease(const Lease6Ptr& lease) {
     PsqlBindArray bind_array;
     ctx->exchange6_->createBindForSend(lease, bind_array);
 
-    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE6 : SFLQ_INSERT_LEASE6);
-    auto result = addLeaseCommon(ctx, index, bind_array);
+    bool result;
+    if (!useSharedFlqStatement(lease)) {
+        result = addLeaseCommon(ctx, INSERT_LEASE6, bind_array);
+    } else {
+        result = addLeaseCommon(ctx, SFLQ_INSERT_LEASE6, bind_array, true);
+    }
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -2722,7 +2750,8 @@ void
 PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
                                  PsqlBindArray& bind_array,
-                                 const LeasePtr& lease) {
+                                 const LeasePtr& lease,
+                                 bool outputs_row_count /* = false */) {
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,
                                  &bind_array.values_[0],
@@ -2731,7 +2760,13 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
 
     ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
 
-    int affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
+
+    int affected_rows = 0;
+    if (outputs_row_count) {
+        affected_rows = getRowCount(r);
+    } else {
+        affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -2753,9 +2788,6 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
 
 void
 PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    const StatementIndex stindex = (!useSharedFlqStatement(lease)
-                                    ? UPDATE_LEASE4 : SFLQ_UPDATE_LEASE4);
-
     LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_UPDATE_ADDR4)
         .arg(lease->addr_.toText());
 
@@ -2782,7 +2814,11 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
     bind_array.add(expire_str);
 
     // Drop to common update code
-    updateLeaseCommon(ctx, stindex, bind_array, lease);
+    if (!useSharedFlqStatement(lease)) {
+        updateLeaseCommon(ctx, UPDATE_LEASE4, bind_array, lease);
+    } else {
+        updateLeaseCommon(ctx, SFLQ_UPDATE_LEASE4, bind_array, lease, true);
+    }
 
     // Update lease current expiration time.
     lease->updateCurrentExpirationTime();
@@ -2795,9 +2831,6 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    const StatementIndex stindex = (!useSharedFlqStatement(lease)
-                                    ? UPDATE_LEASE6 : SFLQ_UPDATE_LEASE6);
-
     LOG_DEBUG(pgsql_lb_logger, PGSQL_LB_DBG_TRACE_DETAIL, PGSQL_LB_UPDATE_ADDR6)
         .arg(lease->addr_.toText())
         .arg(Lease::typeToText(lease->type_));
@@ -2829,7 +2862,11 @@ PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
     bind_array.add(expire_str);
 
     // Drop to common update code
-    updateLeaseCommon(ctx, stindex, bind_array, lease);
+    if (!useSharedFlqStatement(lease)) {
+        updateLeaseCommon(ctx, UPDATE_LEASE6, bind_array, lease);
+    } else {
+        updateLeaseCommon(ctx, SFLQ_UPDATE_LEASE6, bind_array, lease, true);
+    }
 
     // Update lease current expiration time.
     lease->updateCurrentExpirationTime();
@@ -2860,7 +2897,8 @@ PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
 uint64_t
 PgSqlLeaseMgr::deleteLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
-                                 PsqlBindArray& bind_array) {
+                                 PsqlBindArray& bind_array,
+                                 bool outputs_row_count /* = false */) {
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,
                                  &bind_array.values_[0],
@@ -2868,7 +2906,13 @@ PgSqlLeaseMgr::deleteLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                  &bind_array.formats_[0], 0));
 
     ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
-    int affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
+
+    int affected_rows = 0;
+    if (outputs_row_count) {
+        affected_rows = getRowCount(r);
+    } else {
+        affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
+    }
 
     return (affected_rows);
 }
@@ -2900,8 +2944,12 @@ PgSqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
     PgSqlLeaseTrackingContextAlloc get_context(*this, lease);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE4 : SFLQ_DELETE_LEASE4);
-    auto affected_rows = deleteLeaseCommon(ctx, index, bind_array);
+    int affected_rows;
+    if (!useSharedFlqStatement(lease)) {
+        affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE4, bind_array);
+    } else {
+        affected_rows = deleteLeaseCommon(ctx, SFLQ_DELETE_LEASE4, bind_array, true);
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -2951,8 +2999,12 @@ PgSqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     PgSqlLeaseTrackingContextAlloc get_context(*this, lease);
     PgSqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE6 : SFLQ_DELETE_LEASE6);
-    auto affected_rows = deleteLeaseCommon(ctx, index, bind_array);
+    int affected_rows;
+    if (!useSharedFlqStatement(lease)) {
+        affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE6, bind_array);
+    } else {
+        affected_rows = deleteLeaseCommon(ctx, SFLQ_DELETE_LEASE6, bind_array, true);
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
