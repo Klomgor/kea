@@ -871,6 +871,8 @@ private:
     /// @param stindex Index of statement being executed
     /// @param bind MYSQL_BIND array that has been created for the type
     ///        of lease in question.
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @return true if the lease was added, false if it was not added because
     ///         a lease with that address already exists in the database.
@@ -878,7 +880,8 @@ private:
     /// @throw isc::db::DbOperationError An operation on the open database has
     ///        failed.
     bool addLeaseCommon(MySqlLeaseContextPtr& ctx,
-                        StatementIndex stindex, std::vector<MYSQL_BIND>& bind);
+                        StatementIndex stindex, std::vector<MYSQL_BIND>& bind,
+                        bool outputs_row_count = false);
 
     /// @brief Get Lease Collection Common Code
     ///

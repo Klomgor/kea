@@ -2382,10 +2382,24 @@ MySqlLeaseMgr::getDBVersion() {
 bool
 MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
                               StatementIndex stindex,
-                              std::vector<MYSQL_BIND>& bind) {
+                              std::vector<MYSQL_BIND>& bind,
+                              bool outputs_row_count /* = false*/) {
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), &bind[0]);
     checkError(ctx, status, stindex, "unable to bind parameters");
+
+    int32_t affected_rows = 0;
+    MYSQL_BIND obind[1];
+    if (outputs_row_count) {
+        // Build the output value bind array.
+        memset(obind, 0, sizeof(obind));
+        obind[0].buffer_type = MYSQL_TYPE_LONG;
+        obind[0].buffer = reinterpret_cast<char*>(&affected_rows);
+
+        // Bind the output bind array to the statement
+        status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
+        checkError(ctx, status, stindex, "unable to bind output");
+    }
 
     // Execute the statement
     status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
@@ -2398,6 +2412,24 @@ MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
             return (false);
         }
         checkError(ctx, status, stindex, "unable to execute");
+    }
+
+    // See how many rows were affected.
+    if (!outputs_row_count) {
+        affected_rows = mysql_stmt_affected_rows(ctx->conn_.getStatement(stindex));
+    } else {
+        // Results have to be consumed, even if we don't use them or subsequent
+        // commands won't execute.
+        // Store the result.
+        status = mysql_stmt_store_result(ctx->conn_.getStatement(stindex));
+        checkError(ctx, status, stindex, "unable to store result");
+
+        // Fetch the result into affected_rows.
+        MySqlFreeResult fetch_release(ctx->conn_.getStatement(stindex));
+        status = mysql_stmt_fetch(ctx->conn_.getStatement(stindex));
+        if (status != 0) {
+            checkError(ctx, status, stindex, "unable to fetch results");
+        }
     }
 
     // Insert succeeded
@@ -2417,8 +2449,12 @@ MySqlLeaseMgr::addLease(const Lease4Ptr& lease) {
     std::vector<MYSQL_BIND> bind = ctx->exchange4_->createBindForSend(lease);
 
     // ... and drop to common code.
-    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE4 : SFLQ_INSERT_LEASE4);
-    auto result = addLeaseCommon(ctx, index, bind);
+    bool result = false;
+    if (!useSharedFlqStatement(lease)) {
+        result = addLeaseCommon(ctx, INSERT_LEASE4, bind);
+    } else {
+        result = addLeaseCommon(ctx, SFLQ_INSERT_LEASE4, bind, true);
+    }
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
@@ -2448,8 +2484,12 @@ MySqlLeaseMgr::addLease(const Lease6Ptr& lease) {
     std::vector<MYSQL_BIND> bind = ctx->exchange6_->createBindForSend(lease);
 
     // ... and drop to common code.
-    auto index = (!useSharedFlqStatement(lease) ? INSERT_LEASE6 : SFLQ_INSERT_LEASE6);
-    auto result = addLeaseCommon(ctx, index, bind);
+    bool result = false;
+    if (!useSharedFlqStatement(lease)) {
+        result = addLeaseCommon(ctx, INSERT_LEASE6, bind);
+    } else {
+        result = addLeaseCommon(ctx, SFLQ_INSERT_LEASE6, bind, true);
+    }
 
     // Update lease current expiration time (allows update between the creation
     // of the Lease up to the point of insertion in the database).
