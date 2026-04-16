@@ -2311,7 +2311,7 @@ pgsql_lease_stat_recount_test() {
     qry="select count(subnet_id) from lease6_pool_stat where state = 3"
     run_statement "#6.13" "$qry" 0
 
-    # Registered leases for subet 40 should be 2
+    # Registered leases for subnet 40 should be 2
     qry="select leases from lease6_stat where subnet_id = 40 and lease_type = 0 and state = 4"
     run_statement "#6.14" "$qry" 2
 

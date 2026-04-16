@@ -37,8 +37,6 @@ namespace dhcp {
 /// free address.  This should minimize conflicts with other servers until
 /// the number of free addresses approaches zero.
 ///
-/// @TODO The following needs updating once we decide what do about IA_NA.
-///
 /// This allocator should only be used for reasonably small pools due to the
 /// overhead to populate the free leases. A reasonably small pool is an IPv4
 /// pool (including /8) and the prefix delegation pools with similar capacity.
@@ -82,7 +80,7 @@ public:
     /// @brief Sanity checks the subnet and pool configuration
     /// for use with SFLQ.
     ///
-    /// @param subet Subnet to check
+    /// @param subnet Subnet to check
     ///
     /// @throw BadValue if the capacity exceeds limit.
     static void sanityChecksSflqAllocator4(Subnet4Ptr subnet);
@@ -90,7 +88,7 @@ public:
     /// @brief Sanity checks the subnet and pool configuration
     /// for use with SFLQ.
     ///
-    /// @param subet Subnet to check
+    /// @param subnet Subnet to check
     ///
     /// @throw BadValue if the capacity exceeds limit.
     static void sanityChecksSflqAllocator6(Subnet6Ptr subnet);
