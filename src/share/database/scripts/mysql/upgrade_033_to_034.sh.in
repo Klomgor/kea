@@ -635,44 +635,28 @@ BEGIN
 END $$
 DELIMITER ;
 
--- Procedure to create an affected rows count of 1.
--- Used after update and delete lease operations.
-DROP TEMPORARY TABLE IF EXISTS sflq_dummy_row_count;
-DROP PROCEDURE IF EXISTS sflqFakeRowCount;
+-- Function to insert a v4 lease and update SFLQ data.
+DROP FUNCTION IF EXISTS sflqInsertLease4;
 DELIMITER $$
-CREATE PROCEDURE sflqFakeRowCount()
+CREATE FUNCTION sflqInsertLease4(
+    p_address INT UNSIGNED,
+    p_hwaddr  VARBINARY(20),
+    p_client_id VARBINARY(255),
+    p_valid_lifetime INT UNSIGNED,
+    p_expire TIMESTAMP,
+    p_subnet_id INT UNSIGNED,
+    p_fqdn_fwd TINYINT(1),
+    p_fqdn_rev TINYINT(1),
+    p_hostname VARCHAR(255),
+    p_state INT UNSIGNED,
+    p_user_context TEXT,
+    p_relay_id VARBINARY(255),
+    p_remote_id VARBINARY(255),
+    p_pool_id INT UNSIGNED)
+RETURNS INT
+READS SQL DATA
 BEGIN
-    IF (@sflq_dummy_exists IS NOT NULL)
-    THEN
-        UPDATE sflq_dummy_row_count SET dummy_val = NOT dummy_val;
-    ELSE
-        SET @sflq_dummy_exists = 1;
-        CREATE TEMPORARY TABLE sflq_dummy_row_count ( dummy_val TINYINT );
-        INSERT INTO sflq_dummy_row_count (dummy_val) VALUES (0);
-    END IF;
-END $$
-DELIMITER ;
-
--- Procedure to insert a v4 lease and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqInsertLease4;
-DELIMITER $$
-CREATE PROCEDURE sflqInsertLease4(
-    IN p_address INT UNSIGNED,
-    IN p_hwaddr  VARBINARY(20),
-    IN p_client_id VARBINARY(255),
-    IN p_valid_lifetime INT UNSIGNED,
-    IN p_expire TIMESTAMP,
-    IN p_subnet_id INT UNSIGNED,
-    IN p_fqdn_fwd TINYINT(1),
-    IN p_fqdn_rev TINYINT(1),
-    IN p_hostname VARCHAR(255),
-    IN p_state INT UNSIGNED,
-    IN p_user_context TEXT,
-    IN p_relay_id VARBINARY(255),
-    IN p_remote_id VARBINARY(255),
-    IN p_pool_id INT UNSIGNED)
-BEGIN
-    START TRANSACTION;
+    DECLARE lease_row_count INT;
 
     INSERT INTO lease4 (address, hwaddr, client_id, valid_lifetime, expire,
                         subnet_id, fqdn_fwd, fqdn_rev, hostname, state,
@@ -680,6 +664,9 @@ BEGIN
          VALUES ( p_address, p_hwaddr, p_client_id, p_valid_lifetime, p_expire,
                   p_subnet_id, p_fqdn_fwd, p_fqdn_rev, p_hostname, p_state,
                   p_user_context, p_relay_id, p_remote_id, p_pool_id);
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- Update SFLQ data.
     -- If it is expired or expired-reclaimed add it to the free lease queue
@@ -694,34 +681,34 @@ BEGIN
         DELETE FROM free_lease4 WHERE address = p_address;
     END IF;
 
-    COMMIT;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 
 -- Procedure to update a v4 lease and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqUpdateLease4;
+DROP FUNCTION IF EXISTS sflqUpdateLease4;
 DELIMITER $$
-CREATE PROCEDURE sflqUpdateLease4(
-    IN p_address INT UNSIGNED,
-    IN p_hwaddr  VARBINARY(20),
-    IN p_client_id VARBINARY(255),
-    IN p_valid_lifetime INT UNSIGNED,
-    IN p_expire TIMESTAMP,
-    IN p_subnet_id INT UNSIGNED,
-    IN p_fqdn_fwd TINYINT(1),
-    IN p_fqdn_rev TINYINT(1),
-    IN p_hostname VARCHAR(255),
-    IN p_state INT UNSIGNED,
-    IN p_user_context TEXT,
-    IN p_relay_id VARBINARY(255),
-    IN p_remote_id VARBINARY(255),
-    IN p_pool_id INT UNSIGNED,
-    IN p_where_address INT UNSIGNED,
-    IN p_where_expire TIMESTAMP)
+CREATE FUNCTION sflqUpdateLease4(
+    p_address INT UNSIGNED,
+    p_hwaddr  VARBINARY(20),
+    p_client_id VARBINARY(255),
+    p_valid_lifetime INT UNSIGNED,
+    p_expire TIMESTAMP,
+    p_subnet_id INT UNSIGNED,
+    p_fqdn_fwd TINYINT(1),
+    p_fqdn_rev TINYINT(1),
+    p_hostname VARCHAR(255),
+    p_state INT UNSIGNED,
+    p_user_context TEXT,
+    p_relay_id VARBINARY(255),
+    p_remote_id VARBINARY(255),
+    p_pool_id INT UNSIGNED,
+    p_where_address INT UNSIGNED,
+    p_where_expire TIMESTAMP)
+RETURNS INT
+READS SQL DATA
 BEGIN
     DECLARE lease_row_count INT;
-
-    START TRANSACTION;
 
     UPDATE lease4 SET address = p_address, hwaddr = p_hwaddr, client_id = p_client_id,
                       valid_lifetime = p_valid_lifetime, expire = p_expire,
@@ -750,28 +737,20 @@ BEGIN
         END IF;
     END IF;
 
-    COMMIT;
-
-    -- COMMIT resets row count so regardless of what happened
-    -- with SLFQ if the lease was updated force affected row count
-    -- back to 1.
-    IF (lease_row_count > 0)
-    THEN
-        CALL sflqFakeRowCount();
-    END IF;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 
--- Procedure to delete a v4 lease by address and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqDeleteLease4;
+-- Function  to delete a v4 lease by address and update SFLQ data.
+DROP FUNCTION IF EXISTS sflqDeleteLease4;
 DELIMITER $$
-CREATE PROCEDURE sflqDeleteLease4(
-    IN p_address INT UNSIGNED,
-    IN p_expire TIMESTAMP)
+CREATE FUNCTION sflqDeleteLease4(
+    p_address INT UNSIGNED,
+    p_expire TIMESTAMP)
+RETURNS INT
+READS SQL DATA
 BEGIN
     DECLARE lease_row_count INT;
-
-    START TRANSACTION;
 
     -- Delete the lease from lease4.
     DELETE FROM lease4 WHERE address = p_address AND expire = p_expire;
@@ -788,42 +767,36 @@ BEGIN
         ON DUPLICATE KEY UPDATE address = p_address;
     END IF;
 
-    COMMIT;
-
-    -- COMMIT resets row count so regardless of what happened
-    -- with SLFQ if the lease was deleted force affected row count
-    -- back to 1.
-    IF (lease_row_count > 0)
-    THEN
-        CALL sflqFakeRowCount();
-    END IF;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 
--- Procedure to insert a v6 lease and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqInsertLease6;
+-- Function to insert a v6 lease and update SFLQ data.
+DROP FUNCTION IF EXISTS sflqInsertLease6;
 DELIMITER $$
-CREATE PROCEDURE sflqInsertLease6(
-    IN p_address BINARY(16),
-    IN p_duid VARBINARY(128),
-    IN p_valid_lifetime INT UNSIGNED,
-    IN p_expire TIMESTAMP,
-    IN p_subnet_id INT UNSIGNED,
-    IN p_pref_lifetime INT UNSIGNED,
-    IN p_lease_type TINYINT,
-    IN p_iaid INT UNSIGNED,
-    IN p_prefix_len TINYINT UNSIGNED,
-    IN p_fqdn_fwd TINYINT(1),
-    IN p_fqdn_rev TINYINT(1),
-    IN p_hostname VARCHAR(255),
-    IN p_hwaddr VARBINARY(20),
-    IN p_hwtype SMALLINT UNSIGNED,
-    IN p_hwaddr_source INT UNSIGNED,
-    IN p_state INT UNSIGNED,
-    IN p_user_context TEXT,
-    IN p_pool_id INT UNSIGNED)
+CREATE FUNCTION sflqInsertLease6(
+    p_address BINARY(16),
+    p_duid VARBINARY(128),
+    p_valid_lifetime INT UNSIGNED,
+    p_expire TIMESTAMP,
+    p_subnet_id INT UNSIGNED,
+    p_pref_lifetime INT UNSIGNED,
+    p_lease_type TINYINT,
+    p_iaid INT UNSIGNED,
+    p_prefix_len TINYINT UNSIGNED,
+    p_fqdn_fwd TINYINT(1),
+    p_fqdn_rev TINYINT(1),
+    p_hostname VARCHAR(255),
+    p_hwaddr VARBINARY(20),
+    p_hwtype SMALLINT UNSIGNED,
+    p_hwaddr_source INT UNSIGNED,
+    p_state INT UNSIGNED,
+    p_user_context TEXT,
+    p_pool_id INT UNSIGNED)
+RETURNS INT
+READS SQL DATA
 BEGIN
-    START TRANSACTION;
+    DECLARE lease_row_count INT;
 
     INSERT INTO lease6 (address, duid, valid_lifetime, expire, subnet_id,
                         pref_lifetime, lease_type, iaid, prefix_len,
@@ -833,6 +806,9 @@ BEGIN
                  p_pref_lifetime, p_lease_type, p_iaid, p_prefix_len,
                  p_fqdn_fwd, p_fqdn_rev, p_hostname, p_hwaddr, p_hwtype,
                  p_hwaddr_source, p_state, p_user_context, p_pool_id);
+
+    -- Remember the lease affected row count.
+    SET lease_row_count = row_count();
 
     -- Update SFLQ data.
     -- If it is expired or expired-reclaimed add it to the free lease queue
@@ -848,38 +824,38 @@ BEGIN
         DELETE FROM free_lease6 WHERE bin_address = p_address;
     END IF;
 
-    COMMIT;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 
--- Procedure to update a v6 lease and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqUpdateLease6;
+-- Function to update a v6 lease and update SFLQ data.
+DROP FUNCTION IF EXISTS sflqUpdateLease6;
 DELIMITER $$
-CREATE PROCEDURE sflqUpdateLease6(
-    IN p_address BINARY(16),
-    IN p_duid VARBINARY(128),
-    IN p_valid_lifetime INT UNSIGNED,
-    IN p_expire TIMESTAMP,
-    IN p_subnet_id INT UNSIGNED,
-    IN p_pref_lifetime INT UNSIGNED,
-    IN p_lease_type TINYINT,
-    IN p_iaid INT UNSIGNED,
-    IN p_prefix_len TINYINT UNSIGNED,
-    IN p_fqdn_fwd TINYINT(1),
-    IN p_fqdn_rev TINYINT(1),
-    IN p_hostname VARCHAR(255),
-    IN p_hwaddr VARBINARY(20),
-    IN p_hwtype SMALLINT UNSIGNED,
-    IN p_hwaddr_source INT UNSIGNED,
-    IN p_state INT UNSIGNED,
-    IN p_user_context TEXT,
-    IN p_pool_id INT UNSIGNED,
-    IN p_where_address BINARY(16),
-    IN p_where_expire TIMESTAMP)
+CREATE FUNCTION sflqUpdateLease6(
+    p_address BINARY(16),
+    p_duid VARBINARY(128),
+    p_valid_lifetime INT UNSIGNED,
+    p_expire TIMESTAMP,
+    p_subnet_id INT UNSIGNED,
+    p_pref_lifetime INT UNSIGNED,
+    p_lease_type TINYINT,
+    p_iaid INT UNSIGNED,
+    p_prefix_len TINYINT UNSIGNED,
+    p_fqdn_fwd TINYINT(1),
+    p_fqdn_rev TINYINT(1),
+    p_hostname VARCHAR(255),
+    p_hwaddr VARBINARY(20),
+    p_hwtype SMALLINT UNSIGNED,
+    p_hwaddr_source INT UNSIGNED,
+    p_state INT UNSIGNED,
+    p_user_context TEXT,
+    p_pool_id INT UNSIGNED,
+    p_where_address BINARY(16),
+    p_where_expire TIMESTAMP)
+RETURNS INT
+READS SQL DATA
 BEGIN
     DECLARE lease_row_count INT;
-
-    START TRANSACTION;
 
     UPDATE lease6 SET address = p_address, duid = p_duid, valid_lifetime = p_valid_lifetime,
                       expire = p_expire, subnet_id = p_subnet_id, pref_lifetime = p_pref_lifetime,
@@ -909,28 +885,20 @@ BEGIN
         END IF;
     END IF;
 
-    COMMIT;
-
-    -- COMMIT resets row count so regardless of what happened
-    -- with SLFQ if the lease was updated force affected row count
-    -- back to 1.
-    IF (lease_row_count > 0)
-    THEN
-        CALL sflqFakeRowCount();
-    END IF;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 
--- Procedure to delete a v6 lease by address and update SFLQ data.
-DROP PROCEDURE IF EXISTS sflqDeleteLease6;
+-- Function to delete a v6 lease by address and update SFLQ data.
+DROP FUNCTION IF EXISTS sflqDeleteLease6;
 DELIMITER $$
-CREATE PROCEDURE sflqDeleteLease6(
-    IN p_address BINARY(16),
-    IN p_expire TIMESTAMP)
+CREATE FUNCTION sflqDeleteLease6(
+    p_address BINARY(16),
+    p_expire TIMESTAMP)
+RETURNS INT
+READS SQL DATA
 BEGIN
     DECLARE lease_row_count INT;
-
-    START TRANSACTION;
 
     -- Delete the lease from lease4.
     DELETE FROM lease6 WHERE address = p_address AND expire = p_expire;
@@ -949,15 +917,7 @@ BEGIN
         ON DUPLICATE KEY UPDATE bin_address = p_address;
     END IF;
 
-    COMMIT;
-
-    -- COMMIT resets row count so regardless of what happened
-    -- with SLFQ if the lease was deleted force affected row count
-    -- back to 1.
-    IF (lease_row_count > 0)
-    THEN
-        CALL sflqFakeRowCount();
-    END IF;
+    RETURN (lease_row_count);
 END $$
 DELIMITER ;
 

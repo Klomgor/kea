@@ -1016,6 +1016,8 @@ private:
     ///        (Note that the number is determined by the number of parameters
     ///        in the statement.)
     /// @param lease Pointer to the lease object whose record is being updated.
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @throw NoSuchLease Could not update a lease because no lease matches
     ///        the address given.
@@ -1025,7 +1027,8 @@ private:
     void updateLeaseCommon(MySqlLeaseContextPtr& ctx,
                            StatementIndex stindex,
                            MYSQL_BIND* bind,
-                           const LeasePtr& lease);
+                           const LeasePtr& lease,
+                           bool outputs_row_count = false);
 
     /// @brief Delete lease common code
     ///
@@ -1038,6 +1041,8 @@ private:
     /// @param bind Array of MYSQL_BIND objects representing the parameters.
     ///        (Note that the number is determined by the number of parameters
     ///        in the statement.)
+    /// @param outputs_row_count flag indicating that the SQL statement returns
+    /// the affected rows as a result. Defaults to false.
     ///
     /// @return Number of deleted leases.
     ///
@@ -1045,7 +1050,8 @@ private:
     ///        failed.
     uint64_t deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
                                StatementIndex stindex,
-                               MYSQL_BIND* bind);
+                               MYSQL_BIND* bind,
+                               bool outputs_row_count = false);
 
     /// @brief Removes all leases matching subnet ID.
     ///

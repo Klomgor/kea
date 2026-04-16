@@ -564,21 +564,21 @@ tagged_statements = { {
     {MySqlLeaseMgr::SFLQ_PICK_FREE_LEASE6,
                     "SELECT sflqPickFreeLease6(?,?)"},
     {MySqlLeaseMgr::SFLQ_INSERT_LEASE4,
-                    "CALL sflqInsertLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                                          "?, ?, ?, ?, ?)"},
+                    "SELECT sflqInsertLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                            "?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_UPDATE_LEASE4,
-                    "CALL sflqUpdateLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                                          "?, ?, ?, ?, ?, ?, ?)"},
+                    "SELECT sflqUpdateLease4(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                            "?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_DELETE_LEASE4,
-                    "CALL sflqDeleteLease4(?,?)"},
+                    "SELECT sflqDeleteLease4(?,?)"},
     {MySqlLeaseMgr::SFLQ_INSERT_LEASE6,
-                    "CALL sflqInsertLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                                          "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
+                    "SELECT sflqInsertLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                            "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_UPDATE_LEASE6,
-                    "CALL sflqUpdateLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                                          "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
+                    "SELECT sflqUpdateLease6(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                                            "?, ?, ?, ?, ?, ?, ?, ?, ?)"},
     {MySqlLeaseMgr::SFLQ_DELETE_LEASE6,
-                    "CALL sflqDeleteLease6(?, ?)"},
+                    "SELECT sflqDeleteLease6(?, ?)"},
 } };  // tagged_statements
 
 }  // namespace
@@ -3475,11 +3475,25 @@ void
 MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
                                  MYSQL_BIND* bind,
-                                 const LeasePtr& lease) {
+                                 const LeasePtr& lease,
+                                 bool outputs_row_count /* = false*/) {
 
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), bind);
     checkError(ctx, status, stindex, "unable to bind parameters");
+
+    int32_t affected_rows = 0;
+    MYSQL_BIND obind[1];
+    if (outputs_row_count) {
+        // Build the output value bind array.
+        memset(obind, 0, sizeof(obind));
+        obind[0].buffer_type = MYSQL_TYPE_LONG;
+        obind[0].buffer = reinterpret_cast<char*>(&affected_rows);
+
+        // Bind the output bind array to the statement
+        status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
+        checkError(ctx, status, stindex, "unable to bind output");
+    }
 
     // Execute
     status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
@@ -3487,7 +3501,20 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
 
     // See how many rows were affected.  The statement should only update a
     // single row.
-    int affected_rows = mysql_stmt_affected_rows(ctx->conn_.getStatement(stindex));
+    if (!outputs_row_count) {
+        affected_rows = mysql_stmt_affected_rows(ctx->conn_.getStatement(stindex));
+    } else {
+        // Store the result.
+        status = mysql_stmt_store_result(ctx->conn_.getStatement(stindex));
+        checkError(ctx, status, stindex, "unable to store result");
+
+        // Fetch the result into affected_rows.
+        MySqlFreeResult fetch_release(ctx->conn_.getStatement(stindex));
+        status = mysql_stmt_fetch(ctx->conn_.getStatement(stindex));
+        if (status != 0) {
+            checkError(ctx, status, stindex, "unable to fetch results");
+        }
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -3504,14 +3531,12 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
     // Should not happen - primary key constraint should only have selected
     // one row.
     isc_throw(DbOperationError, "apparently updated more than one lease "
-              "that had the address " << lease->addr_.toText());
+              "that had the address " << lease->addr_.toText()
+              << " row count: " << affected_rows);
 }
 
 void
 MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    const StatementIndex stindex = (!useSharedFlqStatement(lease)
-                                    ? UPDATE_LEASE4 : SFLQ_UPDATE_LEASE4);
-
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_UPDATE_ADDR4)
         .arg(lease->addr_.toText());
 
@@ -3549,7 +3574,11 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
     bind.push_back(inbind[1]);
 
     // Drop to common update code
-    updateLeaseCommon(ctx, stindex, &bind[0], lease);
+    if (!useSharedFlqStatement(lease)) {
+        updateLeaseCommon(ctx, UPDATE_LEASE4, &bind[0], lease);
+    } else {
+        updateLeaseCommon(ctx, SFLQ_UPDATE_LEASE4, &bind[0], lease, true);
+    }
 
     // Update lease current expiration time.
     lease->updateCurrentExpirationTime();
@@ -3562,9 +3591,6 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    const StatementIndex stindex = (!useSharedFlqStatement(lease)
-                                    ? UPDATE_LEASE6 : SFLQ_UPDATE_LEASE6);
-
     LOG_DEBUG(mysql_lb_logger, MYSQL_LB_DBG_TRACE_DETAIL, MYSQL_LB_UPDATE_ADDR6)
         .arg(lease->addr_.toText())
         .arg(Lease::typeToText(lease->type_));
@@ -3614,7 +3640,11 @@ MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
     bind.push_back(inbind[1]);
 
     // Drop to common update code
-    updateLeaseCommon(ctx, stindex, &bind[0], lease);
+    if (!useSharedFlqStatement(lease)) {
+        updateLeaseCommon(ctx, UPDATE_LEASE6, &bind[0], lease);
+    } else {
+        updateLeaseCommon(ctx, SFLQ_UPDATE_LEASE6, &bind[0], lease, true);
+    }
 
     // Update lease current expiration time.
     lease->updateCurrentExpirationTime();
@@ -3650,10 +3680,24 @@ MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
 uint64_t
 MySqlLeaseMgr::deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
-                                 MYSQL_BIND* bind) {
+                                 MYSQL_BIND* bind,
+                                 bool outputs_row_count /* = false*/) {
     // Bind the input parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.getStatement(stindex), bind);
     checkError(ctx, status, stindex, "unable to bind WHERE clause parameter");
+
+    int32_t affected_rows = 0;
+    MYSQL_BIND obind[1];
+    if (outputs_row_count) {
+        // Build the output value bind array.
+        memset(obind, 0, sizeof(obind));
+        obind[0].buffer_type = MYSQL_TYPE_LONG;
+        obind[0].buffer = reinterpret_cast<char*>(&affected_rows);
+
+        // Bind the output bind array to the statement
+        status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
+        checkError(ctx, status, stindex, "unable to bind output");
+    }
 
     // Execute
     status = MysqlExecuteStatement(ctx->conn_.getStatement(stindex));
@@ -3661,7 +3705,22 @@ MySqlLeaseMgr::deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
 
     // See how many rows were affected.  Note that the statement may delete
     // multiple rows.
-    return (mysql_stmt_affected_rows(ctx->conn_.getStatement(stindex)));
+    if (!outputs_row_count) {
+        affected_rows = mysql_stmt_affected_rows(ctx->conn_.getStatement(stindex));
+    } else {
+        // Store the result.
+        status = mysql_stmt_store_result(ctx->conn_.getStatement(stindex));
+        checkError(ctx, status, stindex, "unable to store result");
+
+        // Fetch the result into affected_rows.
+        MySqlFreeResult fetch_release(ctx->conn_.getStatement(stindex));
+        status = mysql_stmt_fetch(ctx->conn_.getStatement(stindex));
+        if (status != 0) {
+            checkError(ctx, status, stindex, "unable to fetch results");
+        }
+    }
+
+    return (affected_rows);
 }
 
 bool
@@ -3698,8 +3757,13 @@ MySqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
     MySqlLeaseTrackingContextAlloc get_context(*this, lease);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE4 : SFLQ_DELETE_LEASE4);
-    auto affected_rows = deleteLeaseCommon(ctx, index, inbind);
+    // Drop to common delete code
+    int32_t affected_rows = 0;
+    if (!useSharedFlqStatement(lease)) {
+        affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE4, inbind);
+    } else {
+        affected_rows = deleteLeaseCommon(ctx, SFLQ_DELETE_LEASE4, inbind, true);
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
@@ -3762,8 +3826,13 @@ MySqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     MySqlLeaseTrackingContextAlloc get_context(*this, lease);
     MySqlLeaseContextPtr ctx = get_context.ctx_;
 
-    auto index = (!useSharedFlqStatement(lease) ? DELETE_LEASE6 : SFLQ_DELETE_LEASE6);
-    auto affected_rows = deleteLeaseCommon(ctx, index, inbind);
+    // Drop to common delete code
+    int32_t affected_rows = 0;
+    if (!useSharedFlqStatement(lease)) {
+        affected_rows = deleteLeaseCommon(ctx, DELETE_LEASE6, inbind);
+    } else {
+        affected_rows = deleteLeaseCommon(ctx, SFLQ_DELETE_LEASE6, inbind, true);
+    }
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
