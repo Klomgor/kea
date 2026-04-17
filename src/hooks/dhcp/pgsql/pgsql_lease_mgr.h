@@ -1259,7 +1259,6 @@ public:
 
     /// @brief Calls stored procedure to create an SFLQ pool for v6.
     ///
-    /// @todo TYPE_NA prohibited or no?
     /// @param start_address first address/prefix in the pool.
     /// @param last_address last address/prefix in the pool.
     /// @param lease_type TYPE_NA or TYPE_PD.

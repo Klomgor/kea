@@ -2389,6 +2389,7 @@ MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
     checkError(ctx, status, stindex, "unable to bind parameters");
 
     int32_t affected_rows = 0;
+    ScopedMySqlTransactionPtr trans;
     MYSQL_BIND obind[1];
     if (outputs_row_count) {
         // Build the output value bind array.
@@ -2399,6 +2400,7 @@ MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
         // Bind the output bind array to the statement
         status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
         checkError(ctx, status, stindex, "unable to bind output");
+        trans.reset(new MySqlTransaction(ctx->conn_));
     }
 
     // Execute the statement
@@ -2430,6 +2432,8 @@ MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
         if (status != 0) {
             checkError(ctx, status, stindex, "unable to fetch results");
         }
+
+        trans->commit();
     }
 
     // Insert succeeded
@@ -3523,6 +3527,7 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
     checkError(ctx, status, stindex, "unable to bind parameters");
 
     int32_t affected_rows = 0;
+    ScopedMySqlTransactionPtr trans;
     MYSQL_BIND obind[1];
     if (outputs_row_count) {
         // Build the output value bind array.
@@ -3533,6 +3538,7 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
         // Bind the output bind array to the statement
         status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
         checkError(ctx, status, stindex, "unable to bind output");
+        trans.reset(new MySqlTransaction(ctx->conn_));
     }
 
     // Execute
@@ -3554,6 +3560,8 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
         if (status != 0) {
             checkError(ctx, status, stindex, "unable to fetch results");
         }
+
+        trans->commit();
     }
 
     // Check success case first as it is the most likely outcome.
@@ -3572,7 +3580,7 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
     // one row.
     isc_throw(DbOperationError, "apparently updated more than one lease "
               "that had the address " << lease->addr_.toText()
-              << " row count: " << affected_rows);
+              << ", row count: " << affected_rows);
 }
 
 void
@@ -3727,6 +3735,7 @@ MySqlLeaseMgr::deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
     checkError(ctx, status, stindex, "unable to bind WHERE clause parameter");
 
     int32_t affected_rows = 0;
+    ScopedMySqlTransactionPtr trans;
     MYSQL_BIND obind[1];
     if (outputs_row_count) {
         // Build the output value bind array.
@@ -3737,6 +3746,7 @@ MySqlLeaseMgr::deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
         // Bind the output bind array to the statement
         status = mysql_stmt_bind_result(ctx->conn_.getStatement(stindex), obind);
         checkError(ctx, status, stindex, "unable to bind output");
+        trans.reset(new MySqlTransaction(ctx->conn_));
     }
 
     // Execute
@@ -3758,6 +3768,8 @@ MySqlLeaseMgr::deleteLeaseCommon(MySqlLeaseContextPtr& ctx,
         if (status != 0) {
             checkError(ctx, status, stindex, "unable to fetch results");
         }
+
+        trans->commit();
     }
 
     return (affected_rows);

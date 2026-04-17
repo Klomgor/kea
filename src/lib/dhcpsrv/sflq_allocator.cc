@@ -241,8 +241,20 @@ SharedFlqAllocator::sanityChecksSflqAllocator4(Subnet4Ptr subnet) {
 
 void
 SharedFlqAllocator::sanityChecksSflqAllocator6(Subnet6Ptr subnet) {
-    for (auto const lease_type : {Lease::TYPE_NA, Lease::TYPE_PD}) {
-        for (auto const& pool : subnet->getPools(lease_type)) {
+    if (subnet->getAllocatorType() == "shared-flq") {
+        for (auto const& pool : subnet->getPools(Lease::TYPE_NA)) {
+            auto const& capacity(pool->getCapacity());
+            if (capacity > MAX_V6_POOL_SIZE) {
+                isc_throw(BadValue, "pool capacity " << capacity
+                          << " exceeeds limit of " << MAX_V6_POOL_SIZE
+                          << " for shared-flq allocator on V6 pool "
+                          << pool->toText());
+            }
+        }
+    }
+
+    if (subnet->getPdAllocatorType() == "shared-flq") {
+        for (auto const& pool : subnet->getPools(Lease::TYPE_PD)) {
             auto const& capacity(pool->getCapacity());
             if (capacity > MAX_V6_POOL_SIZE) {
                 isc_throw(BadValue, "pool capacity " << capacity

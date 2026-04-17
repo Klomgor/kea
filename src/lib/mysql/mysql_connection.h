@@ -222,6 +222,8 @@ private:
     bool committed_;
 };
 
+/// @brief Defines a scoped pointer to a transaction.
+typedef boost::scoped_ptr<MySqlTransaction> ScopedMySqlTransactionPtr;
 
 /// @brief Common MySQL Connector Pool
 ///
