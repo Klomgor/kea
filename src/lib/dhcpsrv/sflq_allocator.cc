@@ -100,7 +100,7 @@ SharedFlqAllocator::pickAddressInternal(const ClientClasses& client_classes,
     while (available.size()) {
         // Get a random pool from the available ones.
         auto offset = getRandomNumber(available.size() - 1);
-        auto const& pool = available[offset];
+        PoolPtr const pool = available[offset];
         switch (pool_type_) {
         case Lease::TYPE_V4: {
             // Ask the lease manager for a lease from the pool.
@@ -168,7 +168,7 @@ SharedFlqAllocator::pickPrefixInternal(const ClientClasses& client_classes,
     while (available.size()) {
         // Get a random pool from the available ones.
         auto offset = getRandomNumber(available.size() - 1);
-        auto const& pool = available[offset];
+        PoolPtr const pool = available[offset];
         switch(pool_type_) {
         case Lease::TYPE_V4:
             isc_throw(Unexpected, "pickAddressInternal called for Lease::TYPE_V4");
