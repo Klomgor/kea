@@ -7342,6 +7342,7 @@ BEGIN
             WHERE ((f.bin_address >= bin_start_address AND
                     f.bin_address <= bin_last_address)
             AND (lease6.address IS NULL OR lease6.state = 2))
+            ORDER BY f.bin_address
             LIMIT 1;
     END IF;
 
