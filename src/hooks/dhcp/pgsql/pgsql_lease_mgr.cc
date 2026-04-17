@@ -1886,6 +1886,11 @@ PgSqlLeaseMgr::addLeaseCommon(PgSqlLeaseContextPtr& ctx,
                               StatementIndex stindex,
                               PsqlBindArray& bind_array,
                               bool outputs_row_count /* = false */) {
+    ScopedPgSqlTransactionPtr trans;
+    if (outputs_row_count) {
+        trans.reset(new PgSqlTransaction(ctx->conn_));
+    }
+
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,
                                  &bind_array.values_[0],
@@ -1907,6 +1912,7 @@ PgSqlLeaseMgr::addLeaseCommon(PgSqlLeaseContextPtr& ctx,
     /// @todo not sure Postresql cares - Consume the results even though we don't care.
     if (outputs_row_count) {
         getRowCount(r);
+        trans->commit();
     }
 
     return (true);
@@ -2758,12 +2764,17 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                  &bind_array.lengths_[0],
                                  &bind_array.formats_[0], 0));
 
-    ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
+    ScopedPgSqlTransactionPtr trans;
+    if (outputs_row_count) {
+        trans.reset(new PgSqlTransaction(ctx->conn_));
+    }
 
+    ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
 
     int affected_rows = 0;
     if (outputs_row_count) {
         affected_rows = getRowCount(r);
+        trans->commit();
     } else {
         affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
     }
@@ -2783,7 +2794,8 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
     // Should not happen - primary key constraint should only have selected
     // one row.
     isc_throw(DbOperationError, "apparently updated more than one lease "
-              "that had the address " << lease->addr_.toText());
+              "that had the address " << lease->addr_.toText()
+              << ", row count: " << affected_rows);
 }
 
 void
@@ -2905,11 +2917,17 @@ PgSqlLeaseMgr::deleteLeaseCommon(PgSqlLeaseContextPtr& ctx,
                                  &bind_array.lengths_[0],
                                  &bind_array.formats_[0], 0));
 
+    ScopedPgSqlTransactionPtr trans;
+    if (outputs_row_count) {
+        trans.reset(new PgSqlTransaction(ctx->conn_));
+    }
+
     ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
 
     int affected_rows = 0;
     if (outputs_row_count) {
         affected_rows = getRowCount(r);
+        trans->commit();
     } else {
         affected_rows = boost::lexical_cast<int>(PQcmdTuples(r));
     }

@@ -188,6 +188,9 @@ private:
     bool committed_;
 };
 
+/// @brief Defines a scoped pointer to a transaction.
+typedef boost::scoped_ptr<PgSqlTransaction> ScopedPgSqlTransactionPtr;
+
 /// @brief Common PgSql Connector Pool
 ///
 /// This class provides common operations for PgSql database connection
