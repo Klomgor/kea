@@ -6940,9 +6940,7 @@ BEGIN
 
     -- Find first address greater than the last pick.
     SELECT f.address INTO free_address FROM free_lease4 f
-        LEFT JOIN lease4 ON f.address = lease4.address
         WHERE (f.address > last_address and f.address <= p_end_address)
-        AND (lease4.address IS NULL OR lease4.state = 2)
         ORDER BY f.address
         LIMIT 1;
 
@@ -6952,9 +6950,7 @@ BEGIN
     IF (free_address IS NULL)
     THEN
         SELECT f.address INTO free_address FROM free_lease4 f
-            LEFT JOIN lease4 ON f.address = lease4.address
             WHERE (f.address >= p_start_address AND f.address <= last_address)
-            AND (lease4.address IS NULL OR lease4.state = 2)
             ORDER BY f.address
             LIMIT 1;
     END IF;
@@ -7323,9 +7319,8 @@ BEGIN
     bin_last_address = inetToBytea(last_address);
     -- Find first address greater than the last pick.
     SELECT f.address INTO free_address FROM free_lease6 f
-        LEFT JOIN lease6 ON f.address = lease6.address
-        WHERE ((f.bin_address > bin_last_address AND f.bin_address <= bin_end_address)
-                AND (lease6.address IS NULL OR lease6.state = 2))
+        WHERE (f.bin_address > bin_last_address AND
+               f.bin_address <= bin_end_address)
         ORDER BY f.bin_address
         LIMIT 1;
 
@@ -7335,10 +7330,8 @@ BEGIN
     IF (free_address IS NULL)
     THEN
         SELECT f.address INTO free_address FROM free_lease6 f
-            LEFT JOIN lease6 on f.address = lease6.address
-            WHERE ((f.bin_address >= bin_start_address AND
-                    f.bin_address <= bin_last_address)
-            AND (lease6.address IS NULL OR lease6.state = 2))
+            WHERE (f.bin_address >= bin_start_address AND
+                   f.bin_address <= bin_last_address)
             ORDER BY f.bin_address
             LIMIT 1;
     END IF;

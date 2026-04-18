@@ -4200,29 +4200,32 @@ mysql_sflqPickFreeLease4() {
     run_statement "sflqPickFreeLease4.2" "$sql"  "127.0.0.1";
     run_statement "sflqPickFreeLease4.3" "$sql"  "127.0.0.2";
 
+    # Inserting an active lease directly. Pick should still see it.
     sql="insert into lease4 (address, subnet_id) values (inet_aton('127.0.0.1'), 1)";
     run_statement "insert 127.0.0.1" "$sql"  "";
 
     sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
     run_statement "sflqPickFreeLease4.4" "$sql"  "127.0.0.0";
-    run_statement "sflqPickFreeLease4.5" "$sql"  "127.0.0.2";
-    run_statement "sflqPickFreeLease4.6" "$sql"  "127.0.0.0";
+    run_statement "sflqPickFreeLease4.5" "$sql"  "127.0.0.1";
+    run_statement "sflqPickFreeLease4.6" "$sql"  "127.0.0.2";
 
+    # Updating it to reclaimed directly. Pick should still see it.
     sql="update lease4 set state = 2 where address = (inet_aton('127.0.0.1'));"
     run_statement "update 127.0.0.1" "$sql"  "";
 
     sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "sflqPickFreeLease4.7" "$sql"  "127.0.0.1";
-    run_statement "sflqPickFreeLease4.8" "$sql"  "127.0.0.2";
-    run_statement "sflqPickFreeLease4.9" "$sql"  "127.0.0.0";
+    run_statement "sflqPickFreeLease4.7" "$sql"  "127.0.0.0";
+    run_statement "sflqPickFreeLease4.8" "$sql"  "127.0.0.1";
+    run_statement "sflqPickFreeLease4.9" "$sql"  "127.0.0.2";
 
+    # Deleting a lease directly. Pick should still see it.
     sql="delete from lease4"
     run_statement "delete 127.0.0.1" "$sql"  "";
 
     sql="select inet_ntoa(sflqPickFreeLease4(inet_aton('127.0.0.0'), inet_aton('127.0.0.2')))"
-    run_statement "sflqPickFreeLease4.10" "$sql"  "127.0.0.1";
-    run_statement "sflqPickFreeLease4.11" "$sql"  "127.0.0.2";
-    run_statement "sflqPickFreeLease4.12" "$sql"  "127.0.0.0";
+    run_statement "sflqPickFreeLease4.10" "$sql"  "127.0.0.0";
+    run_statement "sflqPickFreeLease4.11" "$sql"  "127.0.0.1";
+    run_statement "sflqPickFreeLease4.12" "$sql"  "127.0.0.2";
 
     # Check pools with one address.
     address='192.0.2.0'
@@ -4372,29 +4375,32 @@ mysql_sflqPickFreeLease6() {
     run_statement "sflqPickFreeLease6.2" "$sql"  "3001::2";
     run_statement "sflqPickFreeLease6.3" "$sql"  "3001::";
 
+    # Inserting an active lease directly. Pick should still see it.
     sql="insert into lease6 (address, lease_type, subnet_id) values (inet6_aton('3001::1'), 1, 1)";
     run_statement "insert 3001::1" "$sql"  "";
 
     sql="select sflqPickFreeLease6('3001::', '3001::02')"
-    run_statement "sflqPickFreeLease6.4" "$sql"  "3001::2";
-    run_statement "sflqPickFreeLease6.5" "$sql"  "3001::";
-    run_statement "sflqPickFreeLease6.6" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.4" "$sql"  "3001::1";
+    run_statement "sflqPickFreeLease6.5" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.6" "$sql"  "3001::";
 
+    # Updating to reclaimed directly. Pick should still see it.
     sql="update lease6 set state = 2 where address = (inet6_aton('3001::1'));"
     run_statement "update 3001::1" "$sql"  "";
 
     sql="select sflqPickFreeLease6('3001::', '3001::02')"
-    run_statement "sflqPickFreeLease6.7" "$sql"  "3001::";
-    run_statement "sflqPickFreeLease6.8" "$sql"  "3001::1";
-    run_statement "sflqPickFreeLease6.9" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.7" "$sql"  "3001::1";
+    run_statement "sflqPickFreeLease6.8" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.9" "$sql"  "3001::";
 
+    # Deleting a lease directly. Pick should still see it.
     sql="delete from lease6"
     run_statement "delete 3001::1" "$sql"  "";
 
     sql="select sflqPickFreeLease6('3001::', '3001::02')"
-    run_statement "sflqPickFreeLease6.10" "$sql"  "3001::";
-    run_statement "sflqPickFreeLease6.11" "$sql"  "3001::1";
-    run_statement "sflqPickFreeLease6.12" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.10" "$sql"  "3001::1";
+    run_statement "sflqPickFreeLease6.11" "$sql"  "3001::2";
+    run_statement "sflqPickFreeLease6.12" "$sql"  "3001::";
 
     # Check pools with one address.
     address='2001:db8::8bd:1002'

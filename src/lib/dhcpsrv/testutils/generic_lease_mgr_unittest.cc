@@ -5796,18 +5796,24 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
     // Create a subnet with a one address pool for simplicity.
     IOAddress start_address("192.0.2.0");
     IOAddress end_address("192.0.2.0");
+    Lease4Ptr preop_lease = initializeLease4(start_address.toText());
     CfgSubnets4Ptr cfg = CfgMgr::instance().getStagingCfg()->getCfgSubnets4();
     Subnet4Ptr subnet;
     Pool4Ptr pool;
-    subnet.reset(new Subnet4(start_address, 24, 1, 2, 3, 1));
+    subnet.reset(new Subnet4(start_address, 24, 1, 2, 3, preop_lease->subnet_id_));
     pool.reset(new Pool4(start_address, end_address));
     subnet->addPool(pool);
-    AllocatorPtr sflq_allocator(new SharedFlqAllocator(Lease::TYPE_V4, subnet));
-    subnet->setAllocator(Lease::TYPE_V4, sflq_allocator);
+
+    subnet->setAllocatorType("shared-flq");
+    ASSERT_NO_THROW_LOG(subnet->createAllocators());
     cfg->add(subnet);
+    ASSERT_NO_THROW(CfgMgr::instance().commit());
 
     // Should create the SFLQ pool for the subnet.
     cfg->initAllocatorsAfterConfigure();
+
+    ASSERT_TRUE(SharedFlqAllocator::inUse());
+    ASSERT_TRUE(LeaseMgr::useSharedFlqStatement(preop_lease));
 
     // Defines a list of lease operations.
     enum LeaseOp {
@@ -5843,12 +5849,15 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
         // Delete the lease.
         {__LINE__, DELETE, Lease::STATE_DEFAULT,
          !expired, !should_exist, can_pick },
-#if 0
-        // @todo This hinges on #4447
+
         // Add an expired lease.
         {__LINE__, ADD, Lease::STATE_DEFAULT,
-         !expired, should_exist, can_pick },
-#endif
+         expired, should_exist, !can_pick },
+
+        // Delete the lease.
+        {__LINE__, DELETE, Lease::STATE_DEFAULT,
+         !expired, !should_exist, can_pick },
+
         // Add a reclaimed lease.
         {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED,
          !expired, should_exist, can_pick },
@@ -5863,7 +5872,6 @@ GenericLeaseMgrTest::testSflqLeaseOps4() {
     };
 
     // Iterate over the scenarios.
-    Lease4Ptr preop_lease = initializeLease4(start_address.toText());
     for ( auto const& scenario : scenarios ){
         std::ostringstream os;
         os << "scenario at line: " << scenario.lineno_;
@@ -5963,10 +5971,13 @@ GenericLeaseMgrTest::testSflqLeaseOps6(Lease::Type lease_type) {
     // Create a subnet with a one address pool for simplicity.
     IOAddress start_address("2001:db8::");
     IOAddress end_address("2001:db8::");
+    Lease6Ptr preop_lease = initializeLease6(start_address.toText());
+    preop_lease->type_ = lease_type;
+
     CfgSubnets6Ptr cfg = CfgMgr::instance().getStagingCfg()->getCfgSubnets6();
     Subnet6Ptr subnet;
     Pool6Ptr pool;
-    subnet.reset(new Subnet6(start_address, 64, 1, 2, 3, 4, 1));
+    subnet.reset(new Subnet6(start_address, 64, 1, 2, 3, 4, preop_lease->subnet_id_));
 
     if (lease_type == Lease::TYPE_NA) {
         pool.reset(new Pool6(Lease::TYPE_NA, start_address, end_address));
@@ -5980,9 +5991,13 @@ GenericLeaseMgrTest::testSflqLeaseOps6(Lease::Type lease_type) {
 
     ASSERT_NO_THROW_LOG(subnet->createAllocators());
     cfg->add(subnet);
+    ASSERT_NO_THROW(CfgMgr::instance().commit());
 
     // Should create the SFLQ pool for the subnet.
     cfg->initAllocatorsAfterConfigure();
+
+    ASSERT_TRUE(SharedFlqAllocator::inUse());
+    ASSERT_TRUE(LeaseMgr::useSharedFlqStatement(preop_lease));
 
     // Defines a list of lease operations.
     enum LeaseOp {
@@ -6018,12 +6033,15 @@ GenericLeaseMgrTest::testSflqLeaseOps6(Lease::Type lease_type) {
         // Delete the lease.
         {__LINE__, DELETE, Lease::STATE_DEFAULT,
          !expired, !should_exist, can_pick },
-#if 0
-        // @todo This hinges on #4447
+
         // Add an expired lease.
         {__LINE__, ADD, Lease::STATE_DEFAULT,
-         !expired, should_exist, can_pick },
-#endif
+         expired, should_exist, !can_pick },
+
+        // Delete the lease.
+        {__LINE__, DELETE, Lease::STATE_DEFAULT,
+         !expired, !should_exist, can_pick },
+
         // Add a reclaimed lease.
         {__LINE__, ADD, Lease::STATE_EXPIRED_RECLAIMED,
          !expired, should_exist, can_pick },
@@ -6038,8 +6056,6 @@ GenericLeaseMgrTest::testSflqLeaseOps6(Lease::Type lease_type) {
     };
 
     // Iterate over the scenarios.
-    Lease6Ptr preop_lease = initializeLease6(start_address.toText());
-    preop_lease->type_ = lease_type;
     for ( auto const& scenario : scenarios ){
         std::ostringstream os;
         os << "scenario at line: " << scenario.lineno_;
