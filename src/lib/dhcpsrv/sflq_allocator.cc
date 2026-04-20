@@ -220,7 +220,7 @@ SharedFlqAllocator::getSubnetState() const {
     state = boost::dynamic_pointer_cast<SubnetSflqAllocationState>
                                        (subnet->getAllocationState(pool_type_));
     if (!state) {
-        isc_throw(Unexpected, "SharedFlqAllocator::getSubnetState - wrong allcoation state type");
+        isc_throw(Unexpected, "SharedFlqAllocator::getSubnetState - wrong allocation state type");
     }
 
     return (state);
@@ -232,7 +232,7 @@ SharedFlqAllocator::sanityChecksSflqAllocator4(Subnet4Ptr subnet) {
         auto const& capacity(pool->getCapacity());
         if (capacity > MAX_V4_POOL_SIZE) {
             isc_throw(BadValue, "pool capacity " << capacity
-                     << " exceeeds limit of " << MAX_V4_POOL_SIZE
+                     << " exceeds limit of " << MAX_V4_POOL_SIZE
                      << " for shared-flq allocator on V4 pool "
                      << pool->toText());
         }
@@ -246,7 +246,7 @@ SharedFlqAllocator::sanityChecksSflqAllocator6(Subnet6Ptr subnet) {
             auto const& capacity(pool->getCapacity());
             if (capacity > MAX_V6_POOL_SIZE) {
                 isc_throw(BadValue, "pool capacity " << capacity
-                          << " exceeeds limit of " << MAX_V6_POOL_SIZE
+                          << " exceeds limit of " << MAX_V6_POOL_SIZE
                           << " for shared-flq allocator on V6 pool "
                           << pool->toText());
             }
@@ -258,7 +258,7 @@ SharedFlqAllocator::sanityChecksSflqAllocator6(Subnet6Ptr subnet) {
             auto const& capacity(pool->getCapacity());
             if (capacity > MAX_V6_POOL_SIZE) {
                 isc_throw(BadValue, "pool capacity " << capacity
-                          << " exceeeds limit of " << MAX_V6_POOL_SIZE
+                          << " exceeds limit of " << MAX_V6_POOL_SIZE
                           << " for shared-flq allocator on V6 pool "
                           << pool->toText());
             }

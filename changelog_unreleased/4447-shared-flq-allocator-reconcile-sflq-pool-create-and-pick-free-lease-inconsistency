@@ -3,6 +3,6 @@
 	It implements a free lease queue mechanism for
 	MySQL and Postgresql lease back ends. It is 
 	intended for use in configurations that share
-	lease data between mulitple servers (i.e. shared
+	lease data between multiple servers (i.e. shared
 	lease backends).
 	(Gitlab #4336, #4373, #4405, #4417, #4441, #4447)

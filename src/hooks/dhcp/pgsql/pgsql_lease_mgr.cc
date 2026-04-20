@@ -1909,7 +1909,7 @@ PgSqlLeaseMgr::addLeaseCommon(PgSqlLeaseContextPtr& ctx,
         ctx->conn_.checkStatementError(r, tagged_statements[stindex]);
     }
 
-    /// @todo not sure Postresql cares - Consume the results even though we don't care.
+    /// @todo not sure Postgresql cares - Consume the results even though we don't care.
     if (outputs_row_count) {
         getRowCount(r);
         trans->commit();
