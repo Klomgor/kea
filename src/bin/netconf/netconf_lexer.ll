@@ -274,15 +274,6 @@ ControlCharacterFill            [^"\\]|\\["\\/bfnrtu]
     }
 }
 
-\"ca\" {
-    switch(driver.ctx_) {
-    case ParserContext::MANAGED_SERVERS:
-        return NetconfParser::make_CA_SERVER(driver.loc_);
-    default:
-        return NetconfParser::make_STRING("ca", driver.loc_);
-    }
-}
-
 \"model\" {
     switch(driver.ctx_) {
     case ParserContext::SERVER:

@@ -69,7 +69,6 @@ using namespace std;
   DHCP4_SERVER "dhcp4"
   DHCP6_SERVER "dhcp6"
   D2_SERVER "d2"
-  CA_SERVER "ca"
   MODEL "model"
   CONTROL_SOCKET "control-socket"
   SOCKET_TYPE "socket-type"
@@ -457,12 +456,11 @@ not_empty_servers_entries: server_entry
                          ;
 
 
-// We currently support four types of servers: DHCPv4, DHCPv6, D2 and CA
+// We currently support four types of servers: DHCPv4, DHCPv6 and D2
 // (even though D2 socket support is not yet merged).
 server_entry: dhcp4_server
             | dhcp6_server
             | d2_server
-            | ca_server
             | unknown_map_entry
             ;
 
@@ -495,18 +493,6 @@ d2_server: D2_SERVER {
     ctx.unique("d2", ctx.loc2pos(@1));
     ElementPtr m(new MapElement(ctx.loc2pos(@1)));
     ctx.stack_.back()->set("d2", m);
-    ctx.stack_.push_back(m);
-    ctx.enter(ctx.SERVER);
-} COLON LCURLY_BRACKET managed_server_params RCURLY_BRACKET {
-    ctx.stack_.pop_back();
-    ctx.leave();
-};
-
-// That's an entry for ca server.
-ca_server: CA_SERVER {
-    ctx.unique("ca", ctx.loc2pos(@1));
-    ElementPtr m(new MapElement(ctx.loc2pos(@1)));
-    ctx.stack_.back()->set("ca", m);
     ctx.stack_.push_back(m);
     ctx.enter(ctx.SERVER);
 } COLON LCURLY_BRACKET managed_server_params RCURLY_BRACKET {
