@@ -4021,7 +4021,7 @@ PgSqlLeaseMgr::sflqCreateFlqPool4(IOAddress start_address, IOAddress end_address
 
     if (capacity > SharedFlqAllocator::MAX_V4_POOL_SIZE) {
         isc_throw(BadValue, "PgSqlLeasMgr::sflqCreateFlqPool4 pool capacity "
-                            << capacity << " exceeeds limit of "
+                            << capacity << " exceeds limit of "
                             << SharedFlqAllocator::MAX_V4_POOL_SIZE
                             << " for shared-flq allocator on V4 pool ");
     }
@@ -4126,7 +4126,7 @@ PgSqlLeaseMgr::sflqCreateFlqPool6(IOAddress start_address, IOAddress end_address
 
     if (capacity > SharedFlqAllocator::MAX_V6_POOL_SIZE) {
         isc_throw(BadValue, "PgSqlLeasMgr::sflqCreateFlqPool6 pool capacity "
-                            << capacity << " exceeeds limit of "
+                            << capacity << " exceeds limit of "
                             << SharedFlqAllocator::MAX_V6_POOL_SIZE
                             << " for shared-flq allocator on V6 pool ");
     }
