@@ -1,0 +1,4 @@
+[bug]		mgodzina
+	Corrected "Lease Length" label in logged
+	DHCPSRV_DHCP_DDNS_NCR_SENT to "TTL".
+	(Gitlab #4376)

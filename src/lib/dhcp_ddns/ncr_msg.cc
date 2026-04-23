@@ -680,7 +680,7 @@ NameChangeRequest::toText() const {
            << "FQDN: [" << fqdn_ << "]" << std::endl
            << "IP Address: [" << ip_io_address_ << "]" << std::endl
            << "DHCID: [" << dhcid_.toStr() << "]" << std::endl
-           << "Lease Length: " << lease_length_ << std::endl
+           << "TTL: " << lease_length_ << std::endl
            << "Conflict Resolution Mode: "
            << ConflictResolutionModeToString(getConflictResolutionMode())
            << std::endl;
