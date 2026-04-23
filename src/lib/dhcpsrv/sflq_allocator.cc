@@ -25,6 +25,9 @@ namespace isc {
 namespace isc {
 namespace dhcp {
 
+constexpr size_t SharedFlqAllocator::MAX_V4_POOL_SIZE;
+constexpr size_t SharedFlqAllocator::MAX_V6_POOL_SIZE;
+
 void
 SharedFlqAllocator::setInUse(bool in_use) {
     sflq_in_use_ = in_use;
