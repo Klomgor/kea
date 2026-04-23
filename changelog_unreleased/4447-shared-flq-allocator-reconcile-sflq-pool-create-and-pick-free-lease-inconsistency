@@ -1,7 +1,7 @@
 [func]		tmark
 	Added an experimental allocator type, 'shared-flq'.
 	It implements a free lease queue mechanism for
-	MySQL and Postgresql lease back ends. It is 
+	MySQL and Postgresql lease back ends. It is
 	intended for use in configurations that share
 	lease data between multiple servers (i.e. shared
 	lease backends).
