@@ -3362,7 +3362,7 @@ example checks whether the client identifies itself as a PXE device with
 architecture EFI x86-64, and sets several fields if it does. See
 `Section 2.1 of RFC
 4578 <https://datatracker.ietf.org/doc/html/rfc4578#section-2.1>`__)
-corrected by its Errate or the client documentation for specific values.
+corrected by its errata or the client documentation for specific values.
 
 ::
 
