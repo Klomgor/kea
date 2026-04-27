@@ -36,30 +36,33 @@ def get_version():
     meson_build_path = '../../meson.build'
     changelog_path = '../../ChangeLog'
     with open(meson_build_path, encoding='utf-8') as f:
-        version = None
+        v = None
         for line in f.readlines():
             m = re.search(r"version: '([0-9.]+)(|-git)',", line)
             if m is not None:
-                version = ''.join(m.groups())
+                v = ''.join(m.groups())
                 break
-    if version is None or version == '':
+    if v is None or v == '':
         print('ERROR: Cannot determine Kea version from meson.build.')
         sys.exit(1)
 
     # If the first line of the ChangeLog announces release, it means
     # that this is the final release.
-    dash_parts = version.split('-')
+    dash_parts = v.split('-')
     candidate_release = dash_parts[0]
     with open(changelog_path, encoding='utf-8') as changelog_file:
         first_line = changelog_file.readline()
         if candidate_release in first_line and 'released' in first_line:
-            version = candidate_release
-    return version
+            v = candidate_release
+    return v
 
 
-release = get_version()
+# "version" is required for epub.
+# "release" is required for the other formats.
+version = get_version()
+release = version
 
-cloudsmith_series = '-'.join(release.split('.')[0:2])
+cloudsmith_series = '-'.join(version.split('.')[0:2])
 
 # now let's replace versions with odd minor number with dev
 if int(cloudsmith_series[-1]) % 2 != 0:
