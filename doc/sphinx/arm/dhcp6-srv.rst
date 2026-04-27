@@ -2298,11 +2298,11 @@ clause, to send it with the ntp-server-address suboption for the
                "space": "v6-ntp-server-suboptions",
                "name": "ntp-server-address",
                "data": "2a02:8424:6fc4:3601:c13b:9426:51db:aa1"
-            },
-            ...
-        ],
-        ...
-    }
+           },
+           ...
+       ],
+       ...
+   }
 
 
 For the FQDN which allows to pick one of the 4 addresses of it:
@@ -2315,11 +2315,11 @@ For the FQDN which allows to pick one of the 4 addresses of it:
                "space": "v6-ntp-server-suboptions",
                "name": "ntp-server-fqdn",
                "data": "2.pool.ntp.org"
-            },
-            ...
-        ],
-        ...
-    }
+           },
+           ...
+       ],
+       ...
+   }
 
 
 Or for a closed site with its own NTP server using multicast:
@@ -2335,7 +2335,7 @@ Or for a closed site with its own NTP server using multicast:
            },
            ...
        ],
-   ...
+       ...
    }
 
 
