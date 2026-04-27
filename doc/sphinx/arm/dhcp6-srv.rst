@@ -2332,11 +2332,11 @@ Or for a closed site with its own NTP server using multicast:
                "space": "v6-ntp-server-suboptions",
                "name": "ntp-server-multicast",
                "data": "ff05::101"
-            },
-            ...
-        ],
-    ...
-    }
+           },
+           ...
+       ],
+   ...
+   }
 
 
 Note the standard requires to include only one suboption in the ntp-server
