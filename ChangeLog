@@ -2,7 +2,7 @@ Kea 3.1.8 (development) released on April 29, 2026
 
 2461.	[bug]		fdupont
 	Fixed spurious warnings emitted when attempting to close
-	already apclosed HTTP sockets.
+	already closed HTTP sockets.
 	(Gitlab #4344)
 
 2460.	[func]		fdupont
