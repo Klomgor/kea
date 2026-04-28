@@ -20970,6 +20970,54 @@ Logged at debug log level 50.
 The code has issued a rollback call. All outstanding transactions will
 be rolled back and not committed to the database.
 
+MYSQL_LB_SFLQ_CREATE_POOL4
+==========================
+
+.. code-block:: text
+
+    creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4, capacity %5
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end to
+(re)create the shared free lease data for the pool described in the arguments.
+Applies to MySQL and PostgreSQL lease back ends only.
+
+MYSQL_LB_SFLQ_CREATE_POOL6
+==========================
+
+.. code-block:: text
+
+    creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6, capacity %7
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end to
+(re)create the shared free lease data for the pool described in the arguments.
+Applies to MySQL and PostgreSQL lease back ends only.
+
+MYSQL_LB_SFLQ_PICK_LEASE4
+=========================
+
+.. code-block:: text
+
+    picking a free lease from address range %1 - %2
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end for
+a free address from the pool described in the arguments.
+Applies to MySQL and PostgreSQL lease back ends only.
+
+MYSQL_LB_SFLQ_PICK_LEASE6
+=========================
+
+.. code-block:: text
+
+    picking a free lease from address range %1 - %2
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end for
+a free lease from the pool described in the arguments.
+Applies to MySQL and PostgreSQL lease back ends only.
+
 MYSQL_LB_TLS_CIPHER
 ===================
 
@@ -24142,6 +24190,50 @@ PGSQL_LB_ROLLBACK
 Logged at debug log level 50.
 The code has issued a rollback call. All outstanding transactions will
 be rolled back and not committed to the database.
+
+PGSQL_LB_SFLQ_CREATE_POOL4
+==========================
+
+.. code-block:: text
+
+    creating shared-flq pool for address range %1 - %2, subnet id %3, recreate %4, capacity %5
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end to
+(re)create the shared free lease data for the pool described in the arguments.
+
+PGSQL_LB_SFLQ_CREATE_POOL6
+==========================
+
+.. code-block:: text
+
+    creating shared-flq pool for address range %1 - %2, type %3, delegated length: %4, subnet id %5, recreate %6, capacity %7
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end to
+(re)create the shared free lease data for the pool described in the arguments.
+
+PGSQL_LB_SFLQ_PICK_LEASE4
+=========================
+
+.. code-block:: text
+
+    picking a free lease from address range %1 - %2
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end for
+a free address from the pool described in the arguments.
+
+PGSQL_LB_SFLQ_PICK_LEASE6
+=========================
+
+.. code-block:: text
+
+    picking a free lease from address range %1 - %2
+
+Logged at debug log level 50.
+This debug message is issued when the server asks the lease back end for
+a free lease from the pool described in the arguments.
 
 PGSQL_LB_UPDATE_ADDR4
 =====================

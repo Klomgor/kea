@@ -116,7 +116,6 @@ This grammar is generated from ``netconf_parser.yy``. See :ref:`netconf` for mor
      server_entry ::= dhcp4_server
                  | dhcp6_server
                  | d2_server
-                 | ca_server
                  | unknown_map_entry
 
      dhcp4_server ::= "dhcp4" ":" "{" managed_server_params "}"
@@ -124,8 +123,6 @@ This grammar is generated from ``netconf_parser.yy``. See :ref:`netconf` for mor
      dhcp6_server ::= "dhcp6" ":" "{" managed_server_params "}"
 
      d2_server ::= "d2" ":" "{" managed_server_params "}"
-
-     ca_server ::= "ca" ":" "{" managed_server_params "}"
 
      managed_server_params ::= managed_server_param
                           | managed_server_params "," managed_server_param

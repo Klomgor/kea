@@ -1,6 +1,0 @@
-[func]		fdupont
-	More bad Unix control socket configuration parameters are now
-	rejected, before they were silently ignored. For instance
-	it is now forbidden to configure HTTP or TLS parameters on
-	not HTTP nor HTTPS control sockets.
-	(Gitlab #3970)

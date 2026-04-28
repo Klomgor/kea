@@ -1,3 +1,42 @@
+Kea 3.1.8 (development) released on April 29, 2026
+
+2461.	[bug]		fdupont
+	Fixed spurious warnings emitted when attempting to close
+	already apclosed HTTP sockets.
+	(Gitlab #4344)
+
+2460.	[func]		fdupont
+	More bad Unix control socket configuration parameters are now
+	rejected, before they were silently ignored. For instance
+	it is now forbidden to configure HTTP or TLS parameters on
+	not HTTP nor HTTPS control sockets.
+	(Gitlab #3970)
+
+2459.	[func]		tmark
+	Added an experimental allocator type, 'shared-flq'.
+	It implements a free lease queue mechanism for
+	MySQL and Postgresql lease back ends. It is
+	intended for use in configurations that share
+	lease data between multiple servers (i.e. shared
+	lease backends).
+	(Gitlab #4336, #4373, #4405, #4417, #4441, #4447)
+
+2458.	[func]*		fdupont
+	The deprecated control agent has been removed.
+	(Gitlab #3448)
+
+2457.	[bug]		mgodzina
+	Corrected "Lease Length" label in logged
+	DHCPSRV_DHCP_DDNS_NCR_SENT to "TTL".
+	(Gitlab #4376)
+
+2456.	[func]		tmark
+	Auto detection of JSON support in MySQL
+	and PostgreSQL databases has been removed.
+	All database versions with active support
+	should now include JSON support.
+	(Gitlab #4342)
+
 2455.	[build]		razvan
 	The library version numbers have been bumped up for the Kea 3.1.8
 	development release.

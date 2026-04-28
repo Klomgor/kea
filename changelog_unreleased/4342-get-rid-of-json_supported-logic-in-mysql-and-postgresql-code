@@ -1,6 +1,0 @@
-[func]		tmark
-	Auto detection of JSON support in MySQL
-	and PostgreSQL databases has been removed.
-	All database versions with active support
-	should now include JSON support.
-	(Gitlab #4342)
