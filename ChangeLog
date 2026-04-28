@@ -19,7 +19,7 @@ Kea 3.1.8 (development) released on April 29, 2026
 	intended for use in configurations that share
 	lease data between multiple servers (i.e. shared
 	lease backends).
-	(Gitlab #4336, #4373, #4405, #4417, #4441, #4447)
+	(Gitlab #4336, #4373, #4405, #4417, #4425, #4441, #4447)
 
 2458.	[func]*		fdupont
 	The deprecated control agent has been removed.
