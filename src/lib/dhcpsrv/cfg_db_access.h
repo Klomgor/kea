@@ -83,7 +83,7 @@ public:
     /// attempt to use this setting for @c HostMgr.
     ///
     /// Note that the @c HostMgr can reject the new setting if any of the
-    /// host backends used does not support specifying multipe hosts with
+    /// host backends used does not support specifying multiple hosts with
     /// the same IP address in a subnet.
     ///
     /// @param unique new setting to be used by @c HostMgr.

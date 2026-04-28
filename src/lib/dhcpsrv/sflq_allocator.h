@@ -93,10 +93,10 @@ public:
     /// @throw BadValue if the capacity exceeds limit.
     static void sanityChecksSflqAllocator6(Subnet6Ptr subnet);
 
-    /// @brief Maximum capacity of a V4 pool suppported by SFLQ.
+    /// @brief Maximum capacity of a V4 pool supported by SFLQ.
     static constexpr size_t MAX_V4_POOL_SIZE = 16777216;
 
-    /// @brief Maximum capacity of a V6 pool suppported by SFLQ.
+    /// @brief Maximum capacity of a V6 pool supported by SFLQ.
     static constexpr size_t MAX_V6_POOL_SIZE = 16777216;
 
 private:

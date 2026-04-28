@@ -24,7 +24,7 @@ class ClientConnectionImpl;
 /// In particular, this class is used by the Kea control socket to establish
 /// connections for respective Kea services.
 /// As of Kea 1.2 the servers can handle a single connection at the time.
-/// In the future, we're planning to support multiple simulatneous connections.
+/// In the future, we're planning to support multiple simultaneous connections.
 /// In this case, each connection will be handled by a unique instance of the
 /// @ref ClientConnection class.
 ///

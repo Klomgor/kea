@@ -464,7 +464,7 @@ protected:
     /// deferred until the connection is no longer used (a reply is sent).
     bool defer_shutdown_;
 
-    /// @brief Flag which indicates if the conenction was already closed
+    /// @brief Flag which indicates if the connection was already closed
     /// to avoid multiple close calls.
     bool closed_;
 };
